@@ -477,7 +477,7 @@ async function revisePlanFromDiscussion(){
   try{
     const result=await apiRequest({
       task:"plan",
-      message:"请根据原始旅行需求和用户与 AI 的完整讨论，生成或修订一份完整结构化旅行方案。如果 current_plan 存在，则在保留用户已确认约束的前提下修订；如果 current_plan 为空或不完整，则根据原始需求和讨论补充信息生成完整方案。不要擅自编造未确认的交通班次、营业时间或票价。请输出完整可编辑方案，字段保持 city_sequence、intercity_transport、days、checks、questions、summary；days 必须包含每日景点顺序、建议时间、游览时长、地点组合理由、交通衔接与待核验事项。若 context.reference_materials 有内容，必须将用户上传的 Word/PDF/文字资料与讨论内容一起整合，保留有价值的地点和个人备注，去重并区分主观体验与可核实事实。每个城市规划当地特色菜、代表性小吃和合适的用餐区域；每天在 By Day 中合理安排午餐/晚餐或市场美食体验，作为餐饮停留点。优先给出有来源支持的店铺或市场名称；无法核实时推荐菜品和区域，不编造店名、营业时间或价格。每天安排 2–4 个核心景点，并兼顾餐饮、休息和交通缓冲。若仍有关键条件未确定，请在 questions 中明确提出，不要猜测。",
+      message:"请根据原始旅行需求和用户与 AI 的完整讨论，生成或修订一份完整结构化旅行方案。如果 current_plan 存在，则在保留用户已确认约束的前提下修订；如果 current_plan 为空或不完整，则根据原始需求和讨论补充信息生成完整方案。不要擅自编造未确认的交通班次、营业时间或票价。请输出完整可编辑方案，字段保持 city_sequence、intercity_transport、days、checks、questions、summary；days 必须包含每日景点顺序、建议时间、游览时长、地点组合理由、交通衔接与待核验事项。若 context.reference_materials 有内容，必须将用户上传的 Word/PDF/文字资料与讨论内容一起整合，保留有价值的地点和个人备注，去重并区分主观体验与可核实事实。每个城市规划当地特色菜、代表性小吃和合适的用餐区域；每天在 By Day 中合理安排午餐/晚餐或市场美食体验，作为餐饮停留点。优先给出有来源支持的店铺或市场名称；无法核实时推荐菜品和区域，不编造店名、营业时间或价格。每天安排 2–4 个核心景点，并兼顾餐饮、休息和交通缓冲。每个城市在 checks 中至少输出一条以“美食推荐：”开头的当地特色菜、小吃、餐饮区域或有来源支持的店铺建议。若仍有关键条件未确定，请在 questions 中明确提出，不要猜测。",
       history:planDiscussionHistory.slice(-12),
       context:buildPlanContext("revise_existing_plan")
     });
@@ -709,7 +709,7 @@ async function generatePlan(){
   };
   planBrief=brief;planDiscussionHistory=[];planVersions=[];planVersionNumber=1;lastAiPlan=null;savePlanSession();updatePlanReferencePreview();
   try{
-    const result=await apiRequest({task:"plan",message:"请先检查旅行信息是否完整。如果起点、终点、日期、城市停留时间、预算或交通偏好等关键条件缺失，请优先在 questions 中提出最重要的澄清问题，不要猜测。信息足够后，必须生成可编辑的 city_sequence、intercity_transport 和完整 days。By Day 是核心交付：每天的景点顺序、建议时间、游览时长、地点组合理由、交通衔接与待核验事项都要写清楚。每个城市规划当地特色菜、代表性小吃和合适的用餐区域；每天在路线中合理安排午餐/晚餐或市场美食体验，作为餐饮停留点，不要只写“用餐”。优先给出有来源支持的店铺或市场名称；无法核实时推荐菜品和区域，不编造店名、营业时间或价格。若 context.reference_materials 有内容，必须结合用户上传的 Word/PDF/文字资料和本轮讨论，保留有价值的地点与个人备注，去重、区分主观经验和可核实事实，并把资料中的候选景点合理编入 By Day。对营业时间、门票、交通和签证等动态信息，注明来源与核验状态；不能确认的明确标为待核实。每天安排 2–4 个核心景点，并兼顾餐饮、休息和交通缓冲。",context:buildPlanContext("initial_plan")});
+    const result=await apiRequest({task:"plan",message:"请先检查旅行信息是否完整。如果起点、终点、日期、城市停留时间、预算或交通偏好等关键条件缺失，请优先在 questions 中提出最重要的澄清问题，不要猜测。信息足够后，必须生成可编辑的 city_sequence、intercity_transport 和完整 days。By Day 是核心交付：每天的景点顺序、建议时间、游览时长、地点组合理由、交通衔接与待核验事项都要写清楚。每个城市规划当地特色菜、代表性小吃和合适的用餐区域；每天在路线中合理安排午餐/晚餐或市场美食体验，作为餐饮停留点，不要只写“用餐”。优先给出有来源支持的店铺或市场名称；无法核实时推荐菜品和区域，不编造店名、营业时间或价格。若 context.reference_materials 有内容，必须结合用户上传的 Word/PDF/文字资料和本轮讨论，保留有价值的地点与个人备注，去重、区分主观经验和可核实事实，并把资料中的候选景点合理编入 By Day。每个城市在 checks 中至少输出一条以“美食推荐：”开头的当地特色菜、小吃、餐饮区域或有来源支持的店铺建议；每天在 stops 中安排合理的午餐/晚餐或市场美食体验。对营业时间、门票、交通和签证等动态信息，注明来源与核验状态；不能确认的明确标为待核实。每天安排 2–4 个核心景点，并兼顾餐饮、休息和交通缓冲。",context:buildPlanContext("initial_plan")});
     lastAiPlan=result.data&&typeof result.data==="object"?result.data:null;
     if(lastAiPlan)lastAiPlan.sources=result.sources||[];
     if(planHasStructuredData(lastAiPlan)){planVersions=[];}
