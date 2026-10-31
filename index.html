@@ -45,27 +45,87 @@ main{padding:18px 16px 25px}.screen{display:none}.screen.active{display:block}.h
 .plan-reference-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
 .plan-reference-actions .btn{flex:1;min-width:190px}
 .plan-reference-status{font-size:10px;color:var(--muted);margin-top:8px}
+.home-intro{padding:5px 2px 13px}
+.home-intro .eyebrow{letter-spacing:.15em}
+.home-intro h2{font-size:21px;line-height:1.35;margin:7px 0 5px;color:var(--navy)}
+.home-intro p{font-size:12px;line-height:1.65;color:var(--muted);margin:0}
+.home-ai-status{margin:0 0 12px;padding:8px 11px;border-radius:10px;background:#f2f6f1;color:#6b7c72;font-size:10px}
+.stage-card{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:19px;padding:17px;margin:0 0 12px;background:#fff;box-shadow:var(--shadow)}
+.stage-card:after{content:attr(data-mark);position:absolute;right:12px;top:8px;font-size:52px;line-height:1;color:#173f4608;font-weight:900;pointer-events:none}
+.stage-card.plan{background:linear-gradient(145deg,#f7fbf7,#fff 68%);border-color:#dce8dc}
+.stage-card.journey{background:linear-gradient(145deg,#f5f8fa,#fff 68%);border-color:#dfe7e9}
+.stage-card.footprints{background:linear-gradient(145deg,#fbf7ef,#fff 68%);border-color:#eee3d2}
+.stage-top{display:flex;align-items:center;gap:9px;margin-bottom:11px}
+.stage-icon{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:var(--mint);color:var(--teal);font-size:18px}
+.journey .stage-icon{background:#eaf0f2;color:#426b73}
+.footprints .stage-icon{background:#f6eddf;color:#9a713f}
+.stage-kicker{font-size:9px;letter-spacing:.13em;font-weight:850;color:var(--muted)}
+.stage-card h3{font-size:18px;margin:0 0 6px;color:var(--navy)}
+.stage-card h3 span{font-size:13px;color:var(--teal);font-weight:700;margin-left:5px}
+.stage-card p{font-size:11px;line-height:1.7;color:var(--muted);margin:0 0 12px;max-width:410px}
+.stage-tags{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}
+.stage-tags span{font-size:9px;color:#62756a;background:#eef4ee;border-radius:99px;padding:5px 8px}
+.stage-actions{display:flex;gap:8px;flex-wrap:wrap}
+.stage-actions .btn{flex:1;min-width:135px}
+.stage-secondary{display:inline-flex;align-items:center;margin-top:10px;border:0;background:transparent;color:var(--teal);font:inherit;font-size:10px;font-weight:750;padding:3px 0;cursor:pointer}
+.stage-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:12px 0}
+.stage-stat{background:#fff9;border:1px solid #eee7db;border-radius:11px;padding:9px}
+.stage-stat b{display:block;color:var(--navy);font-size:18px}
+.stage-stat span{display:block;color:var(--muted);font-size:9px}
+.home-footer-note{padding:8px 4px 2px;text-align:center;font-size:10px;color:#9aa59e}
 
 @media(min-width:700px){body{padding:18px 0}.app{border-radius:24px;overflow:hidden;min-height:calc(100dvh - 36px)}.bottom{bottom:18px;border-radius:0 0 24px 24px}}
 </style></head>
 <body><div class="app">
 <header class="hero">
   <div class="brand">TRAVEL COMPANION · AI</div>
-  <h1>把复杂行程，<br>变成轻松出发。</h1>
-  <p>从旅行规划、路线安排，到旅途中的即时帮助，把每一段旅程好好留下。</p>
+  <h1>从计划，到旅途，<br>再到回忆。</h1>
+  <p>有人一起规划，路上随时陪伴，走过的世界都值得被记录。</p>
 </header>
 <main>
 <section class="screen active" id="home">
-<div class="head"><h2>今天，从哪里开始？</h2><span class="sub">Plan · Explore · Remember</span></div>
-<div id="aiStatus" class="notice" style="margin-bottom:12px">正在检查 AI 服务连接…</div>
-<div class="entrygrid">
-<button class="entry" onclick="nav('planner')"><span class="ico">✦</span><strong>开始一次新旅行</strong><small>AI 帮你整理资料、规划城市、编排 By Day 和优化路线。</small><span class="pill" style="margin-top:10px">AI 智能规划</span></button>
-<button class="entry" onclick="nav('archive')"><span class="ico">◎</span><strong>导入我的旅行档案</strong><small>把 Travel Bank 的过往旅行记录搬进来，建立自己的世界足迹。</small><span class="pill gold" style="margin-top:10px">我的旅行资产</span></button>
+<div class="home-intro">
+  <div class="eyebrow">YOUR JOURNEY · YOUR STORY</div>
+  <h2>一段旅行，三个阶段。</h2>
+  <p>出发前一起规划，路上随时陪伴，回来后点亮走过的世界。</p>
 </div>
-<div class="card" style="margin-top:12px"><div class="head"><h3>已经有攻略和收藏？</h3><span class="sub">第二种工作方式</span></div><p class="tiny">把小红书截图、网页摘录或零散文字交给 AI，提取地点、整理来源并标记待核实信息。</p><button class="btn light" style="width:100%" onclick="nav('materials')">整理已有旅行资料 →</button></div>
-<div class="card"><div class="head"><h3>我的世界足迹</h3><span class="pill">长期旅行档案</span></div><div class="statgrid"><div class="stat"><b id="archiveTripCount">0</b><span>旅行记录</span></div><div class="stat"><b id="archiveCountryCount">0</b><span>国家 / 地区</span></div><div class="stat"><b id="archiveCityCount">0</b><span>到访城市</span></div></div><div class="divider"></div><button class="btn line" style="width:100%" onclick="nav('footprint')">打开我的世界地图 →</button><p class="tiny" style="margin:8px 0 0">导入的旅行档案默认保存在当前设备；私人照片和回忆不会随公开攻略包导入。</p></div>
-<div class="head" style="margin-top:21px"><h2>先体验一次完整规划</h2><span class="pill">内置示例数据</span></div>
-<div class="card"><div class="eyebrow">BETA TRIP · CENTRAL ASIA</div><h3 style="font-size:17px;margin-top:5px">哈萨克斯坦 × 乌兹别克斯坦</h3><p class="tiny">以阿拉木图、塔什干、撒马尔罕、布哈拉为例，体验城市规划、每日路线、景点详情和现场问答。</p><div class="statgrid"><div class="stat"><b>4</b><span>示例城市</span></div><div class="stat"><b>5</b><span>示例游览日</span></div><div class="stat"><b>20</b><span>候选地点</span></div></div><div class="divider"></div><button class="btn" style="width:100%" onclick="openTrip()">打开示例行程 →</button><p class="tiny" style="margin:9px 0 0">这是用于验证操作流程的预置样例，不是最终旅行计划；跨境交通、开放时间、票务与日期适配仍需核验。</p></div>
+<div id="aiStatus" class="home-ai-status">正在检查 AI 服务连接…</div>
+
+<section class="stage-card plan" data-mark="01">
+  <div class="stage-top"><span class="stage-icon">✦</span><span class="stage-kicker">01 · BEFORE THE TRIP</span></div>
+  <h3>Plan Together <span>一起规划</span></h3>
+  <p>从一个目的地和想法开始。把收藏的攻略、Word 文档和自己的偏好交给 AI，一起讨论、整理资料、规划路线，最后生成每天怎么走的 By Day 行程。</p>
+  <div class="stage-tags"><span>需求梳理</span><span>攻略整合</span><span>每日路线</span><span>当地美食</span></div>
+  <div class="stage-actions"><button class="btn" onclick="nav('planner')">开始规划一趟旅行 →</button></div>
+  <button class="stage-secondary" onclick="nav('materials')">已经有很多攻略？先整理我的资料 →</button>
+</section>
+
+<section class="stage-card journey" data-mark="02">
+  <div class="stage-top"><span class="stage-icon">⌖</span><span class="stage-kicker">02 · ON THE ROAD</span></div>
+  <h3>人在旅途 <span>随时有 AI 陪伴</span></h3>
+  <p>出发后，带着你的 By Day 行程继续走。遇到天气变化、临时调整、路线疑问或想找当地美食，随时问 AI，让计划跟着真实旅程一起变化。</p>
+  <div class="stage-tags"><span>旅途问答</span><span>路线调整</span><span>地点探索</span><span>美食推荐</span></div>
+  <div class="stage-actions">
+    <button class="btn" onclick="nav('assistant')">打开旅途助手 →</button>
+    <button class="btn line" onclick="nav('trip')">查看我的 By Day</button>
+  </div>
+</section>
+
+<section class="stage-card footprints" data-mark="03">
+  <div class="stage-top"><span class="stage-icon">◎</span><span class="stage-kicker">03 · YOUR TRAVEL LEGACY</span></div>
+  <h3>点亮你的足迹 <span>收藏走过的世界</span></h3>
+  <p>把过去的旅行档案导入进来，点亮去过的国家和城市。每一次出发、每一个到访地点，慢慢汇成属于自己的世界地图和旅行记录。</p>
+  <div class="stage-stats">
+    <div class="stage-stat"><b id="archiveTripCount">0</b><span>旅行记录</span></div>
+    <div class="stage-stat"><b id="archiveCountryCount">0</b><span>国家 / 地区</span></div>
+    <div class="stage-stat"><b id="archiveCityCount">0</b><span>到访城市</span></div>
+  </div>
+  <div class="stage-actions">
+    <button class="btn" onclick="nav('footprint')">点亮我的世界地图 →</button>
+    <button class="btn line" onclick="nav('archive')">导入旅行档案</button>
+  </div>
+</section>
+<div class="home-footer-note">Plan · Explore · Remember</div>
 </section><section class="screen" id="planner">
 <div class="head"><h2>AI 旅行规划</h2><span class="sub">从目的地到每天怎么走</span></div>
 <p class="tiny" style="margin:0 2px 12px">先告诉我们这趟旅行的边界，剩下的交给 AI 一起梳理。信息不完整时，会先向你确认，不会擅自补全关键条件。</p>
