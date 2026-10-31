@@ -381,7 +381,7 @@ function renderPlanResult(result){
   appendSources(out,result.sources||[]);
   if(result.warning)addTextNode(out,"p","notice",result.warning);
   const actions=document.createElement("div");actions.className="ai-action-row";
-  const apply=document.createElement("button");apply.className="btn";apply.textContent="直接载入当前方案";apply.onclick=applyAiPlan;apply.disabled=!planHasStructuredData(lastAiPlan);actions.appendChild(apply);
+  const apply=document.createElement("button");apply.className="btn line small";apply.textContent="跳过资料整合，直接载入当前方案";apply.onclick=applyAiPlan;apply.disabled=!planHasStructuredData(lastAiPlan);actions.appendChild(apply);
   const copy=document.createElement("button");copy.className="btn line";copy.textContent="复制方案摘要";copy.onclick=()=>navigator.clipboard?.writeText(JSON.stringify(lastAiPlan||result,null,2)).then(()=>toast("已复制方案数据")).catch(()=>toast("浏览器未允许复制"));actions.appendChild(copy);
   out.appendChild(actions);
 }
@@ -472,7 +472,7 @@ async function revisePlanFromDiscussion(){
   if(!planBrief||!planDiscussionHistory.some(m=>m.role==="user")){toast("请先告诉 AI 你希望补充或调整什么");return}
   if(planDiscussionBusy)return;
   const button=document.getElementById("planDiscussionRevise");
-  planDiscussionBusy=true;setBusy(button,true,"AI 正在更新完整方案…");
+  planDiscussionBusy=true;setBusy(button,true,"AI 正在更新完整方案…");updatePlanReferencePreview();
   addPlanBubbleToLog("system","正在根据讨论内容更新城市顺序、跨城交通和完整 By Day。原方案会保留为历史版本。");
   try{
     const result=await apiRequest({
@@ -498,7 +498,7 @@ async function revisePlanFromDiscussion(){
     appendPlanDiscussionMessage("assistant","更新没有完成："+e.message+"。原方案未改变。");
     savePlanSession();renderPlanResult(lastAiPlan);
   }finally{
-    planDiscussionBusy=false;
+    planDiscussionBusy=false;updatePlanReferencePreview();
     const b=document.getElementById("planDiscussionRevise");if(b){b.disabled=!planDiscussionHistory.some(m=>m.role==="user");b.textContent="按讨论意见更新方案";}
   }
 }
@@ -613,35 +613,50 @@ function clearPlanReferenceMaterials(){
 }
 function buildPlanContext(mode,extra={}){
   const compactPlan=lastAiPlan?{
-    summary:String(lastAiPlan.summary||"").slice(0,350),
-    city_sequence:(lastAiPlan.city_sequence||[]).slice(0,8),
-    intercity_transport:(lastAiPlan.intercity_transport||[]).slice(0,8),
-    days:(lastAiPlan.days||[]).slice(0,10).map(d=>({
+    summary:String(lastAiPlan.summary||"").slice(0,300),
+    city_sequence:(lastAiPlan.city_sequence||[]).slice(0,7),
+    intercity_transport:(lastAiPlan.intercity_transport||[]).slice(0,7),
+    days:(lastAiPlan.days||[]).slice(0,8).map(d=>({
       day_label:d.day_label,city:d.city,title:d.title,
-      stops:(d.stops||[]).slice(0,4).map(s=>({
+      stops:(d.stops||[]).slice(0,3).map(s=>({
         time:s.time,name:s.name,duration:s.duration,
-        reason:String(s.reason||"").slice(0,110),
-        verification:String(s.verification||"").slice(0,100)
+        reason:String(s.reason||"").slice(0,70),
+        verification:String(s.verification||"").slice(0,60)
       }))
     })),
-    checks:(lastAiPlan.checks||[]).slice(0,10),
-    questions:(lastAiPlan.questions||[]).slice(0,8)
+    checks:(lastAiPlan.checks||[]).slice(0,6),
+    questions:(lastAiPlan.questions||[]).slice(0,6)
   }:null;
   let remaining=PLAN_REFERENCE_MAX_TOTAL_CHARS;
   const refs=planReferenceMaterials.map(x=>{
     const text=String(x.text||"").slice(0,remaining);remaining-=text.length;
     return {name:x.name,text};
   }).filter(x=>x.text);
-  return {
+  const context={
     mode,
     trip_brief:planBrief,
     reference_materials:refs,
     current_plan:compactPlan,
-    discussion:planDiscussionHistory.slice(-6).map(x=>({
-      role:x.role,content:String(x.content||"").slice(0,260)
+    discussion:planDiscussionHistory.slice(-5).map(x=>({
+      role:x.role,content:String(x.content||"").slice(0,220)
     })),
     ...extra
   };
+  // Worker input currently caps context at 12k characters. Preserve document evidence first,
+  // then compact older plan details rather than allowing a JSON string to be cut mid-field.
+  let size=JSON.stringify(context).length;
+  while(size>11000&&context.discussion.length>2){context.discussion.shift();size=JSON.stringify(context).length;}
+  while(size>11000&&context.current_plan?.days?.length>5){context.current_plan.days.pop();size=JSON.stringify(context).length;}
+  while(size>11000&&context.current_plan?.days?.some(d=>d.stops.length>1)){
+    const day=[...context.current_plan.days].reverse().find(d=>d.stops.length>1);
+    if(!day)break;day.stops.pop();size=JSON.stringify(context).length;
+  }
+  while(size>11000&&context.reference_materials.length){
+    const last=context.reference_materials[context.reference_materials.length-1];
+    if(last.text.length>500){last.text=last.text.slice(0,-500);size=JSON.stringify(context).length;}
+    else{context.reference_materials.pop();size=JSON.stringify(context).length;}
+  }
+  return context;
 }
 async function finalizePlanAndOpenTrip(){
   if(planDiscussionBusy)return;
