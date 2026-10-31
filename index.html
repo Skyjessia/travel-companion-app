@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#173f46"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://cdn.jsdelivr.net/npm/mammoth@1.9.0/mammoth.browser.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<title>Travel Companion V1.0 · Plan Together + By Day</title>
+<title>Travel Companion · Plan Together</title>
 <style>
 :root{--navy:#173f46;--teal:#2d766b;--mint:#e8f1ec;--gold:#c18d53;--paper:#fbfaf6;--bg:#edf1ed;--ink:#20363a;--muted:#75858a;--line:#e4e8e1;--red:#a65b4e;--shadow:0 12px 32px rgba(23,63,70,.08)}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 10% 0%,#e3eee8 0,transparent 38%),var(--bg);color:var(--ink);font:14px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}.app{max-width:520px;min-height:100dvh;margin:auto;background:var(--paper);position:relative;padding-bottom:84px;box-shadow:0 18px 60px #173f4618}.hero{padding:34px 24px 36px;color:#fff;background:linear-gradient(135deg,#153a43,#23635d 68%,#3c7b6b);border-radius:0 0 28px 28px;position:relative;overflow:hidden}.hero:after{content:"✦";position:absolute;right:20px;top:65px;font-size:90px;color:#ffffff18}.brand{font-size:10px;letter-spacing:.17em;color:#d5e7df;font-weight:800}.hero h1{font-size:29px;line-height:1.25;margin:18px 0 7px;max-width:320px}.hero p{font-size:12px;color:#d8e8e2;max-width:330px;margin:0}.trip-highlight{margin-top:19px;padding:13px;background:#ffffff17;border:1px solid #ffffff30;border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:10px}.trip-highlight small{display:block;color:#d7e6df;font-size:11px}.trip-highlight strong{font-size:13px}.trip-highlight button{border:0;border-radius:11px;padding:9px 12px;background:#f8f6ef;color:var(--navy);font-weight:750;cursor:pointer}
@@ -75,6 +75,41 @@ main{padding:18px 16px 25px}.screen{display:none}.screen.active{display:block}.h
 .home-footer-note{padding:8px 4px 2px;text-align:center;font-size:10px;color:#9aa59e}
 
 @media(min-width:700px){body{padding:18px 0}.app{border-radius:24px;overflow:hidden;min-height:calc(100dvh - 36px)}.bottom{bottom:18px;border-radius:0 0 24px 24px}}
+
+/* ===== Travel Companion VI · Clean Premium ===== */
+:root{--navy:#203b43;--teal:#2d756d;--mint:#eef4f0;--gold:#b98b55;--paper:#fff;--bg:#f5f6f7;--ink:#202d33;--muted:#78858b;--line:#e6eaec;--red:#a65b4e;--shadow:0 3px 18px rgba(28,48,55,.045)}
+body{background:#f5f6f7;color:var(--ink);font-family:Inter,"SF Pro Display","SF Pro Text",-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;font-size:14px;line-height:1.6;letter-spacing:.005em}
+button,input,textarea,select{font:inherit}
+.app{background:#fff;box-shadow:0 10px 42px rgba(28,48,55,.055)}
+.hero{background:linear-gradient(135deg,#193f47 0%,#286b64 100%);border-radius:0 0 25px 25px;padding:31px 24px 33px}
+.hero h1{font-weight:650;letter-spacing:-.025em}
+.home-intro h2,.head h2{font-weight:650;letter-spacing:-.02em}
+.card{border:1px solid #e6eaec;border-radius:18px;padding:17px;box-shadow:0 3px 18px rgba(28,48,55,.04);background:#fff}
+.stage-card{border-radius:19px;box-shadow:0 3px 16px rgba(28,48,55,.035)}
+.stage-card.plan{background:linear-gradient(145deg,#f8fbf9,#fff 72%);border-color:#e2eae5}
+.stage-card.journey{background:linear-gradient(145deg,#f8fafb,#fff 72%);border-color:#e4eaec}
+.stage-card.footprints{background:linear-gradient(145deg,#fcfaf6,#fff 72%);border-color:#eee8de}
+.btn{border-radius:12px;font-weight:650;letter-spacing:.005em}
+.btn.light{background:#edf4f0;color:#286e66}
+.btn.line{border:1px solid #e2e7e8;background:#fff;color:#263a40}
+.field input,.field textarea,.field select,.chatinput input,.plan-chat-compose textarea{border:1px solid #e3e8e9;border-radius:12px;background:#fff;transition:border-color .16s,box-shadow .16s}
+.field input:focus,.field textarea:focus,.field select:focus,.chatinput input:focus,.plan-chat-compose textarea:focus{outline:none;border-color:#8db8ad;box-shadow:0 0 0 3px rgba(45,117,109,.09)}
+.pill{background:#edf4f0;color:#2d756d;font-weight:700}
+.pill.gold{background:#f7f1e8;color:#947044}
+.stop{border-color:#e7ebec;border-radius:14px}
+.mapbox{border-radius:16px}
+.bottom{background:rgba(255,255,255,.94);backdrop-filter:blur(16px);border-top:1px solid rgba(224,230,231,.9);box-shadow:0 -5px 22px rgba(30,48,54,.035)}
+.bottom button{font-size:10px;letter-spacing:.01em}
+.modalbox{border-radius:20px}
+.plan-discussion{border-radius:18px;background:linear-gradient(180deg,#fbfdfc,#f5f8f6);border-color:#e1e9e4}
+.plan-bubble{border-radius:14px}
+.filebox{border-radius:14px;background:#fafcfb;border-color:#cbdad2}
+.beta-transfer-card{background:linear-gradient(180deg,#fbfcfb,#f5f8f6)}
+.beta-transfer-actions{display:flex;gap:8px;flex-wrap:wrap}
+.beta-transfer-actions .btn{display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.beta-transfer-note{font-size:10px;line-height:1.6;color:#7b878b;margin-top:9px}
+@media(min-width:700px){body{background:#f3f5f5}}
+
 </style></head>
 <body><div class="app">
 <header class="hero">
@@ -153,7 +188,7 @@ main{padding:18px 16px 25px}.screen{display:none}.screen.active{display:block}.h
 
 <section class="screen" id="trip"><div class="head"><h2>旅行工作台</h2><span class="pill">已加载示例内容</span></div><div class="card"><div class="eyebrow">CENTRAL ASIA SAMPLE</div><h3 style="font-size:17px">哈萨克斯坦 × 乌兹别克斯坦</h3><p class="tiny">示例城市组合：阿拉木图 → 塔什干 → 撒马尔罕 → 布哈拉。此顺序仅用于体验规划功能，实际顺序应由国际机票、跨境交通与日期决定。</p><div class="statgrid"><div class="stat"><b>4</b><span>城市</span></div><div class="stat"><b>5</b><span>游览日样例</span></div><div class="stat"><b id="stopCount">16</b><span>地点素材</span></div></div></div>
 <div class="card"><div class="head"><h3>城市规划</h3><span class="sub">点选城市查看内容</span></div><div class="citychips" id="cityTabs"></div><div id="cityInfo"></div></div>
-<div class="card"><div class="head"><h3>每日路线与时间安排</h3><span class="sub">可调整、可保存</span></div><div class="daytabs" id="dayTabs"></div><div class="mapbox"><span class="maplabel">路线示意 · 非实时导航</span><span class="pin p1"><b>1</b>核心地点</span><span class="pin p2"><b>2</b>历史城区</span><span class="pin p3"><b>3</b>特色体验</span><span class="pin p4"><b>4</b>弹性安排</span></div><div class="tiny" style="margin:8px 0 10px">地图为界面示意。真实步行距离、路线和交通时间需要地图服务计算后才能显示。</div><div id="dayContent"></div><div class="divider"></div><div class="field"><label>添加当天想去的地点</label><div class="row"><input id="addPlace" placeholder="输入景点 / 餐厅名称"><button class="btn small" onclick="addPlace()">添加</button></div></div><div class="row"><button class="btn light grow" onclick="saveTrip()">保存我的修改</button><button class="btn line" onclick="resetTrip()">恢复示例</button></div><p class="tiny" id="saveStatus" style="margin:8px 0 0">修改保存在当前浏览器，可关闭后重新打开。</p></div>
+<div class="card"><div class="head"><h3>每日路线与时间安排</h3><span class="sub">可调整、可保存</span></div><div class="daytabs" id="dayTabs"></div><div class="mapbox"><span class="maplabel">路线示意 · 非实时导航</span><span class="pin p1"><b>1</b>核心地点</span><span class="pin p2"><b>2</b>历史城区</span><span class="pin p3"><b>3</b>特色体验</span><span class="pin p4"><b>4</b>弹性安排</span></div><div class="tiny" style="margin:8px 0 10px">地图为界面示意。真实步行距离、路线和交通时间需要地图服务计算后才能显示。</div><div id="dayContent"></div><div class="divider"></div><div class="field"><label>添加当天想去的地点</label><div class="row"><input id="addPlace" placeholder="输入景点 / 餐厅名称"><button class="btn small" onclick="addPlace()">添加</button></div></div><div class="row"><button class="btn light grow" onclick="saveTrip()">保存我的修改</button><button class="btn line" onclick="resetTrip()">恢复示例</button></div><button class="btn line small" style="width:100%;margin-top:9px" onclick="exportBetaPackage()">导出旅行成果，分享给我们一起检查 ↓</button><p class="tiny" id="saveStatus" style="margin:8px 0 0">修改保存在当前浏览器；导出测试包后可发给产品团队检查。</p></div>
 <div class="card"><h3>路线可行性检查</h3><div class="itemrow"><div><strong>地点是否真实存在</strong><small>示例地点名称已预置，仍需按实际旅行日期核实信息</small></div><span class="pill gold">部分待核验</span></div><div class="itemrow"><div><strong>开放时间与预约</strong><small>尚未连接官方实时数据</small></div><span class="pill warn">待核验</span></div><div class="itemrow"><div><strong>实际交通与绕路</strong><small>尚未调用地图路线矩阵</small></div><span class="pill warn">待计算</span></div></div>
 </section>
 <section class="screen" id="materials"><div class="head"><h2>旅行资料库</h2><span class="pill">A · 整理已有资料</span></div><div class="card"><h3>粘贴你已经收藏的地点或攻略文字</h3><p class="tiny">粘贴攻略文字，或上传小红书截图。AI 会提取候选地点、推荐理由和待核实信息；不会把截图里的说法自动当成事实。</p><div class="field"><label>资料内容</label><textarea id="rawMaterials" placeholder="例如：雷吉斯坦广场晚上亮灯很好看；想去沙希津达；朋友推荐布哈拉老城的夜景……"></textarea></div><button class="btn" style="width:100%" onclick="parseMaterials()">整理成我的地点清单</button><div id="materialResult" style="margin-top:12px"></div></div><div class="card"><h3>上传截图给 AI 识别</h3><div class="filebox"><input id="fileInput" type="file" multiple accept="image/png,image/jpeg,image/webp"></div><div id="fileNames" class="tiny" style="margin-top:8px">尚未选择文件。选择图片后，点击上方“整理”按钮才会发送给 AI 识别。每次最多 4 张，每张不超过 3 MB。</div></div><div class="card"><h3>当前内置地点素材</h3><div id="bankList"></div></div></section>
@@ -164,6 +199,18 @@ main{padding:18px 16px 25px}.screen{display:none}.screen.active{display:block}.h
 <div class="notice" style="margin-top:12px">隐私说明：目前迁移数据只保存在这台设备的浏览器 localStorage，不会上传到 AI 服务。私人照片与回忆保持独立，后续单独设计安全迁移。</div></div>
 <div class="card"><div class="head"><h3>已导入的旅行档案</h3><span class="sub" id="archiveUpdated">尚未导入</span></div><div class="statgrid"><div class="stat"><b id="archivePageTrips">0</b><span>旅行记录</span></div><div class="stat"><b id="archivePageCountries">0</b><span>国家 / 地区</span></div><div class="stat"><b id="archivePagePlaces">0</b><span>到访地点</span></div></div><div id="archiveTripList" style="margin-top:10px"><p class="tiny">导入后，这里会显示你的旅行清单。</p></div><button class="btn line small" style="margin-top:10px" onclick="nav('footprint')">查看地图足迹 →</button></div>
 <div class="card"><h3>迁移原则</h3><div class="itemrow"><div><strong>公开攻略与地点</strong><small>可以迁移并继续整理</small></div><span class="pill">导入支持</span></div><div class="itemrow"><div><strong>私人照片与回忆</strong><small>不进入公开攻略，也不随公开数据包迁移</small></div><span class="pill gold">独立保护</span></div><div class="itemrow"><div><strong>地点坐标</strong><small>有经纬度的地点可直接点亮地图；缺少坐标的先列入待补充</small></div><span class="pill">逐步完善</span></div></div>
+<div class="card beta-transfer-card">
+<div class="eyebrow">BETA TEST · DATA PORTABILITY</div>
+<h3 style="margin-top:5px">保存与分享旅行成果</h3>
+<p class="tiny">朋友完成规划后，可以把这次旅行的行程、AI 规划、讨论文字和资料提取结果打包下载，再把 JSON 文件发给你。收到文件后，可在这里导入查看。</p>
+<div class="beta-transfer-actions">
+<button class="btn" onclick="exportBetaPackage()">导出我的旅行测试包 ↓</button>
+<label class="btn line" for="betaPackageInput">导入收到的测试包 ↑</label>
+<input id="betaPackageInput" type="file" accept=".json,application/json" style="display:none" onchange="importBetaPackage(this.files&&this.files[0])">
+</div>
+<p id="betaPackageStatus" class="beta-transfer-note">测试包包含：By Day 行程、AI 方案与讨论记录、已提取的 Word/PDF 文字、旅途问答和旅行档案。不包含原始图片、原始 Word/PDF 文件或 API 密钥。</p>
+<div class="notice" style="margin-top:10px">注意：导入会替换当前浏览器中的 Travel Companion 测试数据。导入前请先导出自己的数据备份。请勿分享护照、证件或其他敏感个人资料。</div>
+</div>
 </section>
 <section class="screen" id="footprint">
 <div class="head"><h2>我的世界足迹</h2><span class="pill">Visited · 已到访</span></div>
@@ -853,6 +900,65 @@ function addFromMaterial(v){
 function renderBank(){
   let all=trip.cities.flatMap(c=>c.spots.map(s=>({s,c:c.name})));
   document.getElementById("bankList").innerHTML=all.map(x=>`<div class="itemrow"><div><strong>${x.s}</strong><small>${x.c} · 内置候选地点</small></div><span class="tag">待按日期核实</span></div>`).join("");
+}
+
+function safeReadLocalJson(key,fallback){
+ try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):fallback}catch(e){return fallback}
+}
+function exportBetaPackage(){
+ try{
+  savePlanSession();
+  const packageData={
+   format:"travel-companion-beta-package",version:1,
+   exportedAt:new Date().toISOString(),
+   trip:JSON.parse(JSON.stringify(trip)),
+   activeDay,activeCity,
+   planSession:safeReadLocalJson("travelCompanionPlanSessionV1",null),
+   chatHistory:safeReadLocalJson("travelCompanionChatV05",chatHistory||[]),
+   archive:safeReadLocalJson("travelCompanionArchiveV1",null)
+  };
+  const blob=new Blob([JSON.stringify(packageData,null,2)],{type:"application/json;charset=utf-8"});
+  const url=URL.createObjectURL(blob),a=document.createElement("a");
+  const date=new Date().toISOString().slice(0,10);
+  a.href=url;a.download=`travel-companion-beta-${date}.json`;
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  const status=document.getElementById("betaPackageStatus");
+  if(status)status.textContent="已导出。文件包含行程、AI 规划与讨论文字、已提取资料文字、旅途问答和旅行档案；不包含原始图片、原始文档或 API 密钥。请通过你信任的方式发送给产品团队。";
+  toast("旅行测试包已下载");
+ }catch(e){toast("导出失败："+e.message)}
+}
+async function importBetaPackage(file){
+ if(!file)return;
+ const status=document.getElementById("betaPackageStatus");
+ try{
+  if(file.size>12*1024*1024)throw new Error("测试包超过 12 MB，请确认文件是否正确。");
+  const data=JSON.parse(await file.text());
+  if(data.format!=="travel-companion-beta-package"||data.version!==1)throw new Error("这不是受支持的 Travel Companion 测试包。");
+  if(!data.trip||!Array.isArray(data.trip.cities)||!Array.isArray(data.trip.days))throw new Error("测试包缺少有效的行程数据。");
+  const ok=confirm("导入将替换当前浏览器中的行程、AI 规划讨论、问答和旅行档案。建议先导出自己的备份。确定继续吗？");
+  if(!ok)return;
+  trip=data.trip;
+  activeDay=data.activeDay||trip.days[0]?.id||"";
+  activeCity=data.activeCity||trip.cities[0]?.id||"";
+  if(!trip.days.some(d=>d.id===activeDay))activeDay=trip.days[0]?.id||"";
+  if(!trip.cities.some(c=>c.id===activeCity))activeCity=trip.cities[0]?.id||"";
+  localStorage.setItem("travelCompanionV04",JSON.stringify(trip));
+  if(data.planSession)localStorage.setItem("travelCompanionPlanSessionV1",JSON.stringify(data.planSession));
+  else localStorage.removeItem("travelCompanionPlanSessionV1");
+  if(Array.isArray(data.chatHistory))localStorage.setItem("travelCompanionChatV05",JSON.stringify(data.chatHistory));
+  else localStorage.removeItem("travelCompanionChatV05");
+  if(data.archive)localStorage.setItem("travelCompanionArchiveV1",JSON.stringify(data.archive));
+  else localStorage.removeItem("travelCompanionArchiveV1");
+  restorePlanSession();loadChatHistory();renderTrip();renderArchive();renderArchiveSummary();
+  if(status)status.textContent="导入成功："+(data.exportedAt?("原始导出时间 "+new Date(data.exportedAt).toLocaleString()+"。"):"")+"已载入朋友的旅行成果。";
+  toast("朋友的旅行测试包已导入");
+ }catch(e){
+  if(status)status.textContent="导入失败："+e.message;
+  toast("测试包导入失败");
+ }finally{
+  const input=document.getElementById("betaPackageInput");if(input)input.value="";
+ }
 }
 
 function readArchive(){try{return JSON.parse(localStorage.getItem("travelCompanionArchiveV1")||"null")}catch(e){return null}}
