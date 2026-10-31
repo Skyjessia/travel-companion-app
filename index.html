@@ -297,20 +297,37 @@ function apiHeaders(){
   return headers;
 }
 async function apiRequest(payload){
-  let response = await fetch(`${API_BASE}/api/assistant`, {
-    method:"POST", headers:apiHeaders(), body:JSON.stringify(payload)
-  });
-  if(response.status===401){
-    const code = prompt("请输入测试访问码（如果测试页面要求访问码）");
-    if(code){
-      localStorage.setItem("travelCompanionBetaCode",code);
-      response = await fetch(`${API_BASE}/api/assistant`, {
-        method:"POST", headers:apiHeaders(), body:JSON.stringify(payload)
+  // Each request has a deadline so visitors never wait indefinitely.
+  // Cloudflare Workers and external AI models can take time on long itineraries.
+  async function send(){
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),90000);
+    try{
+      return await fetch(`${API_BASE}/api/assistant`,{
+        method:"POST",headers:apiHeaders(),body:JSON.stringify(payload),signal:controller.signal
       });
+    }catch(error){
+      if(error.name==="AbortError")throw new Error("AI 规划超过 90 秒仍未完成。请检查网络后重试，已填写的行程不会丢失。");
+      if(error instanceof TypeError)throw new Error("无法连接 AI 服务。请检查当前网络，或在手机浏览器中打开后重试。");
+      throw error;
+    }finally{
+      clearTimeout(timer);
     }
   }
-  const data = await response.json().catch(()=>({error:"服务器返回了无法识别的内容"}));
-  if(!response.ok) throw new Error(data.error || `请求失败（${response.status}）`);
+  let response=await send();
+  if(response.status===401){
+    const code=prompt("此页面需要测试访问码，请向分享者获取后输入：");
+    if(!code || !code.trim())throw new Error("需要测试访问码才能使用 AI 规划，请向分享者获取。");
+    localStorage.setItem("travelCompanionBetaCode",code.trim());
+    response=await send();
+  }
+  const data=await response.json().catch(()=>({error:"服务器返回的内容无法识别，请稍后再试。"}));
+  if(!response.ok){
+    if(response.status===401 || response.status===403)throw new Error("测试访问码无效或无权限，请向分享者确认。");
+    if(response.status===429)throw new Error("AI 服务请求过于频繁，请稍后再试。");
+    if(response.status>=500)throw new Error("AI 服务暂时出错，请稍后重试。");
+    throw new Error(data.error || `请求失败（${response.status}）`);
+  }
   return data;
 }
 function setBusy(button,busy,label){
