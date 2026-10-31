@@ -831,9 +831,25 @@ async function generatePlan(){
     pace:document.getElementById("pace").value,
     preferences:document.getElementById("preferences").value.trim()
   };
+  // Origin/destination belong to the route boundaries, not intermediate stops.
+  // Keep the endpoint in trip_brief.destination so the model still routes there.
+  const normalizePlace=name=>name.trim().replace(/\\s+/g,"").replace(/(市|地区)$/,"");
+  const boundaryNames=new Set([normalizePlace(brief.origin),normalizePlace(brief.destination)].filter(Boolean));
+  const seenStops=new Set();
+  const intermediateStops=brief.cities.split(/[、，,;；\\n]+/).map(x=>x.trim()).filter(Boolean).filter(city=>{
+    const key=normalizePlace(city);
+    if(boundaryNames.has(key)||seenStops.has(key))return false;
+    seenStops.add(key);return true;
+  });
+  const removedBoundary=brief.cities.split(/[、，,;；\\n]+/).map(x=>x.trim()).some(x=>x&&boundaryNames.has(normalizePlace(x)));
+  brief.cities=intermediateStops.join("、");
+  if(removedBoundary){
+    document.getElementById("cities").value=brief.cities;
+    toast("已从途经城市中去掉重复的起点或终点，终点仍保留在路线末尾");
+  }
   planBrief=brief;planDiscussionHistory=[];planVersions=[];planVersionNumber=1;lastAiPlan=null;savePlanSession();updatePlanReferencePreview();
   try{
-    const result=await apiRequest({task:"plan",message:"请先检查旅行信息是否完整。如果起点、终点、日期、城市停留时间、预算或交通偏好等关键条件缺失，请优先在 questions 中提出最重要的澄清问题，不要猜测。信息足够后，必须生成可编辑的 city_sequence、intercity_transport 和完整 days。By Day 是核心交付：每天的景点顺序、建议时间、游览时长、地点组合理由、交通衔接与待核验事项都要写清楚。每个城市规划当地特色菜、代表性小吃和合适的用餐区域；每天在路线中合理安排午餐/晚餐或市场美食体验，作为餐饮停留点，不要只写“用餐”。优先给出有来源支持的店铺或市场名称；无法核实时推荐菜品和区域，不编造店名、营业时间或价格。若 context.reference_materials 有内容，必须结合用户上传的 Word/PDF/文字资料和本轮讨论，保留有价值的地点与个人备注，去重、区分主观经验和可核实事实，并把资料中的候选景点合理编入 By Day。每个城市在 checks 中至少输出一条以“美食推荐：”开头的当地特色菜、小吃、餐饮区域或有来源支持的店铺建议；每天在 stops 中安排合理的午餐/晚餐或市场美食体验。对营业时间、门票、交通和签证等动态信息，注明来源与核验状态；不能确认的明确标为待核实。每天安排 2–4 个核心景点，并兼顾餐饮、休息和交通缓冲。",context:buildPlanContext("initial_plan")});
+    const result=await apiRequest({task:"plan",message:"规划边界规则：origin 是唯一起点，destination 是最终终点，cities 仅是途经候选地点；不要把终点当作额外的途经停留或重复创建同名城市，但必须在最终路线抵达终点。航空、火车时刻、班次、价格均属于动态数据；没有经过官方或授权实时交通 API 核验的数据，不得用旧网页搜索结果冒充当前信息，不要编造航班号、车次、票价或售票情况，明确标注「待实时查询」，可提供查询建议。请先检查旅行信息是否完整。如果起点、终点、日期、城市停留时间、预算或交通偏好等关键条件缺失，请优先在 questions 中提出最重要的澄清问题，不要猜测。信息足够后，必须生成可编辑的 city_sequence、intercity_transport 和完整 days。By Day 是核心交付：每天的景点顺序、建议时间、游览时长、地点组合理由、交通衔接与待核验事项都要写清楚。每个城市规划当地特色菜、代表性小吃和合适的用餐区域；每天在路线中合理安排午餐/晚餐或市场美食体验，作为餐饮停留点，不要只写“用餐”。优先给出有来源支持的店铺或市场名称；无法核实时推荐菜品和区域，不编造店名、营业时间或价格。若 context.reference_materials 有内容，必须结合用户上传的 Word/PDF/文字资料和本轮讨论，保留有价值的地点与个人备注，去重、区分主观经验和可核实事实，并把资料中的候选景点合理编入 By Day。每个城市在 checks 中至少输出一条以“美食推荐：”开头的当地特色菜、小吃、餐饮区域或有来源支持的店铺建议；每天在 stops 中安排合理的午餐/晚餐或市场美食体验。对营业时间、门票、交通和签证等动态信息，注明来源与核验状态；不能确认的明确标为待核实。每天安排 2–4 个核心景点，并兼顾餐饮、休息和交通缓冲。",context:buildPlanContext("initial_plan")});
     lastAiPlan=result.data&&typeof result.data==="object"?result.data:null;
     if(lastAiPlan)lastAiPlan.sources=result.sources||[];
     if(planHasStructuredData(lastAiPlan)){planVersions=[];}
