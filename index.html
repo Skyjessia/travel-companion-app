@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#173f46">
+<title>旅伴 AI · 功能型 Demo V0.5 AI 接入版</title>
+<style>
+:root{--navy:#173f46;--teal:#2d766b;--mint:#e8f1ec;--gold:#c18d53;--paper:#fbfaf6;--bg:#edf1ed;--ink:#20363a;--muted:#75858a;--line:#e4e8e1;--red:#a65b4e;--shadow:0 12px 32px rgba(23,63,70,.08)}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 10% 0%,#e3eee8 0,transparent 38%),var(--bg);color:var(--ink);font:14px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}.app{max-width:520px;min-height:100dvh;margin:auto;background:var(--paper);position:relative;padding-bottom:84px;box-shadow:0 18px 60px #173f4618}.hero{padding:24px 21px 22px;color:#fff;background:linear-gradient(135deg,#153a43,#23635d 68%,#3c7b6b);border-radius:0 0 28px 28px;position:relative;overflow:hidden}.hero:after{content:"✦";position:absolute;right:20px;top:65px;font-size:90px;color:#ffffff18}.brand{font-size:10px;letter-spacing:.17em;color:#d5e7df;font-weight:800}.hero h1{font-size:27px;line-height:1.25;margin:18px 0 7px;max-width:320px}.hero p{font-size:12px;color:#d8e8e2;max-width:330px;margin:0}.trip-highlight{margin-top:19px;padding:13px;background:#ffffff17;border:1px solid #ffffff30;border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:10px}.trip-highlight small{display:block;color:#d7e6df;font-size:11px}.trip-highlight strong{font-size:13px}.trip-highlight button{border:0;border-radius:11px;padding:9px 12px;background:#f8f6ef;color:var(--navy);font-weight:750;cursor:pointer}
+main{padding:18px 16px 25px}.screen{display:none}.screen.active{display:block}.head{display:flex;align-items:end;justify-content:space-between;margin:3px 2px 12px}.head h2{font-size:19px;margin:0}.sub{font-size:11px;color:var(--muted)}.card{background:#fff;border:1px solid var(--line);border-radius:17px;padding:15px;margin-bottom:12px;box-shadow:var(--shadow)}.card h3{font-size:15px;margin:0 0 6px}.muted{color:var(--muted)}.tiny{font-size:11px;color:var(--muted)}.eyebrow{font-size:10px;letter-spacing:.1em;color:var(--teal);font-weight:850}.pill{display:inline-flex;align-items:center;padding:4px 9px;border-radius:99px;background:var(--mint);color:var(--teal);font-size:10px;font-weight:750}.pill.gold{background:#f7efe3;color:#946a37}.pill.warn{background:#f8eee9;color:#9c5b4e}.btn{border:0;border-radius:12px;padding:11px 14px;background:var(--teal);color:white;font:inherit;font-weight:750;cursor:pointer}.btn.light{background:var(--mint);color:var(--teal)}.btn.line{background:#fff;border:1px solid var(--line);color:var(--ink)}.btn.small{padding:7px 10px;font-size:11px}.btn:disabled{opacity:.4}.entrygrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.entry{border:1px solid var(--line);border-radius:16px;background:white;padding:14px;text-align:left;min-height:130px;color:var(--ink);cursor:pointer}.entry .ico{font-size:23px}.entry strong{display:block;margin:8px 0 4px}.entry small{font-size:11px;color:var(--muted);line-height:1.45}.statgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:#f5f7f2;border-radius:12px;padding:10px}.stat b{display:block;font-size:18px;color:var(--navy)}.stat span{font-size:10px;color:var(--muted)}.citychips,.daytabs,.chips{display:flex;gap:7px;overflow:auto;padding:2px 0 10px}.chip,.tab{border:1px solid var(--line);background:#fff;color:#5c7069;border-radius:99px;padding:7px 11px;font:inherit;font-size:11px;white-space:nowrap;cursor:pointer}.chip.active,.tab.active{background:var(--navy);color:white;border-color:var(--navy)}.daytabs .tab{border-radius:10px}.stop{border:1px solid var(--line);border-radius:14px;padding:12px;margin:8px 0;background:#fff}.stop-top{display:flex;align-items:flex-start;gap:9px}.num{width:23px;height:23px;flex-shrink:0;border-radius:50%;background:var(--mint);color:var(--teal);display:grid;place-items:center;font-size:11px;font-weight:850}.stop-main{flex:1;min-width:0}.stop-main strong{font-size:13px}.stop-main small{display:block;color:var(--muted);font-size:10px;margin-top:3px}.stop-actions{display:flex;gap:5px;flex-wrap:wrap;margin:9px 0 0 32px}.stop-actions button{border:0;background:#f0f4ef;color:#50645b;border-radius:8px;padding:5px 8px;font-size:10px;cursor:pointer}.timeline{display:flex;gap:9px;align-items:flex-start;margin:11px 0}.time{width:48px;flex-shrink:0;color:var(--teal);font-size:11px;font-weight:800;padding-top:2px}.timeline-content{border-left:2px solid #dce9df;padding-left:11px;flex:1}.timeline-content strong{font-size:12px}.timeline-content p{margin:2px 0 0;color:var(--muted);font-size:10px}.notice{padding:11px 12px;border-radius:12px;background:#faf3e8;color:#826237;font-size:11px;line-height:1.5}.mapbox{height:190px;border-radius:15px;background:linear-gradient(140deg,#e5eee6,#dce9e3);border:1px solid #d5e2d8;position:relative;overflow:hidden}.mapbox:before,.mapbox:after{content:"";position:absolute;border:1px solid #bfd3c6;border-radius:50%;width:340px;height:160px;left:-45px;top:28px;transform:rotate(-23deg)}.mapbox:after{width:380px;height:100px;left:100px;top:85px;transform:rotate(22deg)}.maplabel{position:absolute;right:9px;top:8px;background:#ffffffc9;border-radius:7px;padding:4px 7px;font-size:9px;color:#62776c;z-index:2}.pin{position:absolute;z-index:2;background:#fff;padding:5px 8px;border-radius:99px;box-shadow:0 3px 10px #244a3b20;font-size:10px}.pin b{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:var(--teal);color:white;margin-right:4px}.p1{left:9%;top:18%}.p2{left:49%;top:34%}.p3{left:20%;top:69%}.p4{left:66%;top:75%}.field{margin:10px 0}.field label{display:block;font-size:11px;font-weight:750;margin-bottom:5px}.field input,.field textarea,.field select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:11px;background:white;font:inherit;color:var(--ink)}.field textarea{min-height:86px;resize:vertical}.filebox{padding:14px;border:1px dashed #b9cdbd;border-radius:13px;background:#f8fbf7}.itemrow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}.itemrow:last-child{border:0}.itemrow strong{font-size:12px}.itemrow small{display:block;font-size:10px;color:var(--muted)}.tag{font-size:9px;background:#f1f3ef;padding:3px 6px;border-radius:6px;color:#61736b;white-space:nowrap}.chat{border-radius:14px;padding:11px 12px;margin:9px 0;font-size:12px;white-space:pre-wrap}.chat.ai{background:#f0f5f0;margin-right:16px}.chat.user{background:#e4efe7;margin-left:25px}.chatinput{display:flex;gap:7px}.chatinput input{flex:1;min-width:0;border:1px solid var(--line);border-radius:11px;padding:10px;font:inherit}.bottom{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(520px,100%);display:grid;grid-template-columns:repeat(4,1fr);padding:8px 8px calc(8px + env(safe-area-inset-bottom));background:#fffffff0;backdrop-filter:blur(12px);border-top:1px solid var(--line);z-index:10}.bottom button{border:0;background:transparent;color:#829089;font:inherit;font-size:10px;padding:5px;cursor:pointer}.bottom button b{display:block;font-size:17px;font-weight:500}.bottom button.active{color:var(--teal);font-weight:850}.toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);background:var(--navy);color:white;padding:10px 15px;border-radius:99px;font-size:11px;opacity:0;pointer-events:none;transition:.2s;z-index:30;max-width:90%;text-align:center}.toast.show{opacity:1}.modal{display:none;position:fixed;inset:0;background:#102a2dcc;z-index:40;padding:18px;align-items:center;justify-content:center}.modal.show{display:flex}.modalbox{background:var(--paper);width:min(480px,100%);max-height:85dvh;overflow:auto;border-radius:19px;padding:18px;box-shadow:0 20px 70px #0004}.modalhead{display:flex;justify-content:space-between;align-items:center}.modalhead button{border:0;background:#edf2ed;border-radius:9px;padding:7px 10px}.progress{height:6px;background:#edf1eb;border-radius:10px;overflow:hidden}.progress i{display:block;height:100%;background:#72a58b;width:58%}.divider{height:1px;background:var(--line);margin:12px 0}.ai-output{white-space:pre-wrap;line-height:1.65;font-size:12px;color:var(--ink);overflow-wrap:anywhere}.ai-source{display:block;color:var(--teal);font-size:11px;margin:5px 0;overflow-wrap:anywhere}.ai-loading{display:flex;align-items:center;gap:8px;color:var(--teal);font-size:12px;padding:12px 0}.ai-result-card{background:#f7faf6;border:1px solid #e2ebe1;border-radius:12px;padding:11px;margin:8px 0}.ai-result-card strong{font-size:12px}.ai-result-card p{font-size:11px;color:#60716a;margin:4px 0}.ai-action-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+@media(min-width:700px){body{padding:18px 0}.app{border-radius:24px;overflow:hidden;min-height:calc(100dvh - 36px)}.bottom{bottom:18px;border-radius:0 0 24px 24px}}
+</style></head>
+<body><div class="app">
+<header class="hero"><div class="brand">TRAVEL COMPANION · AI</div><h1>把复杂行程，<br>变成轻松出发。</h1><p>从旅行规划、路线安排，到旅途中的即时帮助，把每一段旅程好好留下。</p><div class="trip-highlight"><div><strong>中亚双国旅行 · 示例项目</strong><small>哈萨克斯坦 × 乌兹别克斯坦 · 可直接体验</small></div><button onclick="openTrip()">打开示例行程 →</button></div></header>
+<main>
+<section class="screen active" id="home"><div class="head"><h2>今天想怎么开始？</h2><span class="sub">一个 AI 入口，两种工作方式</span></div><div id="aiStatus" class="notice" style="margin-bottom:12px">正在检查 AI 服务连接…</div>
+<div class="entrygrid"><button class="entry" onclick="nav('planner')"><span class="ico">✦</span><strong>AI 帮我规划</strong><small>告诉我目的地、日期和喜好，先生成一份可编辑的旅行方案。</small></button><button class="entry" onclick="nav('materials')"><span class="ico">▧</span><strong>整理已有资料</strong><small>把收藏的地点、攻略文字和截图资料交给 AI 整理。</small></button></div>
+<div class="head" style="margin-top:21px"><h2>你的第一份旅行内容</h2><span class="pill">内置示例数据</span></div>
+<div class="card"><div class="eyebrow">BETA TRIP · CENTRAL ASIA</div><h3 style="font-size:17px;margin-top:5px">哈萨克斯坦 × 乌兹别克斯坦</h3><p class="tiny">以阿拉木图、塔什干、撒马尔罕、布哈拉为例，体验城市规划、每日路线、景点详情和现场问答。</p><div class="statgrid"><div class="stat"><b>4</b><span>示例城市</span></div><div class="stat"><b>5</b><span>示例游览日</span></div><div class="stat"><b>20</b><span>候选地点</span></div></div><div class="divider"></div><button class="btn" style="width:100%" onclick="openTrip()">查看第一版真实内容 →</button><p class="tiny" style="margin:9px 0 0">说明：这是用于验证操作流程的预置样例，不是朋友的最终旅行计划；跨境交通、开放时间、票务与日期适配尚未实时核验。</p></div>
+<div class="card"><div class="row" style="justify-content:space-between"><h3>我们要解决的事</h3><span class="pill gold">产品目标</span></div><div class="itemrow"><div><strong>少做无效功课</strong><small>把零散信息变成结构化资料</small></div><span>01</span></div><div class="itemrow"><div><strong>减少绕路与赶场</strong><small>城市分区、每日路线、时间预算</small></div><span>02</span></div><div class="itemrow"><div><strong>旅途中能随时求助</strong><small>临时变化、附近建议、计划调整</small></div><span>03</span></div></div>
+</section>
+<section class="screen" id="planner"><div class="head"><h2>AI 旅行规划</h2><span class="pill">B · 从零规划</span></div><div class="card"><h3>先告诉我旅行边界</h3><p class="tiny">AI 将根据你的旅行边界生成初步方案，并尝试检索当前公开信息。交通时间与路线距离仍需地图路线服务进一步核算。</p><div class="field"><label>出发地 / 起点</label><input id="origin" value="阿拉木图" placeholder="例如：新加坡"></div><div class="field"><label>返程地 / 终点</label><input id="destination" value="塔什干" placeholder="例如：塔什干"></div><div class="field"><label>想去的城市</label><input id="cities" value="阿拉木图、撒马尔罕、布哈拉、塔什干"></div><div class="field"><label>旅行日期（可暂时留空）</label><div class="row"><input id="startDate" type="date"><input id="endDate" type="date"></div></div><div class="field"><label>旅行节奏</label><select id="pace"><option>舒适慢游</option><option>经典高效</option><option>深度文化</option><option>自然户外</option></select></div><div class="field"><label>偏好补充</label><textarea id="preferences" placeholder="例如：历史文化、美食、建筑；不想每天换酒店；每天步行不要太多"></textarea></div><button class="btn" style="width:100%" onclick="generatePlan()">让 AI 生成旅行方案</button></div><div id="generated" class="card" style="display:none"></div></section>
+<section class="screen" id="trip"><div class="head"><h2>旅行工作台</h2><span class="pill">已加载示例内容</span></div><div class="card"><div class="eyebrow">CENTRAL ASIA SAMPLE</div><h3 style="font-size:17px">哈萨克斯坦 × 乌兹别克斯坦</h3><p class="tiny">示例城市组合：阿拉木图 → 塔什干 → 撒马尔罕 → 布哈拉。此顺序仅用于体验规划功能，实际顺序应由国际机票、跨境交通与日期决定。</p><div class="statgrid"><div class="stat"><b>4</b><span>城市</span></div><div class="stat"><b>5</b><span>游览日样例</span></div><div class="stat"><b id="stopCount">16</b><span>地点素材</span></div></div></div>
+<div class="card"><div class="head"><h3>城市规划</h3><span class="sub">点选城市查看内容</span></div><div class="citychips" id="cityTabs"></div><div id="cityInfo"></div></div>
+<div class="card"><div class="head"><h3>每日路线与时间安排</h3><span class="sub">可调整、可保存</span></div><div class="daytabs" id="dayTabs"></div><div class="mapbox"><span class="maplabel">路线示意 · 非实时导航</span><span class="pin p1"><b>1</b>核心地点</span><span class="pin p2"><b>2</b>历史城区</span><span class="pin p3"><b>3</b>特色体验</span><span class="pin p4"><b>4</b>弹性安排</span></div><div class="tiny" style="margin:8px 0 10px">地图为界面示意。真实步行距离、路线和交通时间需要地图服务计算后才能显示。</div><div id="dayContent"></div><div class="divider"></div><div class="field"><label>添加当天想去的地点</label><div class="row"><input id="addPlace" placeholder="输入景点 / 餐厅名称"><button class="btn small" onclick="addPlace()">添加</button></div></div><div class="row"><button class="btn light grow" onclick="saveTrip()">保存我的修改</button><button class="btn line" onclick="resetTrip()">恢复示例</button></div><p class="tiny" id="saveStatus" style="margin:8px 0 0">修改保存在当前浏览器，可关闭后重新打开。</p></div>
+<div class="card"><h3>路线可行性检查</h3><div class="itemrow"><div><strong>地点是否真实存在</strong><small>示例地点名称已预置，仍需按实际旅行日期核实信息</small></div><span class="pill gold">部分待核验</span></div><div class="itemrow"><div><strong>开放时间与预约</strong><small>尚未连接官方实时数据</small></div><span class="pill warn">待核验</span></div><div class="itemrow"><div><strong>实际交通与绕路</strong><small>尚未调用地图路线矩阵</small></div><span class="pill warn">待计算</span></div></div>
+</section>
+<section class="screen" id="materials"><div class="head"><h2>旅行资料库</h2><span class="pill">A · 整理已有资料</span></div><div class="card"><h3>粘贴你已经收藏的地点或攻略文字</h3><p class="tiny">粘贴攻略文字，或上传小红书截图。AI 会提取候选地点、推荐理由和待核实信息；不会把截图里的说法自动当成事实。</p><div class="field"><label>资料内容</label><textarea id="rawMaterials" placeholder="例如：雷吉斯坦广场晚上亮灯很好看；想去沙希津达；朋友推荐布哈拉老城的夜景……"></textarea></div><button class="btn" style="width:100%" onclick="parseMaterials()">整理成我的地点清单</button><div id="materialResult" style="margin-top:12px"></div></div><div class="card"><h3>上传截图给 AI 识别</h3><div class="filebox"><input id="fileInput" type="file" multiple accept="image/png,image/jpeg,image/webp"></div><div id="fileNames" class="tiny" style="margin-top:8px">尚未选择文件。选择图片后，点击上方“整理”按钮才会发送给 AI 识别。每次最多 4 张，每张不超过 3 MB。</div></div><div class="card"><h3>当前内置地点素材</h3><div id="bankList"></div></div></section>
+<section class="screen" id="assistant"><div class="head"><h2>旅途中，随时问 AI</h2><span class="pill">AI 实时助理</span></div><div class="card"><div class="row"><span style="font-size:24px">✦</span><div><strong>你的旅行助理</strong><div class="tiny">直接问旅行问题。AI 会结合当前行程，并在适合时检索公开信息。</div></div></div><div class="chips" id="quickQuestions"><button class="chip" onclick="ask('今天下雨，帮我调整行程')">今天下雨，调整行程</button><button class="chip" onclick="ask('这几个景点是不是绕路？')">检查是否绕路</button><button class="chip" onclick="ask('我想少走路，怎么调整？')">我想少走路</button><button class="chip" onclick="ask('这个景点需要提前预约吗？')">需要提前预约吗</button><button class="chip" onclick="ask('临时多出半天，有什么特别玩法？')">发现特别玩法</button></div><div id="chatlog"><div class="chat ai">你好！我可以帮你检查路线、规划时间、整理资料和处理旅途变化。涉及实时交通、天气、门票或入境政策时，我会优先检索来源，并标出仍需确认的部分。</div></div><div class="chatinput"><input id="question" placeholder="也可以输入你遇到的问题"><button class="btn" onclick="sendCustom()">发送</button></div></div></section>
+</main>
+<nav class="bottom"><button class="active" data-screen="home" onclick="nav('home')"><b>⌂</b>首页</button><button data-screen="planner" onclick="nav('planner')"><b>✦</b>AI 规划</button><button data-screen="trip" onclick="nav('trip')"><b>⌖</b>行程</button><button data-screen="assistant" onclick="nav('assistant')"><b>◌</b>旅途助手</button></nav>
+<div class="toast" id="toast"></div><div class="modal" id="modal" onclick="if(event.target.id==='modal')closeModal()"><div class="modalbox"><div class="modalhead"><strong id="modalTitle">地点详情</strong><button onclick="closeModal()">关闭 ✕</button></div><div id="modalBody"></div></div></div></div>
+<script src="./config.js"></script>
+<script>
+const seed={
+ cities:[
+  {id:'almaty',name:'阿拉木图',country:'哈萨克斯坦',days:'建议先预留 2–3 天，再按兴趣调整',summary:'城市与自然结合：市区文化、集市、山地景观。户外项目需特别核对季节、天气与交通。',spots:['绿色集市','潘菲洛夫公园','升天大教堂','科克托别','麦迪奥高山滑冰场','琼布拉克滑雪度假区']},
+  {id:'tashkent',name:'塔什干',country:'乌兹别克斯坦',days:'建议预留 1–2 天，视抵离航班调整',summary:'适合作为交通衔接与城市文化体验节点，地铁、老城、市集可组合安排。',spots:['哈斯特伊玛目建筑群','乔尔苏集市','塔什干地铁','阿米尔·帖木儿广场']},
+  {id:'samarkand',name:'撒马尔罕',country:'乌兹别克斯坦',days:'建议预留 1–2 个完整游览日',summary:'历史建筑集中度高，可按历史城区与陵墓群分区规划，需根据开放时间调整先后。',spots:['雷吉斯坦广场','古尔阿米尔陵','比比哈努清真寺','沙希津达陵墓群','乌鲁伯格天文台']},
+  {id:'bukhara',name:'布哈拉',country:'乌兹别克斯坦',days:'建议预留 1–2 个完整游览日',summary:'老城步行体验是重点，可围绕拉比哈乌兹、卡隆建筑群和古城集市组织路线。',spots:['拉比哈乌兹广场','卡隆宣礼塔与清真寺','布哈拉方舟','塔基集市','萨曼王陵']}
+ ],
+ days:[
+  {id:'d1',label:'D1 · 阿拉木图',city:'almaty',title:'市区文化与初到适应',stops:[['10:00','潘菲洛夫公园','城市公园 · 建议轻松开始，预留步行与休息时间'],['11:00','升天大教堂','木结构建筑 · 现场开放与参观规则待核实'],['12:30','绿色集市','当地市场 · 午餐与市场体验'],['15:30','科克托别','城市观景 · 缆车运营与天气需出发前核实']]},
+  {id:'d2',label:'D2 · 阿拉木图',city:'almaty',title:'山地自然体验日',stops:[['09:00','麦迪奥高山滑冰场','山谷与户外景观 · 交通及开放状态待核实'],['11:00','琼布拉克滑雪度假区','山地体验 · 缆车运营、天气与季节条件待核实'],['15:00','返回市区休息','预留交通与恢复时间，不建议再塞入远距离景点']]},
+  {id:'d3',label:'D3 · 塔什干',city:'tashkent',title:'首都城市文化与市集',stops:[['09:30','哈斯特伊玛目建筑群','宗教与历史建筑 · 着装及开放要求待核实'],['11:30','乔尔苏集市','当地市场 · 适合安排午餐与自由探索'],['14:00','塔什干地铁','建筑与城市交通体验 · 站点参观规则需现场确认'],['16:00','阿米尔·帖木儿广场','城市公共空间 · 可按体力调整']]},
+  {id:'d4',label:'D4 · 撒马尔罕',city:'samarkand',title:'历史城区核心路线',stops:[['09:00','雷吉斯坦广场','核心历史建筑群 · 门票、开放时间与参观时长待官方核实'],['11:00','比比哈努清真寺','历史建筑 · 可与周边老城地点组合'],['12:30','午餐与休息','在历史城区附近安排，减少往返'],['14:00','沙希津达陵墓群','重点文化体验 · 着装、开放和参观规则待核实'],['16:30','古尔阿米尔陵','按当日开放时间和体力决定是否加入']]},
+  {id:'d5',label:'D5 · 布哈拉',city:'bukhara',title:'布哈拉老城步行探索',stops:[['09:00','布哈拉方舟','历史城堡 · 门票和开放时间待核实'],['10:45','卡隆宣礼塔与清真寺','老城地标 · 参观限制与票务待核实'],['12:30','拉比哈乌兹广场','午餐与休息 · 可观察周边生活'],['14:00','塔基集市','传统集市 · 适合慢慢逛'],['16:00','萨曼王陵','历史建筑 · 根据距离与开放时间调整']]}
+ ]
+};
+let trip=loadTrip()||JSON.parse(JSON.stringify(seed));let activeDay='d4',activeCity='samarkand';
+function loadTrip(){try{let x=localStorage.getItem('travelCompanionV04');return x?JSON.parse(x):null}catch(e){return null}}
+function persist(silent=false){try{localStorage.setItem('travelCompanionV04',JSON.stringify(trip));if(!silent)toast('已保存到当前设备，下次打开可继续编辑')}catch(e){toast('当前浏览器无法保存，请检查隐私模式设置')}}
+function toast(s){let t=document.getElementById('toast');t.textContent=s;t.classList.add('show');clearTimeout(window._toastTimer);window._toastTimer=setTimeout(()=>t.classList.remove('show'),2400)}
+function nav(id){document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('.bottom button').forEach(x=>x.classList.toggle('active',x.dataset.screen===id));window.scrollTo({top:0,behavior:'smooth'});if(id==='trip')renderTrip();if(id==='materials')renderBank()}
+function openTrip(){nav('trip')}
+function renderTrip(){document.getElementById('cityTabs').innerHTML=trip.cities.map(c=>`<button class="chip ${c.id===activeCity?'active':''}" onclick="selectCity('${c.id}')">${c.name}</button>`).join('');let c=trip.cities.find(x=>x.id===activeCity)||trip.cities[0];document.getElementById('cityInfo').innerHTML=`<div class="row" style="justify-content:space-between"><strong>${c.name} · ${c.country}</strong><span class="pill gold">示例建议</span></div><p class="tiny">${c.summary}</p><p class="tiny"><b>停留时间：</b>${c.days}</p><div class="tiny"><b>候选地点：</b>${c.spots.join('、')}</div>`;document.getElementById('dayTabs').innerHTML=trip.days.map(d=>`<button class="tab ${d.id===activeDay?'active':''}" onclick="selectDay('${d.id}')">${d.label}</button>`).join('');let d=trip.days.find(x=>x.id===activeDay)||trip.days[0];let count=trip.days.reduce((n,x)=>n+x.stops.length,0);document.getElementById('stopCount').textContent=count;document.getElementById('dayContent').innerHTML=`<div class="row" style="justify-content:space-between"><strong>${d.title}</strong><span class="pill">${d.stops.length} 个安排</span></div>`+d.stops.map((s,i)=>`<div class="timeline"><div class="time">${s[0]}</div><div class="timeline-content"><strong>${s[1]}</strong><p>${s[2]}</p><button class="btn line small" style="margin-top:6px" onclick="showSpot('${escapeAttr(s[1])}')">查看地点说明</button></div></div><div class="stop-actions" style="margin:0 0 8px 57px"><button onclick="moveStop(${i},-1)">↑ 上移</button><button onclick="moveStop(${i},1)">↓ 下移</button><button onclick="removeStop(${i})">移除</button></div>`).join('')}
+function selectCity(id){activeCity=id;let day=trip.days.find(x=>x.city===id);if(day)activeDay=day.id;renderTrip()}
+function selectDay(id){activeDay=id;let d=trip.days.find(x=>x.id===id);if(d)activeCity=d.city;renderTrip()}
+function moveStop(i,dir){let d=trip.days.find(x=>x.id===activeDay),j=i+dir;if(!d||j<0||j>=d.stops.length)return;[d.stops[i],d.stops[j]]=[d.stops[j],d.stops[i]];renderTrip();persist(true);toast('顺序已调整；正式路线需重新计算交通时间')}
+function removeStop(i){let d=trip.days.find(x=>x.id===activeDay);if(!d)return;d.stops.splice(i,1);renderTrip();persist(true);toast('已从当天行程移除')}
+function addPlace(){let e=document.getElementById('addPlace'),v=e.value.trim();if(!v){toast('先输入一个地点名称');return}let d=trip.days.find(x=>x.id===activeDay);d.stops.push(['待定',v,'用户新增地点 · 坐标、开放时间和路线尚待核实']);e.value='';renderTrip();persist(true);toast('地点已加入当天行程')}
+function saveTrip(){persist();document.getElementById('saveStatus').textContent='最近保存：'+new Date().toLocaleString()+' · 保存在当前设备浏览器'}
+function resetTrip(){if(!confirm('恢复内置示例会覆盖当前设备保存的修改，确定继续吗？'))return;trip=JSON.parse(JSON.stringify(seed));activeDay='d4';activeCity='samarkand';persist(true);renderTrip();toast('已恢复内置示例')}
+function showSpot(name){let details={
+'雷吉斯坦广场':'撒马尔罕最具代表性的历史建筑群之一。适合作为历史城区游览的重点。门票、开放时间、夜间灯光安排及现场规则需按出行日期核实。',
+'比比哈努清真寺':'撒马尔罕历史城区的重要宗教建筑。建议与雷吉斯坦及老城其他地点合并考虑，具体步行时间应由地图路线服务计算。',
+'沙希津达陵墓群':'以蓝色瓷砖装饰闻名的陵墓建筑群。建议预留充足参观时间，并核实开放安排、着装及现场礼仪。',
+'古尔阿米尔陵':'帖木儿及其家族相关陵墓建筑。可与撒马尔罕历史城区路线结合，是否同日安排取决于开放时间和体力。',
+'绿色集市':'阿拉木图当地市场体验候选点。适合观察当地食材与日常生活；摊位营业情况和支付方式应现场确认。',
+'潘菲洛夫公园':'阿拉木图市区公园，适合与附近建筑和市区步行路线组合。',
+'升天大教堂':'位于潘菲洛夫公园内的木结构东正教教堂。参观时应尊重宗教场所规则，并核实开放状态。',
+'科克托别':'阿拉木图城市观景候选点。缆车、天气和运营状态需出发前核实。',
+'麦迪奥高山滑冰场':'阿拉木图附近山地景观与运动场地。季节、开放状态和道路情况会影响是否适合安排。',
+'琼布拉克滑雪度假区':'山地度假区，适合自然景观或户外体验。缆车运营、天气、季节和交通需实时核实。',
+'哈斯特伊玛目建筑群':'塔什干老城的重要宗教与历史建筑区域。参观前应确认开放要求和着装礼仪。',
+'乔尔苏集市':'塔什干具有代表性的传统市场，适合体验当地食物和市集氛围。具体营业时间及支付方式需确认。',
+'塔什干地铁':'城市公共交通系统，也有值得关注的车站建筑。乘车、摄影等规则以现场规定为准。',
+'阿米尔·帖木儿广场':'塔什干市中心公共空间，可与市区其他地点组合安排。',
+'布哈拉方舟':'布哈拉历史城堡建筑群，是老城文化路线的候选重点。门票和开放时间需核实。',
+'卡隆宣礼塔与清真寺':'布哈拉老城重要地标，适合与周边历史建筑和集市步行串联。',
+'拉比哈乌兹广场':'布哈拉老城的水池广场与休闲区域，适合安排午餐或休息。',
+'塔基集市':'布哈拉传统商业街区与集市建筑，可结合老城步行路线体验。',
+'萨曼王陵':'布哈拉历史建筑之一，建议结合当天路线和开放时间安排。'
+};document.getElementById('modalTitle').textContent=name;document.getElementById('modalBody').innerHTML=`<p>${details[name]||'这是加入行程的候选地点。正式使用前需要核实地点身份、坐标、开放时间、门票和交通信息。'}</p><div class="notice">资料状态：基础介绍示例。当前没有连接实时地图、官方票务或营业数据；不应将此内容当作出行当天的实时核验结果。</div><div class="divider"></div><button class="btn light" onclick="closeModal();toast('已查看地点资料')">知道了</button>`;document.getElementById('modal').classList.add('show')}
+function closeModal(){document.getElementById('modal').classList.remove('show')}
+function escapeAttr(s){return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;')}
+
+let lastAiPlan = null;
+let lastMaterialItems = [];
+let chatHistory = [];
+
+function apiHeaders(){
+  const headers = {"Content-Type":"application/json"};
+  const code = localStorage.getItem("travelCompanionBetaCode");
+  if(code) headers["x-beta-code"] = code;
+  return headers;
+}
+function apiBase(){
+  return String(window.TRAVEL_COMPANION_CONFIG?.API_BASE_URL || "").trim().replace(/\/$/,"");
+}
+async function apiRequest(payload){
+  const base = apiBase();
+  if(!base) throw new Error("还没有配置 AI 服务地址。请先完成 Cloudflare Worker 部署，并在 config.js 填入 Worker URL。");
+  let response = await fetch(base + "/api/assistant", {
+    method:"POST", headers:apiHeaders(), body:JSON.stringify(payload)
+  });
+  if(response.status===401){
+    const code = prompt("请输入测试访问码（如果测试页面要求访问码）");
+    if(code){
+      localStorage.setItem("travelCompanionBetaCode",code);
+      response = await fetch(base + "/api/assistant", {
+        method:"POST", headers:apiHeaders(), body:JSON.stringify(payload)
+      });
+    }
+  }
+  const data = await response.json().catch(()=>({error:"服务器返回了无法识别的内容"}));
+  if(!response.ok) throw new Error(data.error || `请求失败（${response.status}）`);
+  return data;
+}
+function setBusy(button,busy,label){
+  if(!button) return;
+  if(busy){button.dataset.oldText=button.textContent;button.disabled=true;button.textContent=label||"AI 正在处理…";}
+  else {button.disabled=false;button.textContent=button.dataset.oldText||"完成";delete button.dataset.oldText;}
+}
+function appendAiText(container,text){
+  const block=document.createElement("div");
+  block.className="ai-output";
+  block.textContent=text||"AI 没有返回文字内容。";
+  container.appendChild(block);
+}
+function appendSources(container,sources){
+  if(!Array.isArray(sources)||!sources.length)return;
+  const wrap=document.createElement("div");
+  wrap.style.marginTop="12px";
+  const title=document.createElement("strong");title.textContent="参考来源";title.style.fontSize="11px";wrap.appendChild(title);
+  sources.forEach(s=>{
+    if(!s.url || !/^https?:\/\//i.test(s.url))return;
+    const a=document.createElement("a");a.className="ai-source";a.href=s.url;a.target="_blank";a.rel="noopener noreferrer";
+    a.textContent=s.title||s.url;wrap.appendChild(a);
+  });
+  container.appendChild(wrap);
+}
+function showAiError(container,error){
+  container.innerHTML="";
+  const box=document.createElement("div");box.className="notice";box.textContent="AI 暂时没有完成这次请求："+error.message;
+  container.appendChild(box);
+  const tip=document.createElement("p");tip.className="tiny";tip.textContent="请检查服务是否已部署、OPENAI_API_KEY 是否已添加到服务器 Secrets，以及 API 账户是否有可用额度。";
+  container.appendChild(tip);
+}
+async function checkAiHealth(){
+  const el=document.getElementById("aiStatus");
+  if(!el)return;
+  const base=apiBase();
+  if(!base){
+    el.textContent="AI 服务尚未连接：完成 Cloudflare Worker 部署后，把 Worker 地址填写到 config.js。当前仍可浏览和编辑内置示例行程。";
+    return;
+  }
+  try{
+    const r=await fetch(base + "/api/health");
+    const d=await r.json();
+    if(d.configured){
+      el.textContent=`AI 服务已连接 · ${d.model}${d.webSearch?" · 在线检索已启用":""}`;
+      el.style.background="#eaf4ed";el.style.color="#2d766b";
+    }else{
+      el.textContent="Worker 已连接，但尚未配置 OPENAI_API_KEY 或 OPENAI_MODEL。请在 Cloudflare Worker 的 Variables and Secrets 中补齐。";
+    }
+  }catch(e){
+    el.textContent="无法连接 AI 后端。请检查 config.js 中的 Worker URL、Cloudflare Worker 是否已部署，以及 CORS 来源设置。";
+  }
+}
+function collectTripContext(){
+  const day=trip.days.find(x=>x.id===activeDay);
+  return {
+    cities:trip.cities,
+    days:trip.days,
+    activeCity,
+    activeDay,
+    currentDay:day||null
+  };
+}
+function addTextNode(parent,tag,cls,text){
+  const n=document.createElement(tag);if(cls)n.className=cls;n.textContent=text||"";parent.appendChild(n);return n;
+}
+function renderPlanResult(result){
+  const out=document.getElementById("generated");out.style.display="block";out.innerHTML="";
+  addTextNode(out,"div","eyebrow","AI TRIP PLAN · REAL MODEL OUTPUT");
+  addTextNode(out,"h3","",result.summary||"你的第一版旅行方案");
+  const cityWrap=document.createElement("div");cityWrap.className="ai-result-card";
+  addTextNode(cityWrap,"strong","","城市顺序与停留建议");
+  (result.city_sequence||[]).forEach((c,i)=>{
+    addTextNode(cityWrap,"p","",`${i+1}. ${c.city} · ${c.country||"国家待确认"} · ${c.nights||"待分配"} 晚 — ${c.reason||""}`);
+  });
+  out.appendChild(cityWrap);
+  if((result.intercity_transport||[]).length){
+    const trans=document.createElement("div");trans.className="ai-result-card";addTextNode(trans,"strong","","城市间交通");
+    result.intercity_transport.forEach(t=>addTextNode(trans,"p","",`${t.from} → ${t.to}：${t.mode}。${t.notes}（${t.verification}）`));
+    out.appendChild(trans);
+  }
+  (result.days||[]).forEach(d=>{
+    const card=document.createElement("div");card.className="ai-result-card";
+    addTextNode(card,"strong","",`${d.day_label||"每日行程"} · ${d.city} · ${d.title}`);
+    (d.stops||[]).forEach(s=>addTextNode(card,"p","",`${s.time||"时间待定"}｜${s.name}｜${s.duration||"时长待核"}。${s.reason||""} ${s.verification||""}`));
+    out.appendChild(card);
+  });
+  if((result.checks||[]).length){
+    const checks=document.createElement("div");checks.className="ai-result-card";addTextNode(checks,"strong","","可行性与避坑检查");
+    result.checks.forEach(x=>addTextNode(checks,"p","",`• ${x}`));out.appendChild(checks);
+  }
+  if((result.questions||[]).length){
+    const qs=document.createElement("div");qs.className="notice";addTextNode(qs,"strong","","还需要你确认");
+    result.questions.forEach(x=>addTextNode(qs,"p","",`• ${x}`));out.appendChild(qs);
+  }
+  appendSources(out,result.sources||[]);
+  if(result.warning)addTextNode(out,"p","notice",result.warning);
+  const actions=document.createElement("div");actions.className="ai-action-row";
+  const apply=document.createElement("button");apply.className="btn";apply.textContent="把 AI 方案载入行程工作台";apply.onclick=applyAiPlan;actions.appendChild(apply);
+  const copy=document.createElement("button");copy.className="btn line";copy.textContent="复制方案摘要";copy.onclick=()=>navigator.clipboard?.writeText(JSON.stringify(lastAiPlan,null,2)).then(()=>toast("已复制方案数据")).catch(()=>toast("浏览器未允许复制"));actions.appendChild(copy);
+  out.appendChild(actions);
+}
+async function generatePlan(){
+  const button=document.querySelector('#planner .card .btn');
+  const out=document.getElementById("generated");out.style.display="block";out.innerHTML="";
+  addTextNode(out,"div","ai-loading","✦ AI 正在整理旅行约束、检索当前信息并生成方案…");
+  setBusy(button,true,"AI 规划中…");
+  const brief={
+    origin:document.getElementById("origin").value.trim(),
+    destination:document.getElementById("destination").value.trim(),
+    cities:document.getElementById("cities").value.trim(),
+    startDate:document.getElementById("startDate").value,
+    endDate:document.getElementById("endDate").value,
+    pace:document.getElementById("pace").value,
+    preferences:document.getElementById("preferences").value.trim()
+  };
+  try{
+    const result=await apiRequest({task:"plan",message:"请根据以下信息规划旅行。优先给出合理城市顺序、停留时间、城市间交通研究方向和每天的城市内路线。",context:brief});
+    lastAiPlan=result.data;
+    if(lastAiPlan)lastAiPlan.sources=result.sources||[];
+    renderPlanResult(lastAiPlan||{summary:result.text||"AI 已返回结果",checks:[],questions:[],days:[]});
+    toast("AI 已生成旅行方案，请检查并确认");
+  }catch(e){showAiError(out,e)}
+  finally{setBusy(button,false)}
+}
+function applyAiPlan(){
+  if(!lastAiPlan){toast("还没有可应用的 AI 方案");return}
+  const plan=lastAiPlan;
+  const cityMap=new Map();
+  trip.cities=(plan.city_sequence||[]).map((c,i)=>{
+    const id=`ai-city-${i}`;cityMap.set(c.city,id);
+    const days=(plan.days||[]).filter(d=>d.city===c.city).length;
+    const spots=(plan.days||[]).filter(d=>d.city===c.city).flatMap(d=>(d.stops||[]).map(s=>s.name));
+    return {id,name:c.city,country:c.country||"待确认",days:`建议 ${c.nights||"待确认"} 晚`,summary:c.reason||"由 AI 根据本次旅行需求生成",spots:[...new Set(spots)]};
+  });
+  trip.days=(plan.days||[]).map((d,i)=>({
+    id:`ai-day-${i+1}`,label:d.day_label||`D${i+1} · ${d.city}`,city:cityMap.get(d.city)||trip.cities[0]?.id,
+    title:d.title||"AI 规划日程",
+    stops:(d.stops||[]).map(s=>[s.time||"待定",s.name,`${s.duration||"游览时长待核"} · ${s.reason||""} · ${s.verification||"信息待核实"}`])
+  }));
+  if(!trip.cities.length||!trip.days.length){toast("AI 方案内容不完整，暂不能载入");return}
+  activeCity=trip.cities[0].id;activeDay=trip.days[0].id;
+  persist(true);renderTrip();nav("trip");toast("AI 方案已载入工作台；请继续核实交通和开放时间");
+}
+async function readSelectedImages(){
+  const files=[...document.getElementById("fileInput").files];
+  if(files.length>4)throw new Error("每次最多上传 4 张图片");
+  const images=[];
+  for(const file of files){
+    if(!["image/jpeg","image/png","image/webp"].includes(file.type))throw new Error("目前只支持 JPG、PNG、WEBP 图片");
+    if(file.size>3*1024*1024)throw new Error(`图片 ${file.name} 超过 3 MB，请压缩后再试`);
+    const data=await new Promise((resolve,reject)=>{
+      const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error("图片读取失败"));reader.readAsDataURL(file);
+    });
+    images.push({name:file.name,dataUrl:data});
+  }
+  return images;
+}
+function renderMaterialsResult(result){
+  const target=document.getElementById("materialResult");target.innerHTML="";
+  addTextNode(target,"div","pill",`AI 整理完成 · ${(result.items||[]).length} 条候选内容`);
+  if(result.summary)addTextNode(target,"p","tiny",result.summary);
+  lastMaterialItems=result.items||[];
+  lastMaterialItems.forEach((item,i)=>{
+    const row=document.createElement("div");row.className="ai-result-card";
+    addTextNode(row,"strong","",item.name||"未识别地点");
+    addTextNode(row,"p","",`${item.city||"城市待确认"} · ${item.category||"类别待确认"} · 识别信心：${item.confidence||"待判断"}`);
+    addTextNode(row,"p","",`原始说法：${item.source_claim||"无明确描述"}`);
+    addTextNode(row,"p","",`有用信息：${item.useful_tip||"待补充"}；状态：${item.status||"待核实"}`);
+    const b=document.createElement("button");b.className="btn line small";b.textContent="加入我的候选地点";b.onclick=()=>addFromMaterial(item.name||"未命名地点");row.appendChild(b);
+    target.appendChild(row);
+  });
+  appendSources(target,result.sources||[]);
+  if(result.warning)addTextNode(target,"p","notice",result.warning);
+}
+async function parseMaterials(){
+  const raw=document.getElementById("rawMaterials").value.trim();
+  const target=document.getElementById("materialResult");
+  let images=[];
+  try{images=await readSelectedImages()}catch(e){toast(e.message);return}
+  if(!raw&&!images.length){toast("请粘贴攻略文字或选择截图");return}
+  target.innerHTML="";addTextNode(target,"div","ai-loading","✦ AI 正在读取资料、识别地点并提取推荐理由…");
+  const button=document.querySelector('#materials .card .btn');
+  setBusy(button,true,"AI 整理中…");
+  try{
+    const result=await apiRequest({task:"materials",message:raw||"请从我上传的旅行攻略截图中提取所有候选地点和有用信息。",images});
+    renderMaterialsResult({...((result.data)||{summary:result.text||"",items:[]}),sources:result.sources||[],warning:result.warning||""});
+  }catch(e){showAiError(target,e)}
+  finally{setBusy(button,false)}
+}
+function addFromMaterial(v){
+  let d=trip.days.find(x=>x.id===activeDay)||trip.days[0];
+  if(!d){toast("请先创建一份行程");return}
+  d.stops.push(["待定",v,"来自 AI 整理的用户资料 · 坐标、开放时间与路线待核实"]);
+  renderTrip();persist(true);toast("已加入当前行程的候选地点");
+}
+function renderBank(){
+  let all=trip.cities.flatMap(c=>c.spots.map(s=>({s,c:c.name})));
+  document.getElementById("bankList").innerHTML=all.map(x=>`<div class="itemrow"><div><strong>${x.s}</strong><small>${x.c} · 内置候选地点</small></div><span class="tag">待按日期核实</span></div>`).join("");
+}
+document.getElementById("fileInput").addEventListener("change",e=>{
+  const fs=[...e.target.files];
+  document.getElementById("fileNames").textContent=fs.length?fs.map(f=>f.name+" · "+(f.size/1024/1024).toFixed(1)+" MB").join("；"):"尚未选择图片";
+});
+function addChatBubble(role,text){
+  const log=document.getElementById("chatlog");const b=document.createElement("div");b.className=`chat ${role}`;b.textContent=text;log.appendChild(b);log.scrollTop=log.scrollHeight;
+}
+async function ask(q){
+  if(!q.trim())return;
+  addChatBubble("user",q);chatHistory.push({role:"user",content:q});
+  const log=document.getElementById("chatlog");const loading=document.createElement("div");loading.className="chat ai";loading.textContent="AI 正在结合你的行程思考…";log.appendChild(loading);
+  try{
+    const result=await apiRequest({task:"chat",message:q,history:chatHistory.slice(0,-1).slice(-10),context:collectTripContext()});
+    loading.textContent=result.text||"AI 没有返回文字内容。";
+    if(result.sources?.length){
+      result.sources.forEach(s=>{if(s.url&&/^https?:\/\//i.test(s.url)){const a=document.createElement("a");a.className="ai-source";a.href=s.url;a.target="_blank";a.rel="noopener noreferrer";a.textContent=s.title||s.url;loading.appendChild(a)}});
+    }
+    if(result.warning){const warn=document.createElement("div");warn.className="tiny";warn.textContent=result.warning;loading.appendChild(warn);}
+    chatHistory.push({role:"assistant",content:result.text||""});
+    try{localStorage.setItem("travelCompanionChatV05",JSON.stringify(chatHistory.slice(-20)))}catch(e){}
+  }catch(e){loading.textContent="AI 暂时没有完成请求："+e.message;}
+  log.scrollTop=log.scrollHeight;
+}
+function sendCustom(){const e=document.getElementById("question"),q=e.value.trim();if(!q)return;e.value="";ask(q)}
+async function loadChatHistory(){
+  try{const saved=JSON.parse(localStorage.getItem("travelCompanionChatV05")||"[]");if(Array.isArray(saved)&&saved.length){chatHistory=saved;const log=document.getElementById("chatlog");log.innerHTML="";saved.forEach(m=>addChatBubble(m.role==="assistant"?"ai":"user",m.content));}}
+  catch(e){}
+}
+renderTrip();renderBank();loadChatHistory();checkAiHealth();
+
+</script></body></html>
