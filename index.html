@@ -113,7 +113,12 @@ async function apiRequest(payload){
     }
   }
   const data = await response.json().catch(()=>({error:"服务器返回了无法识别的内容"}));
-  if(!response.ok) throw new Error(data.error || `请求失败（${response.status}）`);
+  if(!response.ok){
+    const err=new Error(data.error || `请求失败（${response.status}）`);
+    err.code=data.code||"";
+    err.diagnostics=data.diagnostics||null;
+    throw err;
+  }
   return data;
 }
 function setBusy(button,busy,label){
@@ -143,7 +148,14 @@ function showAiError(container,error){
   container.innerHTML="";
   const box=document.createElement("div");box.className="notice";box.textContent="AI 暂时没有完成这次请求："+error.message;
   container.appendChild(box);
-  const tip=document.createElement("p");tip.className="tiny";tip.textContent="请检查服务是否已部署、OPENAI_API_KEY 是否已添加到服务器 Secrets，以及 API 账户是否有可用额度。";
+  const structured=["MODEL_OUTPUT_TRUNCATED","MODEL_JSON_INVALID","PLAN_SCHEMA_INCOMPLETE","MATERIALS_SCHEMA_INCOMPLETE"].includes(error.code) || /JSON|行程结构|输出达到长度/.test(error.message||"");
+  let help=structured
+    ? "AI 服务连接已通过健康检查；这次问题发生在模型结构化输出阶段。请先缩短城市或旅行天数后重试，不需要重复配置 API Key。"
+    : "请检查 Cloudflare Worker 是否正常部署、对应模型的 API Key 是否已配置，以及 API 账户是否有可用额度。";
+  if(error.diagnostics?.finishReason){
+    help+=`（模型结束原因：${error.diagnostics.finishReason}；输出 tokens：${error.diagnostics.completionTokens??"未知"}）`;
+  }
+  const tip=document.createElement("p");tip.className="tiny";tip.textContent=help;
   container.appendChild(tip);
 }
 async function checkAiHealth(){
@@ -161,7 +173,7 @@ async function checkAiHealth(){
       el.textContent=`AI 服务已连接 · ${d.model}${d.webSearch?" · 在线检索已启用":""}`;
       el.style.background="#eaf4ed";el.style.color="#2d766b";
     }else{
-      el.textContent="Worker 已连接，但尚未配置 OPENAI_API_KEY 或 OPENAI_MODEL。请在 Cloudflare Worker 的 Variables and Secrets 中补齐。";
+      el.textContent="Worker 已连接，但尚未配置对应模型的 API Key 或模型名称。请在 Cloudflare Worker 的 Variables and Secrets 中补齐。";
     }
   }catch(e){
     el.textContent="无法连接 AI 后端。请检查 config.js 中的 Worker URL、Cloudflare Worker 是否已部署，以及 CORS 来源设置。";
