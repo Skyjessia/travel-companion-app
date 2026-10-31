@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#173f46"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<title>Travel Companion V0.9 · Plan Together</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#173f46"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://cdn.jsdelivr.net/npm/mammoth@1.9.0/mammoth.browser.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<title>Travel Companion V1.0 · Plan Together + By Day</title>
 <style>
 :root{--navy:#173f46;--teal:#2d766b;--mint:#e8f1ec;--gold:#c18d53;--paper:#fbfaf6;--bg:#edf1ed;--ink:#20363a;--muted:#75858a;--line:#e4e8e1;--red:#a65b4e;--shadow:0 12px 32px rgba(23,63,70,.08)}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 10% 0%,#e3eee8 0,transparent 38%),var(--bg);color:var(--ink);font:14px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}.app{max-width:520px;min-height:100dvh;margin:auto;background:var(--paper);position:relative;padding-bottom:84px;box-shadow:0 18px 60px #173f4618}.hero{padding:34px 24px 36px;color:#fff;background:linear-gradient(135deg,#153a43,#23635d 68%,#3c7b6b);border-radius:0 0 28px 28px;position:relative;overflow:hidden}.hero:after{content:"✦";position:absolute;right:20px;top:65px;font-size:90px;color:#ffffff18}.brand{font-size:10px;letter-spacing:.17em;color:#d5e7df;font-weight:800}.hero h1{font-size:29px;line-height:1.25;margin:18px 0 7px;max-width:320px}.hero p{font-size:12px;color:#d8e8e2;max-width:330px;margin:0}.trip-highlight{margin-top:19px;padding:13px;background:#ffffff17;border:1px solid #ffffff30;border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:10px}.trip-highlight small{display:block;color:#d7e6df;font-size:11px}.trip-highlight strong{font-size:13px}.trip-highlight button{border:0;border-radius:11px;padding:9px 12px;background:#f8f6ef;color:var(--navy);font-weight:750;cursor:pointer}
@@ -36,6 +36,15 @@ main{padding:18px 16px 25px}.screen{display:none}.screen.active{display:block}.h
 .plan-upload-name{font-size:10px;color:var(--muted);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .plan-upload-note{font-size:10px;color:var(--muted)}
 .plan-current-version{font-size:10px;color:var(--muted)}
+.plan-reference-card{margin-top:14px;background:linear-gradient(180deg,#fbfdf9,#f3f7f1);border-color:#dce8dc}
+.plan-reference-list{display:grid;gap:7px;margin-top:10px}
+.plan-reference-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;background:#fff;border:1px solid var(--line);border-radius:10px}
+.plan-reference-item strong{display:block;font-size:11px;overflow-wrap:anywhere}
+.plan-reference-item small{display:block;font-size:10px;color:var(--muted)}
+.plan-reference-item button{border:0;background:#f7eee8;color:#95634e;border-radius:8px;padding:5px 8px;font:inherit;font-size:10px;cursor:pointer}
+.plan-reference-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.plan-reference-actions .btn{flex:1;min-width:190px}
+.plan-reference-status{font-size:10px;color:var(--muted);margin-top:8px}
 
 @media(min-width:700px){body{padding:18px 0}.app{border-radius:24px;overflow:hidden;min-height:calc(100dvh - 36px)}.bottom{bottom:18px;border-radius:0 0 24px 24px}}
 </style></head>
@@ -61,7 +70,16 @@ main{padding:18px 16px 25px}.screen{display:none}.screen.active{display:block}.h
 <div class="head"><h2>AI 旅行规划</h2><span class="sub">从目的地到每天怎么走</span></div>
 <p class="tiny" style="margin:0 2px 12px">先告诉我们这趟旅行的边界，剩下的交给 AI 一起梳理。信息不完整时，会先向你确认，不会擅自补全关键条件。</p>
 
-<div class="card planner-form"><div class="row" style="justify-content:space-between;align-items:center"><h3>先告诉我旅行边界</h3><span class="pill">B · 从零规划</span></div><p class="tiny">告诉 AI 你的起点、终点、城市和旅行偏好。AI 会先检查信息是否完整，再生成可编辑的城市顺序、跨城交通研究方向和逐日路线。景点开放时间、票务与实际交通仍需按出行日期核验。</p><div class="field"><label>出发地 / 起点</label><input id="origin" value="阿拉木图" placeholder="例如：新加坡"></div><div class="field"><label>返程地 / 终点</label><input id="destination" value="塔什干" placeholder="例如：塔什干"></div><div class="field"><label>想去的城市</label><input id="cities" value="阿拉木图、撒马尔罕、布哈拉、塔什干"></div><div class="field"><label>旅行日期（可暂时留空）</label><div class="row"><input id="startDate" type="date"><input id="endDate" type="date"></div></div><div class="field"><label>旅行节奏</label><select id="pace"><option>舒适慢游</option><option>经典高效</option><option>深度文化</option><option>自然户外</option></select></div><div class="field"><label>偏好补充</label><textarea id="preferences" placeholder="例如：历史文化、美食、建筑；不想每天换酒店；每天步行不要太多"></textarea></div><button class="btn" style="width:100%" onclick="generatePlan()">让 AI 生成旅行方案</button></div><div id="generated" class="card" style="display:none"></div>
+<div class="card planner-form"><div class="row" style="justify-content:space-between;align-items:center"><h3>先告诉我旅行边界</h3><span class="pill">B · 从零规划</span></div><p class="tiny">告诉 AI 你的起点、终点、城市和旅行偏好。AI 会先检查信息是否完整，再生成可编辑的城市顺序、跨城交通研究方向和逐日路线。景点开放时间、票务与实际交通仍需按出行日期核验。</p><div class="field"><label>出发地 / 起点</label><input id="origin" value="阿拉木图" placeholder="例如：新加坡"></div><div class="field"><label>返程地 / 终点</label><input id="destination" value="塔什干" placeholder="例如：塔什干"></div><div class="field"><label>想去的城市</label><input id="cities" value="阿拉木图、撒马尔罕、布哈拉、塔什干"></div><div class="field"><label>旅行日期（可暂时留空）</label><div class="row"><input id="startDate" type="date"><input id="endDate" type="date"></div></div><div class="field"><label>旅行节奏</label><select id="pace"><option>舒适慢游</option><option>经典高效</option><option>深度文化</option><option>自然户外</option></select></div><div class="field"><label>偏好补充</label><textarea id="preferences" placeholder="例如：历史文化、美食、建筑；不想每天换酒店；每天步行不要太多"></textarea></div><button class="btn" style="width:100%" onclick="generatePlan()">开始与 AI 规划</button></div><div id="generated" class="card" style="display:none"></div>
+<div class="card plan-reference-card" id="planReferenceCard">
+  <div class="row" style="justify-content:space-between;align-items:center;gap:8px"><div><h3 style="margin:0">把自己做过的功课也交给 AI</h3><div class="tiny">第二轮讨论后，可在这里补充整理好的 Word、PDF 或文字资料。</div></div><span class="pill">资料整合</span></div>
+  <p class="tiny" style="margin:9px 0">上传已经收藏或整理的攻略，AI 会与本次讨论、城市规划和 By Day 一并整合。保留你的原始资料，不会把未经核实的帖子内容当成事实。</p>
+  <div class="filebox"><label for="planReferenceFiles" style="display:block;font-weight:750;margin-bottom:7px">上传旅行资料（支持 DOCX / PDF / TXT / MD）</label><input id="planReferenceFiles" type="file" multiple accept=".docx,.pdf,.txt,.md,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf,text/plain,text/markdown" onchange="handlePlanReferenceFiles(this.files)"><div class="plan-reference-status">最多 5 份文件；单份不超过 10 MB。Word 请使用 .docx 格式，暂不支持旧版 .doc。</div></div>
+  <div id="planReferenceList" class="plan-reference-list"><div class="tiny">尚未添加文件。也可以不上传，直接使用 AI 与你的讨论内容生成最终行程。</div></div>
+  <div class="plan-reference-actions"><button id="planFinalizeButton" class="btn" onclick="finalizePlanAndOpenTrip()" disabled>整合资料并生成 By Day →</button><button class="btn line small" onclick="clearPlanReferenceMaterials()">清空资料</button></div>
+  <div id="planReferenceHint" class="plan-reference-status">完成第一轮规划和第二轮讨论后，点击上方按钮，AI 会整合资料、推荐当地美食并生成最终每日行程，然后进入行程工作台。</div>
+  <p class="tiny" style="margin:8px 0 0">隐私提示：文件在浏览器本地提取文字；提取后的文字会随规划请求发送给 AI 服务，并保存在当前设备的浏览器记录中。文件原件不会作为文档附件长期保存。不要上传证件或敏感个人资料。</p>
+</div>
 <div class="card" style="background:#f5f8f3">
   <div class="row" style="justify-content:space-between;align-items:center;gap:10px">
     <div><strong>已经收藏了很多攻略？</strong><div class="tiny">上传小红书截图、粘贴攻略文字，让 AI 提取地点、整理来源并标记待核实信息。</div></div>
@@ -161,6 +179,7 @@ let planVersions = [];
 let planVersionNumber = 0;
 let planDiscussionBusy = false;
 let planDiscussionPreviewUrls = [];
+let planReferenceMaterials = [];
 
 const API_BASE = "https://travel-companion-ai.skyjessia01.workers.dev";
 
@@ -253,7 +272,8 @@ function savePlanSession(){
   try{
     localStorage.setItem("travelCompanionPlanSessionV1",JSON.stringify({
       brief:planBrief,plan:lastAiPlan,discussion:planDiscussionHistory.slice(-24),
-      versions:planVersions.slice(-6),versionNumber:planVersionNumber
+      versions:planVersions.slice(-6),versionNumber:planVersionNumber,
+      referenceMaterials:planReferenceMaterials.slice(0,5)
     }));
   }catch(e){console.warn("方案协商记录暂未保存",e)}
 }
@@ -339,9 +359,17 @@ function renderPlanResult(result){
     addTextNode(card,"strong","",`${d.day_label||"每日行程"} · ${d.city||"城市待确认"} · ${d.title||""}`);
     (d.stops||[]).forEach(s=>addTextNode(card,"p","",`${s.time||"时间待定"}｜${s.name}｜${s.duration||"时长待核"}。${s.reason||""} ${s.verification||""}`));out.appendChild(card);
   });
-  if((result.checks||[]).length){
+  const allChecks=result.checks||[];
+  const foodChecks=allChecks.filter(x=>/^(美食推荐|当地美食|餐饮建议)[：:]/.test(String(x)));
+  const otherChecks=allChecks.filter(x=>!foodChecks.includes(x));
+  if(foodChecks.length){
+    const food=document.createElement("div");food.className="ai-result-card";
+    addTextNode(food,"strong","","当地美食与用餐建议");
+    foodChecks.forEach(x=>addTextNode(food,"p","",`• ${x}`));out.appendChild(food);
+  }
+  if(otherChecks.length){
     const checks=document.createElement("div");checks.className="ai-result-card";addTextNode(checks,"strong","","可行性与避坑检查");
-    result.checks.forEach(x=>addTextNode(checks,"p","",`• ${x}`));out.appendChild(checks);
+    otherChecks.forEach(x=>addTextNode(checks,"p","",`• ${x}`));out.appendChild(checks);
   }
   if((result.questions||[]).length){
     const qs=document.createElement("div");qs.className="notice";addTextNode(qs,"strong","","还需要你确认");
@@ -353,7 +381,7 @@ function renderPlanResult(result){
   appendSources(out,result.sources||[]);
   if(result.warning)addTextNode(out,"p","notice",result.warning);
   const actions=document.createElement("div");actions.className="ai-action-row";
-  const apply=document.createElement("button");apply.className="btn";apply.textContent="把 AI 方案载入行程工作台";apply.onclick=applyAiPlan;apply.disabled=!planHasStructuredData(lastAiPlan);actions.appendChild(apply);
+  const apply=document.createElement("button");apply.className="btn";apply.textContent="直接载入当前方案";apply.onclick=applyAiPlan;apply.disabled=!planHasStructuredData(lastAiPlan);actions.appendChild(apply);
   const copy=document.createElement("button");copy.className="btn line";copy.textContent="复制方案摘要";copy.onclick=()=>navigator.clipboard?.writeText(JSON.stringify(lastAiPlan||result,null,2)).then(()=>toast("已复制方案数据")).catch(()=>toast("浏览器未允许复制"));actions.appendChild(copy);
   out.appendChild(actions);
 }
@@ -416,7 +444,7 @@ async function sendPlanMessage(prefill){
   renderPlanDiscussionLog();
   addPlanBubbleToLog("ai","AI 正在结合当前方案和你上传的资料思考…");
   planDiscussionBusy=true;
-  const send=document.getElementById("planDiscussionSend");if(send)send.disabled=true;
+  const send=document.getElementById("planDiscussionSend");if(send)send.disabled=true;updatePlanReferencePreview();
   const revise=document.getElementById("planDiscussionRevise");if(revise)revise.disabled=true;
   try{
     const result=await apiRequest({
@@ -424,7 +452,7 @@ async function sendPlanMessage(prefill){
       message:message,
       images,
       history:planDiscussionHistory.slice(0,-1).slice(-10),
-      context:{mode:"plan_discussion",trip_brief:planBrief,current_plan:lastAiPlan,current_workbench:collectTripContext()}
+      context:buildPlanContext("plan_discussion",{current_workbench:collectTripContext()})
     });
     const answer=result.text||"我已经收到你的意见和资料。你可以继续补充，或点击按讨论意见更新方案。";
     appendPlanDiscussionMessage("assistant",answer,result.sources||[]);
@@ -437,7 +465,7 @@ async function sendPlanMessage(prefill){
   }finally{
     planDiscussionBusy=false;
     const s=document.getElementById("planDiscussionSend");if(s)s.disabled=false;
-    const r=document.getElementById("planDiscussionRevise");if(r)r.disabled=!planDiscussionHistory.some(m=>m.role==="user");
+    const r=document.getElementById("planDiscussionRevise");if(r)r.disabled=!planDiscussionHistory.some(m=>m.role==="user");updatePlanReferencePreview();
   }
 }
 async function revisePlanFromDiscussion(){
@@ -449,9 +477,9 @@ async function revisePlanFromDiscussion(){
   try{
     const result=await apiRequest({
       task:"plan",
-      message:"请根据原始旅行需求和用户与 AI 的完整讨论，生成或修订一份完整结构化旅行方案。如果 current_plan 存在，则在保留用户已确认约束的前提下修订；如果 current_plan 为空或不完整，则根据原始需求和讨论补充信息生成完整方案。不要擅自编造未确认的交通班次、营业时间或票价。请输出完整可编辑方案，字段保持 city_sequence、intercity_transport、days、checks、questions、summary；days 必须包含每日景点顺序、建议时间、游览时长、地点组合理由、交通衔接与待核验事项。若仍有关键条件未确定，请在 questions 中明确提出，不要猜测。",
+      message:"请根据原始旅行需求和用户与 AI 的完整讨论，生成或修订一份完整结构化旅行方案。如果 current_plan 存在，则在保留用户已确认约束的前提下修订；如果 current_plan 为空或不完整，则根据原始需求和讨论补充信息生成完整方案。不要擅自编造未确认的交通班次、营业时间或票价。请输出完整可编辑方案，字段保持 city_sequence、intercity_transport、days、checks、questions、summary；days 必须包含每日景点顺序、建议时间、游览时长、地点组合理由、交通衔接与待核验事项。若 context.reference_materials 有内容，必须将用户上传的 Word/PDF/文字资料与讨论内容一起整合，保留有价值的地点和个人备注，去重并区分主观体验与可核实事实。每个城市规划当地特色菜、代表性小吃和合适的用餐区域；每天在 By Day 中合理安排午餐/晚餐或市场美食体验，作为餐饮停留点。优先给出有来源支持的店铺或市场名称；无法核实时推荐菜品和区域，不编造店名、营业时间或价格。每天安排 2–4 个核心景点，并兼顾餐饮、休息和交通缓冲。若仍有关键条件未确定，请在 questions 中明确提出，不要猜测。",
       history:planDiscussionHistory.slice(-12),
-      context:{mode:"revise_existing_plan",trip_brief:planBrief,current_plan:lastAiPlan,discussion:planDiscussionHistory.slice(-12)}
+      context:buildPlanContext("revise_existing_plan")
     });
     const revised=result.data;
     if(!planHasStructuredData(revised)){
@@ -482,8 +510,173 @@ function restorePlanSession(){
     planDiscussionHistory=Array.isArray(saved.discussion)?saved.discussion:[];
     planVersions=Array.isArray(saved.versions)?saved.versions:[];
     planVersionNumber=Number(saved.versionNumber)|| (lastAiPlan?1:0);
+    planReferenceMaterials=Array.isArray(saved.referenceMaterials)?saved.referenceMaterials.slice(0,5):[];
     if(lastAiPlan)renderPlanResult(lastAiPlan);
+    updatePlanReferencePreview();
   }catch(e){console.warn("读取方案协商记录失败",e)}
+}
+const PLAN_REFERENCE_MAX_FILES=5;
+const PLAN_REFERENCE_MAX_TOTAL_CHARS=6500;
+function updatePlanReferencePreview(){
+  const list=document.getElementById("planReferenceList");
+  const button=document.getElementById("planFinalizeButton");
+  const hint=document.getElementById("planReferenceHint");
+  if(list){
+    list.innerHTML="";
+    if(!planReferenceMaterials.length){
+      const empty=document.createElement("div");empty.className="tiny";empty.textContent="尚未添加文件。也可以不上传，直接使用 AI 与你的讨论内容生成最终行程。";list.appendChild(empty);
+    }else{
+      planReferenceMaterials.forEach((item,index)=>{
+        const row=document.createElement("div");row.className="plan-reference-item";
+        const info=document.createElement("div");
+        const name=document.createElement("strong");name.textContent=item.name;info.appendChild(name);
+        const meta=document.createElement("small");meta.textContent=`已提取 ${(item.text||"").length.toLocaleString()} 字符`;info.appendChild(meta);
+        const remove=document.createElement("button");remove.type="button";remove.textContent="移除";remove.onclick=()=>removePlanReferenceMaterial(index);
+        row.append(info,remove);list.appendChild(row);
+      });
+    }
+  }
+  if(button)button.disabled=!planHasStructuredData(lastAiPlan)||planDiscussionBusy;
+  if(hint){
+    const count=planReferenceMaterials.length;
+    hint.textContent=count?`已保留 ${count} 份资料。点击后 AI 将结合资料、讨论记录和原始需求，重新生成完整 By Day 并进入工作台。`:"没有上传文件也可以继续。点击后 AI 会根据原始需求与讨论记录生成最终 By Day 并进入工作台。";
+  }
+}
+async function extractPlanReferenceFile(file){
+  const ext=(file.name.split(".").pop()||"").toLowerCase();
+  if(ext==="txt"||ext==="md")return await file.text();
+  const buffer=await file.arrayBuffer();
+  if(ext==="docx"){
+    if(!window.mammoth)throw new Error("Word 文档解析组件没有加载成功。请刷新页面，或先另存为 TXT 再上传。");
+    const result=await window.mammoth.extractRawText({arrayBuffer:buffer});
+    return result.value||"";
+  }
+  if(ext==="pdf"){
+    if(!window.pdfjsLib)throw new Error("PDF 解析组件没有加载成功。请刷新页面，或先另存为 TXT 再上传。");
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    const pdf=await window.pdfjsLib.getDocument({data:new Uint8Array(buffer)}).promise;
+    const chunks=[];
+    const pageLimit=Math.min(pdf.numPages,25);
+    for(let pageNo=1;pageNo<=pageLimit;pageNo++){
+      const page=await pdf.getPage(pageNo);
+      const content=await page.getTextContent();
+      chunks.push(content.items.map(x=>x.str||"").join(" "));
+    }
+    let text=chunks.join("\n");
+    if(pdf.numPages>pageLimit)text+=`\n[提示：文档共 ${pdf.numPages} 页，本次仅提取前 ${pageLimit} 页。]`;
+    if(!text.trim())throw new Error("这个 PDF 没有可提取的文字，可能是扫描图片版。请将关键页面截图上传到第二轮讨论区。");
+    return text;
+  }
+  throw new Error(`暂不支持 ${ext||"未知"} 格式。请使用 DOCX、PDF、TXT 或 MD。`);
+}
+async function handlePlanReferenceFiles(fileList){
+  const files=[...(fileList||[])];
+  if(!files.length)return;
+  if(planReferenceMaterials.length+files.length>PLAN_REFERENCE_MAX_FILES){
+    toast(`最多保留 ${PLAN_REFERENCE_MAX_FILES} 份资料，请先移除部分文件。`);return;
+  }
+  const input=document.getElementById("planReferenceFiles");
+  const status=document.querySelector("#planReferenceCard .filebox .plan-reference-status");
+  if(status)status.textContent="正在本地读取文档文字…";
+  let used=planReferenceMaterials.reduce((n,x)=>n+(x.text||"").length,0);
+  try{
+    for(const file of files){
+      if(file.size>10*1024*1024)throw new Error(`${file.name} 超过 10 MB，请压缩或拆分后再上传。`);
+      const extracted=(await extractPlanReferenceFile(file)).replace(/\u0000/g," ").trim();
+      if(!extracted)throw new Error(`${file.name} 没有提取到文字内容。`);
+      const remaining=PLAN_REFERENCE_MAX_TOTAL_CHARS-used;
+      if(remaining<=0)throw new Error("资料文字总量已达到上限，请移除部分文件后再添加。");
+      const text=extracted.slice(0,remaining);
+      planReferenceMaterials.push({name:file.name,text,chars:text.length});
+      used+=text.length;
+      if(text.length<extracted.length)toast("资料较长，已保留前段内容；建议把重点章节单独整理后再上传。");
+    }
+    savePlanSession();updatePlanReferencePreview();
+    if(status)status.textContent="文档文字已提取并保留在当前规划会话中；点击最终生成时会与 AI 讨论一并整合。";
+    toast("资料已添加到本次旅行规划");
+  }catch(e){
+    if(status)status.textContent=e.message;
+    toast(e.message);
+  }finally{
+    if(input)input.value="";
+  }
+}
+function removePlanReferenceMaterial(index){
+  planReferenceMaterials.splice(index,1);savePlanSession();updatePlanReferencePreview();
+}
+function clearPlanReferenceMaterials(){
+  if(!planReferenceMaterials.length){toast("目前没有已添加的资料");return}
+  if(!confirm("确定清空本次规划中保留的全部文档文字吗？"))return;
+  planReferenceMaterials=[];savePlanSession();updatePlanReferencePreview();
+  const input=document.getElementById("planReferenceFiles");if(input)input.value="";
+  toast("已清空本次规划资料");
+}
+function buildPlanContext(mode,extra={}){
+  const compactPlan=lastAiPlan?{
+    summary:String(lastAiPlan.summary||"").slice(0,350),
+    city_sequence:(lastAiPlan.city_sequence||[]).slice(0,8),
+    intercity_transport:(lastAiPlan.intercity_transport||[]).slice(0,8),
+    days:(lastAiPlan.days||[]).slice(0,10).map(d=>({
+      day_label:d.day_label,city:d.city,title:d.title,
+      stops:(d.stops||[]).slice(0,4).map(s=>({
+        time:s.time,name:s.name,duration:s.duration,
+        reason:String(s.reason||"").slice(0,110),
+        verification:String(s.verification||"").slice(0,100)
+      }))
+    })),
+    checks:(lastAiPlan.checks||[]).slice(0,10),
+    questions:(lastAiPlan.questions||[]).slice(0,8)
+  }:null;
+  let remaining=PLAN_REFERENCE_MAX_TOTAL_CHARS;
+  const refs=planReferenceMaterials.map(x=>{
+    const text=String(x.text||"").slice(0,remaining);remaining-=text.length;
+    return {name:x.name,text};
+  }).filter(x=>x.text);
+  return {
+    mode,
+    trip_brief:planBrief,
+    reference_materials:refs,
+    current_plan:compactPlan,
+    discussion:planDiscussionHistory.slice(-6).map(x=>({
+      role:x.role,content:String(x.content||"").slice(0,260)
+    })),
+    ...extra
+  };
+}
+async function finalizePlanAndOpenTrip(){
+  if(planDiscussionBusy)return;
+  if(!planBrief||!planHasStructuredData(lastAiPlan)){
+    toast("请先完成第一轮 AI 规划，再生成最终 By Day。");return;
+  }
+  const button=document.getElementById("planFinalizeButton");
+  planDiscussionBusy=true;setBusy(button,true,"AI 正在整合资料并生成 By Day…");
+  const hint=document.getElementById("planReferenceHint");
+  if(hint)hint.textContent="AI 正在整合你的 Word/PDF 资料、讨论记录、景点路线和当地美食建议…";
+  try{
+    const result=await apiRequest({
+      task:"plan",
+      message:"请生成本次旅行的最终可执行 By Day 方案。必须整合原始旅行需求、当前方案、用户与 AI 的讨论，以及 context.reference_materials 中的所有资料。保留用户已确认的安排和个人备注；去重并识别同一地点的不同写法；区分攻略作者的主观体验、资料中的事实陈述和已由可靠来源核实的信息。将适合的景点按地理区域与游览逻辑安排进每日路线，形成清晰的 City Walk 顺序。每天安排 2–4 个核心景点，并合理加入午餐、晚餐或当地市场美食体验；推荐当地特色菜、小吃和合适用餐区域，优先提供有可靠来源支持的店铺/市场名称，无法核实则只推荐菜品与区域，不编造店名、营业时间和价格。交通班次、票价、开放时间、距离和精确步行耗时不得编造；未核实项目标注待核实，真实步行距离留待下一阶段地图路线服务计算。输出完整结构化 JSON，字段保持 summary、city_sequence、intercity_transport、days、checks、questions；days 必须有 day_label、city、title、stops，每个 stop 必须有 time、name、duration、reason、verification。请确保每天的景点、餐饮、休息和城市间交通衔接合理。",
+      history:planDiscussionHistory.slice(-12),
+      context:buildPlanContext("final_by_day")
+    });
+    const finalPlan=result.data;
+    if(!planHasStructuredData(finalPlan)){
+      throw new Error(result.text||"AI 返回的最终 By Day 结构不完整，原方案已保留，请继续补充后重试。");
+    }
+    if(lastAiPlan)planVersions.push({version:planVersionNumber||1,plan:JSON.parse(JSON.stringify(lastAiPlan))});
+    planVersions=planVersions.slice(-6);
+    planVersionNumber=(planVersionNumber||1)+1;
+    lastAiPlan=finalPlan;lastAiPlan.sources=result.sources||[];
+    appendPlanDiscussionMessage("assistant","已整合本次上传资料与全部讨论，生成最终 By Day 方案。原方案已保留为历史版本。",result.sources||[]);
+    savePlanSession();renderPlanResult(lastAiPlan);updatePlanReferencePreview();
+    applyAiPlan();
+  }catch(e){
+    if(hint)hint.textContent="这次整合没有完成，原方案和已上传资料都已保留。"+e.message;
+    appendPlanDiscussionMessage("assistant","最终 By Day 生成未完成："+e.message);
+    savePlanSession();toast("最终方案未生成，原方案与资料已保留");
+  }finally{
+    planDiscussionBusy=false;setBusy(button,false);updatePlanReferencePreview();
+  }
 }
 async function generatePlan(){
   const button=document.querySelector('#planner .planner-form .btn');
@@ -499,14 +692,14 @@ async function generatePlan(){
     pace:document.getElementById("pace").value,
     preferences:document.getElementById("preferences").value.trim()
   };
-  planBrief=brief;planDiscussionHistory=[];planVersions=[];planVersionNumber=1;lastAiPlan=null;
+  planBrief=brief;planDiscussionHistory=[];planVersions=[];planVersionNumber=1;lastAiPlan=null;savePlanSession();updatePlanReferencePreview();
   try{
-    const result=await apiRequest({task:"plan",message:"请先检查旅行信息是否完整。如果起点、终点、日期、城市停留时间、预算或交通偏好等关键条件缺失，请优先在 questions 中提出最重要的澄清问题，不要猜测。信息足够后，必须生成可编辑的 city_sequence、intercity_transport 和完整 days。By Day 是核心交付：每天的景点顺序、建议时间、游览时长、地点组合理由、交通衔接与待核验事项都要写清楚。对营业时间、门票、交通和签证等动态信息，注明来源与核验状态；不能确认的明确标为待核实。",context:brief});
+    const result=await apiRequest({task:"plan",message:"请先检查旅行信息是否完整。如果起点、终点、日期、城市停留时间、预算或交通偏好等关键条件缺失，请优先在 questions 中提出最重要的澄清问题，不要猜测。信息足够后，必须生成可编辑的 city_sequence、intercity_transport 和完整 days。By Day 是核心交付：每天的景点顺序、建议时间、游览时长、地点组合理由、交通衔接与待核验事项都要写清楚。每个城市规划当地特色菜、代表性小吃和合适的用餐区域；每天在路线中合理安排午餐/晚餐或市场美食体验，作为餐饮停留点，不要只写“用餐”。优先给出有来源支持的店铺或市场名称；无法核实时推荐菜品和区域，不编造店名、营业时间或价格。若 context.reference_materials 有内容，必须结合用户上传的 Word/PDF/文字资料和本轮讨论，保留有价值的地点与个人备注，去重、区分主观经验和可核实事实，并把资料中的候选景点合理编入 By Day。对营业时间、门票、交通和签证等动态信息，注明来源与核验状态；不能确认的明确标为待核实。每天安排 2–4 个核心景点，并兼顾餐饮、休息和交通缓冲。",context:buildPlanContext("initial_plan")});
     lastAiPlan=result.data&&typeof result.data==="object"?result.data:null;
     if(lastAiPlan)lastAiPlan.sources=result.sources||[];
     if(planHasStructuredData(lastAiPlan)){planVersions=[];}
     renderPlanResult(lastAiPlan||{summary:result.text||"AI 已返回结果",text:result.text||"",checks:[],questions:[],days:[]});
-    savePlanSession();toast("AI 已生成旅行方案，请检查并与 AI 继续讨论");
+    savePlanSession();updatePlanReferencePreview();toast("AI 已生成初步方案，请继续讨论或整合资料");
   }catch(e){showAiError(out,e)}
   finally{setBusy(button,false)}
 }
