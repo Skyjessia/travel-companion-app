@@ -84,7 +84,7 @@ test('locked dining candidate can be arranged as optional daily local food',()=>
 });
 test('initial Plan discovers every domestic city before a single refinement',async()=>{
  const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
- const snippet=source.slice(source.indexOf('async function generatePlan(){'),source.indexOf('function applyAiPlan(){'));
+ const snippet=source.slice(source.indexOf('async function generatePlan(){'),source.indexOf('function applyAiPlan('));
  const fields={origin:'长沙',destination:'衡阳',cities:'',startDate:'',endDate:'',pace:'舒适慢游',preferences:'历史与地方生活',planDays:'3'};
  const nodes=Object.fromEntries(Object.entries(fields).map(([k,v])=>[k,{value:v}]));nodes.generated={style:{},innerHTML:''};
  const found=[];let refinements=0;
@@ -143,4 +143,13 @@ test('day comparison highlights changed and added days, reports removal, ignores
 
 test('guided actions offer delegation and relevant constraints without typing',()=>{
  const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');const snippet=source.slice(source.indexOf('function guidedPlanChoices('),source.indexOf('function renderGuidedPlanChoices('));const f={};vm.createContext(f);vm.runInContext(snippet,f);const choices=f.guidedPlanChoices('返程城市与住宿如何决定');assert.ok(choices.some(c=>c.label==='你帮我推荐'));assert.ok(choices.some(c=>c.label==='按原来的终点'));assert.ok(choices.some(c=>c.label==='交通方便、少换酒店'));assert.ok(choices.length<=5);assert.ok(choices.every(c=>c.message));
+});
+
+test('sketch uses real geography with a uniform scale and leaves missing locations absent',()=>{
+ const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');const f={Math};vm.createContext(f);vm.runInContext(source.slice(source.indexOf('function sketchCoordinates('),source.indexOf('function renderRouteSketch(')),f);
+ const p=f.sketchCoordinates([{xy:[112,27]},{xy:[111,27]},{xy:[111,28]},{xy:null}],800,560);assert.ok(p[0][0]>p[1][0]);assert.ok(p[2][1]<p[1][1]);assert.equal(p[3],null);assert.ok(Math.abs((p[0][0]-p[1][0])/(p[1][1]-p[2][1])-Math.cos(27.5*Math.PI/180))<0.01);
+});
+test('context compaction removes duplicate metadata and keeps all days, cities and chosen candidates',()=>{
+ const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');const f={lastAiPlan:{city_sequence:Array.from({length:9},(_,i)=>({city:'城'+i,country:'中国'})),intercity_transport:[]}};vm.createContext(f);vm.runInContext(source.slice(source.indexOf('function compactPlanContext('),source.indexOf('function buildPlanContext(')),f);
+ const context={current_plan:{days:Array.from({length:14},(_,i)=>({day_label:'D'+i,local_food:[{name:'特色菜',source:'x'.repeat(20000)}]}))},candidate_choices:{p9:'locked'},candidate_pools:[{city:'城0',candidates:Array.from({length:12},(_,i)=>({id:'p'+i,name:'景点'+i,type:'景点',assessment:{reason:'匹配',extra:'x'.repeat(5000)}}))}]};f.compactPlanContext(context,'plan_discussion');assert.equal(context.current_plan.days.length,14);assert.equal(context.current_plan.city_sequence.length,9);assert.ok(context.candidate_pools[0].candidates.some(p=>p.id==='p9'));assert.ok(JSON.stringify(context).length<6000);
 });

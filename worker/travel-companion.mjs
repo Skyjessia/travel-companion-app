@@ -386,7 +386,7 @@ function makeInput(task, body) {
 
     const instructions = String(body.message || "请根据旅行信息生成完整、可编辑的逐日旅行方案。").slice(0, 5000);
 
-    const context = JSON.stringify(body.context || {}, null, 2).slice(0, 48000);
+    const context = JSON.stringify(body.context || {});
 
     return [{
 
@@ -406,7 +406,7 @@ function makeInput(task, body) {
 
     .map(x => ({ role: x.role, content: x.content.slice(0, 4000) }));
 
-  const context = JSON.stringify(body.context || {}).slice(0, 48000);
+  const context = JSON.stringify(body.context || {});
 
   const userText = `当前旅行上下文（仅供参考）：\n${context}\n\n用户现在的问题：\n${String(body.message || "请结合我上传的图片分析。").slice(0, 4000)}`;
 
@@ -1404,7 +1404,7 @@ export default {
 
         service: "travel-companion-ai",
 
-        version: "2026-11-01-conversation-6",
+        version: "2026-11-01-context-map-7",
 
         configured: Boolean(env.DEEPSEEK_API_KEY),
 
