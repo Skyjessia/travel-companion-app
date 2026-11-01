@@ -1,3 +1,15 @@
+## V16 · 新城市草案与 JSON 解析恢复
+
+这一轮前端会自动发布；服务端解析改进需要更新一次已有 Cloudflare Worker。
+
+1. 打开 `worker/travel-companion.mjs`，复制全文。
+2. 在现有 `travel-companion-ai` Worker 的代码编辑页面替换脚本并部署；现有 Secrets 和变量保持原样。
+3. `/api/health` 的 `version` 应为 `2026-11-01-json-recovery-16`。
+
+本版仅识别完整 JSON 或完整 JSON 的代码块/前后说明，不猜补截断内容、不执行模型代码。真实损坏输出仍返回错误；前端会针对格式错误有界重试一次，保留原方案并区分新旧城市。
+
+---
+
 # V13：确认后的行程直接生成
 
 前端看到 `PLAN TOGETHER · V13` 即可测试。**这次直接生成最终行程不依赖 Worker 更新，也不再请求 AI 重写。** 原有 V12 Worker 可继续使用。

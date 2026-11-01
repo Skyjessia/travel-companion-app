@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8"><meta name="app-version" content="2026-11-01-discovery-contrast-15"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#173f46"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://cdn.jsdelivr.net/npm/mammoth@1.9.0/mammoth.browser.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<meta charset="utf-8"><meta name="app-version" content="2026-11-01-draft-recovery-16"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#173f46"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://cdn.jsdelivr.net/npm/mammoth@1.9.0/mammoth.browser.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <title>Travel Companion · 一起规划，轻松出发</title>
 <link rel="canonical" href="https://skyjessia.github.io/travel-companion-app/">
 <meta name="description" content="和 AI 一起规划每天怎么走，带着行程轻松出发，收藏走过的世界。">
@@ -280,7 +280,7 @@ button,input,textarea,select{font:inherit}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="assets/plan-core.js?v=14.1"></script>
 <script src="assets/candidate-discovery.js?v=15.2"></script>
-<script src="assets/plan-workflow.js?v=15.1"></script>
+<script src="assets/plan-workflow.js?v=16.1"></script>
 <script src="assets/journey-ready.js?v=14.4"></script>
 <script>
 const seed={
@@ -571,7 +571,7 @@ async function apiRequest(payload){
     if(response.status===401 || response.status===403)throw new Error("测试访问码无效或无权限，请向分享者确认。");
     if(response.status===429)throw new Error("AI 服务请求过于频繁，请稍后再试。");
     if(payload.task==='review'&&data.code==='UNSUPPORTED_TASK')throw new Error('请先将 Worker 更新为 plan-workflow-11，再重试综合评估；每天的选择已保留。');
-    if(response.status>=500){const error=new Error(data.error||"AI 服务暂时出错，请稍后重试。");error.code=data.code;error.requestId=data.requestId;throw error;}
+    if(response.status>=500){const error=new Error(data.error||"AI 服务暂时出错，请稍后重试。");error.code=data.code;error.requestId=data.requestId||data.diagnostics?.requestId;throw error;}
     throw new Error(data.error || `请求失败（${response.status}）`);
   }
   return data;

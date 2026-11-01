@@ -795,6 +795,26 @@ async function runWebResearch(task, body, env, requestId = "unknown") {
 
 }
 
+// Unwrap a complete JSON value without changing, guessing or executing its contents.
+function parseStructuredModelResponse(value){
+ const text=String(value||'').replace(/^\uFEFF/,'').trim();
+ try{return JSON.parse(text);}catch{}
+ const fenced=text.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+ if(fenced)return JSON.parse(fenced[1]);
+ const start=text.indexOf('{');
+ if(start<0||/[{}\[\]`=><();]/.test(text.slice(0,start)))throw new Error('MODEL_JSON_INVALID');
+ const stack=[];let quoted=false,escaped=false,end=-1;
+ for(let i=start;i<text.length;i++){
+  const c=text[i];
+  if(quoted){if(escaped)escaped=false;else if(c.charCodeAt(0)===92)escaped=true;else if(c==='"')quoted=false;continue;}
+  if(c==='"'){quoted=true;continue;}
+  if(c==='{'||c==='[')stack.push(c);
+  else if(c==='}'||c===']'){if(stack.pop()!==(c==='}'?'{':'['))throw new Error('MODEL_JSON_INVALID');if(!stack.length){end=i+1;break;}}
+ }
+ if(end<0||/[{}\[\]`=><();]/.test(text.slice(end)))throw new Error('MODEL_JSON_INVALID');
+ return JSON.parse(text.slice(start,end));
+}
+
 async function callDeepSeek(task, input, env, requestBody, requestId = "unknown") {
 
   const callStartedAt = Date.now();
@@ -1013,13 +1033,13 @@ async function callDeepSeek(task, input, env, requestBody, requestId = "unknown"
 
     }
 
-    try { data = JSON.parse(text); }
+    try { data = parseStructuredModelResponse(text); }
 
     catch {
 
       return { status: 502, body: {
 
-        error: `模型返回内容无法解析为 JSON（结束原因：${finishReason}）。请重试；若重复出现，请检查 Worker 返回记录。`,
+        error: `AI 回复的行程格式未完成，请重试；原方案和选择不受影响。`,
 
         code: "MODEL_JSON_INVALID",
 
@@ -1448,7 +1468,7 @@ export default {
 
         service: "travel-companion-ai",
 
-        version: "2026-11-01-confirmed-plan-13",
+        version: "2026-11-01-json-recovery-16",
 
         configured: Boolean(env.DEEPSEEK_API_KEY),
 
@@ -1734,4 +1754,4 @@ export default {
   }
 
 };
-export {planPoiQueries,rankPoiCandidates,validatePoolPlan,isPlaceholderStop,resolveMapItem,recommendInternationalCandidates};
+export {parseStructuredModelResponse,planPoiQueries,rankPoiCandidates,validatePoolPlan,isPlaceholderStop,resolveMapItem,recommendInternationalCandidates};
