@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8"><meta name="app-version" content="2026-11-01-editorial-responsive-14"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#173f46"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://cdn.jsdelivr.net/npm/mammoth@1.9.0/mammoth.browser.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<meta charset="utf-8"><meta name="app-version" content="2026-11-01-discovery-contrast-15"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#173f46"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://cdn.jsdelivr.net/npm/mammoth@1.9.0/mammoth.browser.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <title>Travel Companion · 一起规划，轻松出发</title>
 <link rel="canonical" href="https://skyjessia.github.io/travel-companion-app/">
 <meta name="description" content="和 AI 一起规划每天怎么走，带着行程轻松出发，收藏走过的世界。">
@@ -142,7 +142,7 @@ button,input,textarea,select{font:inherit}
 .candidate-preference-input{display:block;width:100%;min-height:76px;margin:10px 0;padding:10px;border:1px solid var(--line);border-radius:10px;font:inherit;resize:vertical}
 .pace-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.field .pace-choice{display:flex;align-items:center;gap:9px;margin:0;padding:13px 11px;border:1px solid var(--line);border-radius:12px;cursor:pointer;background:#fff;font-size:12px}.field .pace-choice input{width:18px;height:18px;margin:0;accent-color:var(--teal);flex-shrink:0}.pace-choice:has(input:checked){border-color:#82b6a2;background:var(--mint);color:var(--teal)}.pace-choice:has(input:focus-visible){outline:2px solid var(--teal);outline-offset:2px}#candidateInlineExplorer{margin:12px 0 0;background:#f8faf6;box-shadow:none}
 .real-trip-map{height:285px;border-radius:15px;border:1px solid var(--line);background:#eef3ee;z-index:1;margin:12px 0}.trip-map-tooltip{font:11px/1.4 inherit;color:var(--navy);border-radius:8px}.transport-overview{margin:18px 0;padding:15px;border:1px solid var(--line);border-radius:15px;background:#f7faf6}.transport-segment{padding:10px 0;border-top:1px solid var(--line)}.transport-segment strong{display:block;margin-bottom:5px}.transport-summary{font-weight:700;color:var(--teal);font-size:12px}.enter-daily-button{display:block;width:100%;padding:18px;font-size:17px;min-height:58px}.material-absorb{margin:16px 0;padding:14px;border:1px solid #dfe7dc;border-radius:13px;background:#fff}.discussion-history{margin:14px 0}.plan-discussion-actions .btn:first-child{flex:1;min-height:43px}
-.plan-day-updated{border:2px solid #c8a164!important;background:#fffdf5!important}.plan-day-updated>span.pill{background:#f7e7c4;color:#78521c}#planLatestReply{margin:14px 0;padding:16px;background:#f1f6f0;border-radius:14px}#planLatestReply p{white-space:pre-wrap;line-height:1.8}#planWorkStatus{border:1px solid #8cb9a8} .discussion-history .plan-discussion-log{max-height:340px}#planLatestReply{max-height:380px;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}#planGuidedChoices{display:grid;grid-template-columns:1fr;gap:9px}#planGuidedChoices button{text-align:left;white-space:normal;line-height:1.6;padding:13px}.decision-question{font-weight:650}#planEntryStatus:empty{display:none}.route-city-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}.route-city-summary p{margin:3px 0;font-size:11px}</style><link rel="stylesheet" href="assets/journey-ready.css?v=14.4"></head>
+.plan-day-updated{border:2px solid #c8a164!important;background:#fffdf5!important}.plan-day-updated>span.pill{background:#f7e7c4;color:#78521c}#planLatestReply{margin:14px 0;padding:16px;background:#f1f6f0;border-radius:14px}#planLatestReply p{white-space:pre-wrap;line-height:1.8}#planWorkStatus{border:1px solid #8cb9a8} .discussion-history .plan-discussion-log{max-height:340px}#planLatestReply{max-height:380px;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}#planGuidedChoices{display:grid;grid-template-columns:1fr;gap:9px}#planGuidedChoices button{text-align:left;white-space:normal;line-height:1.6;padding:13px}.decision-question{font-weight:650}#planEntryStatus:empty{display:none}.route-city-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}.route-city-summary p{margin:3px 0;font-size:11px}</style><link rel="stylesheet" href="assets/journey-ready.css?v=15.1"></head>
 <body><div class="app">
 <header class="hero">
   <div class="brand">TRAVEL COMPANION · AI</div>
@@ -279,7 +279,8 @@ button,input,textarea,select{font:inherit}
 <div class="toast" id="toast"></div><div class="modal" id="modal" onclick="if(event.target.id==='modal')closeModal()"><div class="modalbox"><div class="modalhead"><strong id="modalTitle">地点详情</strong><button onclick="closeModal()">关闭 ✕</button></div><div id="modalBody"></div></div></div></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="assets/plan-core.js?v=14.1"></script>
-<script src="assets/plan-workflow.js?v=14.5"></script>
+<script src="assets/candidate-discovery.js?v=15.1"></script>
+<script src="assets/plan-workflow.js?v=15.1"></script>
 <script src="assets/journey-ready.js?v=14.4"></script>
 <script>
 const seed={
@@ -394,13 +395,14 @@ function refreshLiveMap(record,fit=true){
   record.layers.clearLayers();
   for(const p of points){
     const popup=document.createElement('div');addTextNode(popup,'strong','',p.name);addTextNode(popup,'p','tiny',p.kind==='city'?'城市定位':p.kind==='food'?'已选餐饮地点；营业待核验':'已选景点；开放与票务待核验');
-    const label=document.createElement('span');label.textContent=(p.kind==='food'?'🍴 ':String(p.index+1)+'. ')+p.name;
-    L.circleMarker(p.latlng,{radius:p.kind==='city'?8:7,color:'#fff',weight:2,fillColor:p.kind==='food'?'#bc8956':'#2d766b',fillOpacity:1}).addTo(record.layers).bindTooltip(label,{permanent:true,direction:'top',className:'trip-map-tooltip'}).bindPopup(popup);
+    const label=document.createElement('span');label.textContent=p.name;
+    const icon=L.divIcon({className:'trip-map-pin'+(p.kind==='food'?' food':''),html:'<span>'+(p.kind==='food'?'🍴':String(p.index+1))+'</span>',iconSize:[32,32],iconAnchor:[16,16]});
+    const marker=L.marker(p.latlng,{icon,title:(p.kind==='food'?'餐饮：':'第 '+(p.index+1)+' 站：')+p.name}).addTo(record.layers).bindTooltip(label,{permanent:true,direction:p.index%2?'bottom':'top',offset:[0,p.index%2?18:-18],className:'trip-map-tooltip'}).bindPopup(popup);marker.getElement()?.setAttribute('aria-label',(p.kind==='food'?'餐饮：':'第 '+(p.index+1)+' 站：')+p.name);
   }
   // Connect only adjacent resolved waypoints; never bridge missing locations.
-  for(let i=1;i<points.length;i++)if(points[i].index===points[i-1].index+1&&points[i].kind!=='food'&&points[i-1].kind!=='food')L.polyline([points[i-1].latlng,points[i].latlng],{color:'#b08a62',weight:3,dashArray:'7 7',opacity:.8}).addTo(record.layers);
+  for(let i=1;i<points.length;i++)if(points[i].index===points[i-1].index+1&&points[i].kind!=='food'&&points[i-1].kind!=='food'){const route=[points[i-1].latlng,points[i].latlng];L.polyline(route,{color:'#fff',weight:8,opacity:.95}).addTo(record.layers);L.polyline(route,{color:'#386d61',weight:4,dashArray:'8 7',opacity:1}).addTo(record.layers);}
   record.map.invalidateSize();
-  if(points.length&&(fit||!record.hasFit||record.lastCount!==points.length)){if(points.length===1)record.map.setView(points[0].latlng,record.whole?9:14);else record.map.fitBounds(L.latLngBounds(points.map(p=>p.latlng)),{padding:[35,35],maxZoom:record.whole?10:15});record.hasFit=true;}
+  if(points.length&&(fit||!record.hasFit||record.lastCount!==points.length)){if(points.length===1)record.map.setView(points[0].latlng,record.whole?9:14);else record.map.fitBounds(L.latLngBounds(points.map(p=>p.latlng)),{padding:[55,65],maxZoom:record.whole?10:15});record.hasFit=true;}
   if(!points.length)record.map.setView(descriptors.some(p=>p.country==='中国')?[32,105]:[20,0],descriptors.some(p=>p.country==='中国')?4:2);
   record.lastCount=points.length;
   const missing=descriptors.filter(p=>!parseMapCoordinate(p.location));
