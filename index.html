@@ -132,7 +132,7 @@ button,input,textarea,select{font:inherit}
 .candidate-preference-input{display:block;width:100%;min-height:76px;margin:10px 0;padding:10px;border:1px solid var(--line);border-radius:10px;font:inherit;resize:vertical}
 .pace-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.field .pace-choice{display:flex;align-items:center;gap:9px;margin:0;padding:13px 11px;border:1px solid var(--line);border-radius:12px;cursor:pointer;background:#fff;font-size:12px}.field .pace-choice input{width:18px;height:18px;margin:0;accent-color:var(--teal);flex-shrink:0}.pace-choice:has(input:checked){border-color:#82b6a2;background:var(--mint);color:var(--teal)}.pace-choice:has(input:focus-visible){outline:2px solid var(--teal);outline-offset:2px}#candidateInlineExplorer{margin:12px 0 0;background:#f8faf6;box-shadow:none}
 .real-trip-map{height:285px;border-radius:15px;border:1px solid var(--line);background:#eef3ee;z-index:1;margin:12px 0}.trip-map-tooltip{font:11px/1.4 inherit;color:var(--navy);border-radius:8px}.transport-overview{margin:18px 0;padding:15px;border:1px solid var(--line);border-radius:15px;background:#f7faf6}.transport-segment{padding:10px 0;border-top:1px solid var(--line)}.transport-segment strong{display:block;margin-bottom:5px}.transport-summary{font-weight:700;color:var(--teal);font-size:12px}.enter-daily-button{display:block;width:100%;padding:18px;font-size:17px;min-height:58px}.material-absorb{margin:16px 0;padding:14px;border:1px solid #dfe7dc;border-radius:13px;background:#fff}.discussion-history{margin:14px 0}.plan-discussion-actions .btn:first-child{flex:1;min-height:43px}
-.plan-day-updated{border:2px solid #c8a164!important;background:#fffdf5!important}.plan-day-updated>span.pill{background:#f7e7c4;color:#78521c}#planLatestReply{margin:14px 0;padding:16px;background:#f1f6f0;border-radius:14px}#planLatestReply p{white-space:pre-wrap;line-height:1.8}#planWorkStatus{border:1px solid #8cb9a8} .discussion-history .plan-discussion-log{max-height:340px}</style></head>
+.plan-day-updated{border:2px solid #c8a164!important;background:#fffdf5!important}.plan-day-updated>span.pill{background:#f7e7c4;color:#78521c}#planLatestReply{margin:14px 0;padding:16px;background:#f1f6f0;border-radius:14px}#planLatestReply p{white-space:pre-wrap;line-height:1.8}#planWorkStatus{border:1px solid #8cb9a8} .discussion-history .plan-discussion-log{max-height:340px}#planLatestReply{max-height:380px;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}#planGuidedChoices{display:grid;grid-template-columns:1fr;gap:9px}#planGuidedChoices button{text-align:left;white-space:normal;line-height:1.6;padding:13px}.decision-question{font-weight:650}#planEntryStatus:empty{display:none}.route-city-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}.route-city-summary p{margin:3px 0;font-size:11px}</style></head>
 <body><div class="app">
 <header class="hero">
   <div class="brand">TRAVEL COMPANION · AI</div>
@@ -405,15 +405,17 @@ function sketchCoordinates(points,width,height){
  const scale=Math.min((width-260)/(maxX-minX||1e-8),(height-170)/(maxY-minY||1e-8));const cx=(minX+maxX)/2,cy=(minY+maxY)/2;
  return projected.map(p=>p?[width/2-45+(p[0]-cx)*scale,height/2-(p[1]-cy)*scale]:null);
 }
+function routeExperienceIcon(text){if(/博物馆|纪念馆|美术馆/.test(text))return '🏛';if(/古城|古镇|老街|村|寨/.test(text))return '🏘';if(/山|峡谷|森林/.test(text))return '⛰';if(/湖|河|瀑|海/.test(text))return '💧';if(/寺|庙|祠/.test(text))return '⛩';return '📍';}
 function renderRouteSketch(record){
  const ns='http://www.w3.org/2000/svg',root=record.element;root.replaceChildren();
  const points=record.getItems().map(locateMapDescriptor).map((p,i)=>({...p,i,xy:parseMapCoordinate(p.location)}));const known=points.filter(p=>p.xy),missing=points.filter(p=>!p.xy);
  if(!known.length){record.status.textContent='正在匹配城市地理位置；匹配前暂不绘图。'+missing.map(p=>p.name).join('、');return;}
- const height=560,svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 800 '+height);svg.setAttribute('role','img');svg.setAttribute('aria-label','按真实坐标绘制的行程总览');svg.style='width:100%;display:block;background:#faf7ef;border-radius:18px';
+ const xspan=Math.max(...known.map(p=>p.xy[0]))-Math.min(...known.map(p=>p.xy[0])),yspan=Math.max(...known.map(p=>p.xy[1]))-Math.min(...known.map(p=>p.xy[1]));const height=xspan>yspan*1.8?360:560,svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 800 '+height);svg.setAttribute('role','img');svg.setAttribute('aria-label','按真实坐标绘制的行程总览');svg.style='width:100%;display:block;background:#faf7ef;border-radius:18px';
  const colors=['#779d88','#c18b68','#b09d83','#c5a154','#a38eb3','#7e9fb4'],positions=sketchCoordinates(points,800,height);
  function el(tag,attrs,text){const n=document.createElementNS(ns,tag);for(const [k,v] of Object.entries(attrs))n.setAttribute(k,v);if(text)n.textContent=text;svg.appendChild(n);return n;}
  el('text',{x:735,y:40,fill:'#a89982','font-size':18},'北 ↑');
- const used=[];positions.forEach((pos,i)=>{if(!pos)return;const [x,y]=pos,color=colors[i%colors.length];if(i&&positions[i-1]){const [px,py]=positions[i-1];el('path',{d:`M ${px} ${py} L ${x} ${y}`,fill:'none',stroke:color,'stroke-width':4,'stroke-dasharray':'10 9'});}el('circle',{cx:x,cy:y,r:20,fill:'#fff',stroke:color,'stroke-width':4});el('text',{x,y:y+7,'text-anchor':'middle',fill:color,'font-size':20,'font-weight':'bold'},String(i+1));let ly=y-8;while(used.some(p=>Math.abs(p[0]-x)<180&&Math.abs(p[1]-ly)<44))ly+=48;used.push([x,ly]);if(ly!==y-8)el('path',{d:`M ${x} ${y} L ${x+30} ${ly}`,fill:'none',stroke:color});const days=(record.plan.days||[]).filter(d=>d.city===points[i].name).map(d=>d.day_label);el('text',{x:x+28,y:ly,fill:'#223c40','font-size':20,'font-weight':'bold'},points[i].name);el('text',{x:x+28,y:ly+22,fill:'#8c8171','font-size':14},days.join(' · '));});root.appendChild(svg);
+ const used=[];positions.forEach((pos,i)=>{if(!pos)return;const [x,y]=pos,color=colors[i%colors.length];if(i&&positions[i-1]){const [px,py]=positions[i-1];el('path',{d:`M ${px} ${py} L ${x} ${y}`,fill:'none',stroke:color,'stroke-width':4,'stroke-dasharray':'10 9'});}el('circle',{cx:x,cy:y,r:20,fill:'#fff',stroke:color,'stroke-width':4});el('text',{x,y:y+7,'text-anchor':'middle',fill:color,'font-size':20,'font-weight':'bold'},String(i+1));let ly=y-8;while(used.some(p=>Math.abs(p[0]-x)<180&&Math.abs(p[1]-ly)<44))ly+=48;used.push([x,ly]);if(ly!==y-8)el('path',{d:`M ${x} ${y} L ${x+30} ${ly}`,fill:'none',stroke:color});const days=(record.plan.days||[]).filter(d=>d.city===points[i].name).map(d=>d.day_label);el('text',{x:x+28,y:ly,fill:'#223c40','font-size':20,'font-weight':'bold'},routeExperienceIcon((record.plan.days||[]).filter(d=>d.city===points[i].name).flatMap(d=>(d.stops||[]).map(s=>s.name)).join(' '))+' '+points[i].name);el('text',{x:x+28,y:ly+22,fill:'#8c8171','font-size':14},days.join(' · '));});root.appendChild(svg);
+ const summary=document.createElement('div');summary.className='route-city-summary';for(const point of points){const days=(record.plan.days||[]).filter(d=>d.city===point.name);const row=document.createElement('div');row.className='day-local';addTextNode(row,'strong','',point.name+' · '+days.map(d=>d.day_label).join(' / '));addTextNode(row,'p','',days.flatMap(d=>(d.stops||[]).map(p=>routeExperienceIcon(p.name)+' '+p.name)).join(' · '));summary.appendChild(row);}root.appendChild(summary);
  record.status.textContent='按真实坐标投影，北向上；虚线表示行程衔接，不是道路导航。'+(missing.length?'未定位暂不绘制：'+missing.map(p=>p.name).join('、')+'。':'');
 }
 function appendRouteSketch(parent,plan,id){const element=document.createElement('div');element.id=id;const status=document.createElement('p');status.className='tiny';parent.append(element,status);const record={element,status,getItems:()=>planCityMapItems(plan),sketch:true,plan};liveTripMaps.set(element,record);requestAnimationFrame(()=>refreshLiveMap(record));}
@@ -453,7 +455,7 @@ function renderTrip(){
     return [{...meta,key:meta.key||mapKey(kind,stop[1],city.name,city.country),name:stop[1],city:city.name,country:city.country,kind}];
   }));
   const details=document.createElement('details');addTextNode(details,'summary','','查看全程地图与跨城交通');
-  appendTransportOverview(details,{city_sequence:trip.cities.map(c=>({city:c.name,country:c.country})),intercity_transport:trip.transport||[]},'tripWholeRouteMap');details.ontoggle=()=>{if(details.open)requestAnimationFrame(()=>{for(const r of liveTripMaps.values())if(details.contains(r.element))refreshLiveMap(r);});};whole.appendChild(details);
+  appendTransportOverview(details,{city_sequence:trip.cities.map(c=>({city:c.name,country:c.country})),intercity_transport:trip.transport||[],days:trip.days.map(d=>({day_label:d.label,city:trip.cities.find(c=>c.id===d.city)?.name,stops:d.stops.map(s=>({name:s[1]}))}))},'tripWholeRouteMap');details.ontoggle=()=>{if(details.open)requestAnimationFrame(()=>{for(const r of liveTripMaps.values())if(details.contains(r.element))refreshLiveMap(r);});};whole.appendChild(details);
 }
 
 function selectCity(id){activeCity=id;let day=trip.days.find(x=>x.city===id);if(day)activeDay=day.id;renderTrip()}
@@ -673,14 +675,29 @@ function guidedPlanChoices(text){
  choices.push({label:'每天轻松一点',message:'请在原有天数内减少每天赶路和景点数量，保留核心体验与锁定地点，先建议具体取舍。'},{label:'多点当地生活',message:'我想增加当地街区、市场或文化体验，请推荐具体地点和取舍，避免泛泛的地方生活占位。'});
  return choices.slice(0,5);
 }
-function renderGuidedPlanChoices(text){const root=document.getElementById('planGuidedChoices');if(!root)return;root.replaceChildren();for(const option of guidedPlanChoices(String(text||''))){const b=document.createElement('button');b.textContent=option.label;b.disabled=planDiscussionBusy||candidatePoolBusy;b.onclick=()=>sendPlanMessage(option.message);root.appendChild(b);}}
+function cleanPlanDecision(data){
+ if(!data||typeof data!=='object')return null;
+ const question=typeof data.question==='string'?data.question.trim():'';
+ const options=(Array.isArray(data.options)?data.options:[]).filter(x=>typeof x?.label==='string'&&typeof x.value==='string'&&x.label.trim()&&x.value.trim()).slice(0,2);
+ if(question&&(options.length!==2||options[0].value===options[1].value))return null;
+ return {reply:String(data.reply||''),question,options,recommendation:String(data.recommendation||''),ready:data.ready===true&&!question,details:String(data.details||'')};
+}
+function renderGuidedPlanChoices(text,decision){
+ const root=document.getElementById('planGuidedChoices');if(!root)return;root.replaceChildren();
+ const add=(label,message)=>{const b=document.createElement('button');b.textContent=label;b.disabled=planDiscussionBusy||candidatePoolBusy;b.onclick=()=>sendPlanMessage(message);root.appendChild(b);};
+ if(decision?.question){decision.options.forEach((o,i)=>add((i?'B · ':'A · ')+o.label,'针对问题：'+decision.question+'\n我的选择：'+o.value));add('帮我选','针对问题：'+decision.question+'\n请按我的原始兴趣和约束替我推荐一个选项，说明建议采用哪一个；如无关键冲突，可继续形成方案。');}
+ else if(!decision?.ready)add('帮我比较 A / B','请针对当前尚未解决的首个关键问题，给出两个具体可选方案 A / B 并推荐其中一个，不要改变已经确认的约束。');
+ const update=document.getElementById('planDiscussionRevise');if(update)update.textContent=decision?.ready?'生成推荐方案':'按已确认想法更新方案';
+}
 function renderLatestPlanReply(){
  const root=document.getElementById('planLatestReply');if(!root)return;root.replaceChildren();
- const latest=[...planDiscussionHistory].reverse().find(m=>m.role==='assistant');
- renderGuidedPlanChoices(latest?.content||(lastAiPlan?.questions||[]).join('；'));
- if(latest){addTextNode(root,'strong','','AI 的最新回复');const text=String(latest.content||'');addTextNode(root,'p','',text.length>320?text.slice(0,320)+'…':text);if(text.length>320){const details=document.createElement('details');addTextNode(details,'summary','','展开完整建议');addTextNode(details,'p','',text);root.appendChild(details);}}
- else if(lastAiPlan?.questions?.length){addTextNode(root,'strong','','先一起确认');for(const q of lastAiPlan.questions.slice(0,2))addTextNode(root,'p','',q);}
- else addTextNode(root,'p','tiny','你可以直接提出调整想法；满意后进入每日行程。');
+ const latest=[...planDiscussionHistory].reverse().find(m=>m.role==='assistant');const decision=cleanPlanDecision(latest?.decision||(!latest||/^已生成方案/.test(latest.content||'')?lastAiPlan?.next_decision:null));
+ renderGuidedPlanChoices(latest?.content,decision);
+ if(decision){addTextNode(root,'p','',decision.reply);if(decision.question){addTextNode(root,'strong','','这一步一起决定');addTextNode(root,'p','decision-question',decision.question);}if(decision.recommendation)addTextNode(root,'p','tiny','AI 建议：'+decision.recommendation);if(decision.ready)addTextNode(root,'p','','关键信息已足够，可以生成方案。');if(decision.details){const d=document.createElement('details');addTextNode(d,'summary','','查看推荐依据');addTextNode(d,'p','',decision.details);root.appendChild(d);}}
+ else if(latest){addTextNode(root,'strong','','AI 的最新回复');addTextNode(root,'p','',latest.content||'');}
+ else if(lastAiPlan?.questions?.length){addTextNode(root,'strong','','当前待确认的问题');lastAiPlan.questions.forEach(q=>addTextNode(root,'p','',q));}
+ else addTextNode(root,'p','tiny','可以直接进入每日行程，或让 AI 帮你比较其他选择。');
+ root.scrollTop=0;
 }
 async function updatePlanFromInput(){
   if(planDiscussionBusy||planUploadsBusy)return;
@@ -792,7 +809,7 @@ function renderPlanResult(result){
   const actions=document.createElement('div');actions.className='ai-action-row';
   const apply=document.createElement('button');apply.className='btn enter-daily-button';apply.textContent='进入每日行程 →';apply.onclick=applyAiPlan;apply.disabled=planDiscussionBusy||candidatePoolBusy||!planHasStructuredData(lastAiPlan);actions.appendChild(apply);
   if(planReferencesPending||Object.keys(candidateChoices).length){const current=document.createElement('button');current.className='btn line';current.textContent='查看当前方案 · 暂不应用新选择或资料';current.disabled=planDiscussionBusy||candidatePoolBusy;current.onclick=()=>applyAiPlan(true);actions.appendChild(current);}
-  out.appendChild(actions);
+  out.appendChild(actions);const entryStatus=document.createElement('div');entryStatus.id='planEntryStatus';entryStatus.className='notice';entryStatus.setAttribute('role','status');entryStatus.textContent=planEntryBlocker(false);out.appendChild(entryStatus);
   const supporting=document.createElement('details');supporting.className='plan-support';addTextNode(supporting,'summary','','交通、准备事项与资料来源');
   for(const c of result.city_sequence||[])addTextNode(supporting,'p','tiny',c.city+'：'+(c.reason||''));
   for(const t of result.intercity_transport||[])addTextNode(supporting,'p','tiny',t.from+' → '+t.to+'：'+t.mode+'；'+(t.notes||'')+' '+(t.verification||'待核验'));
@@ -870,8 +887,10 @@ async function sendPlanMessage(prefill){
       history:planDiscussionHistory.slice(0,-1).slice(-10),
       context:buildPlanContext("plan_discussion",{current_workbench:collectTripContext()})
     });
-    const answer=result.text||"我已经收到你的意见和资料。你可以继续补充，或点击按讨论意见更新方案。";
+    const decision=cleanPlanDecision(result.data);if(result.data&&!decision)throw new Error("AI 的选项尚不完整，请重试比较；当前方案保留");
+    const answer=decision?[decision.reply,decision.question,decision.recommendation].filter(Boolean).join("\n\n"):result.text||"我已经收到你的意见和资料。你可以继续补充，或点击按讨论意见更新方案。";
     appendPlanDiscussionMessage("assistant",answer,result.sources||[]);
+    if(decision){planDiscussionHistory.at(-1).decision=decision;savePlanSession();}
     if(fileInput)fileInput.value="";
     updatePlanDiscussionFilePreview();
     renderPlanDiscussionLog();
@@ -1192,12 +1211,19 @@ async function generatePlan(){
   }catch(e){showAiError(out,e)}
   finally{setBusy(button,false)}
 }
+function planEntryBlocker(useCurrentOnly){
+ if(planDiscussionBusy||candidatePoolBusy)return 'AI 仍在处理，请等待上方工作状态结束后再进入。';
+ if(!planHasStructuredData(lastAiPlan))return '当前还没有完整的每日安排，请先生成推荐方案。';
+ if(useCurrentOnly===true)return '';
+ if(planUploadsBusy||planReferencesPending)return '新上传资料尚未应用。可以先查看当前方案，或展开更多定制整合资料后再进入。';
+ const selected=poolSelectedIds();if(Object.entries(candidateChoices).some(([id,choice])=>choice==='locked'?!selected.has(id):choice==='excluded'&&selected.has(id)))return '你刚才的景点加减尚未应用：请先按选择调整行程，或先查看当前方案。';
+ return '';
+}
+function showPlanEntryStatus(message){const root=document.getElementById('planEntryStatus');if(root){root.textContent=message;root.scrollIntoView({block:'nearest',behavior:'smooth'});}else toast(message);}
 function applyAiPlan(useCurrentOnly=false){
-  if(useCurrentOnly!==true&&(planUploadsBusy||planReferencesPending)){toast('新增资料尚未整合，请先按讨论意见更新方案');return;}
-  if(planDiscussionBusy||candidatePoolBusy){toast('请等待当前调整完成');return;}
-  const selected=poolSelectedIds();
-  if(useCurrentOnly!==true&&Object.entries(candidateChoices).some(([id,choice])=>choice==='locked'?!selected.has(id):choice==='excluded'&&selected.has(id))){toast('还有未应用的加减选择，请先按选择调整 Plan');return;}
-  if(!lastAiPlan){toast("还没有可应用的 AI 方案");return}
+ const blocked=planEntryBlocker(useCurrentOnly);if(blocked){showPlanEntryStatus(blocked);return;}
+ const before=JSON.parse(JSON.stringify(trip));const beforeCity=activeCity,beforeDay=activeDay;
+ try{
   const plan=lastAiPlan;trip.planDerived=true;trip.planVersion=planVersionNumber;trip.transport=plan.intercity_transport||[];
   const cityMap=new Map();
   trip.cities=(plan.city_sequence||[]).map((c,i)=>{
@@ -1213,7 +1239,8 @@ function applyAiPlan(useCurrentOnly=false){
   }));
   if(!trip.cities.length||!trip.days.length){toast("AI 方案内容不完整，暂不能载入");return}
   activeCity=trip.cities[0].id;activeDay=trip.days[0].id;
-  persist(true);renderTrip();nav("trip");toast("AI 方案已载入工作台；请继续核实交通和开放时间");
+  persist(true);nav("trip");toast("AI 方案已载入工作台；请继续核实交通和开放时间");
+ }catch(error){trip=before;activeCity=beforeCity;activeDay=beforeDay;nav('planner');showPlanEntryStatus('每日行程载入失败：'+error.message+'。当前方案保留，可重试；请将此提示发给我们。');}
 }
 function togglePlanInterest(button){
   const selected=document.querySelectorAll('[data-plan-interest].active');

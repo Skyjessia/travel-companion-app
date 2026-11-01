@@ -826,6 +826,9 @@ async function callDeepSeek(task, input, env, requestBody, requestId = "unknown"
 
   if (task === "materials") messages.push({ role: "user", content: `请仅返回一个完整 JSON 对象，结构示例：{"summary":"整理摘要","items":[{"name":"地点名称","city":"所在城市","category":"类别","source_claim":"原始说法","useful_tip":"可用提示","confidence":"识别信心","status":"核实状态"}]}。每个字段均为字符串；无法识别时 items 返回空数组。不要输出 JSON 以外的内容。` });
 
+  const guidedChat=task==='chat'&&requestBody?.context?.mode==='plan_discussion';
+  if(guidedChat)messages.push({role:'user',content:'仅输出合法 JSON（json）：{"reply":"简短回应刚才的选择","question":"本轮唯一需要决定的问题，信息足够则为空","options":[{"label":"具体选项A，不带A前缀","value":"用户选A的完整意思"},{"label":"具体选项B，不带B前缀","value":"用户选B的完整意思"}],"recommendation":"推荐A或B的简短原因","ready":false,"details":"可选详细依据"}。问题非空时必须有两个互斥且紧扣该问题的具体选项，不能用泛化的少走路或多点文化代替回答。信息足够时 ready=true、question为空、options=[]，不要无限追问。每次只推进一个关键决定，尊重已有约束，不重复已回答问题。'});
+  if(task==='plan')messages.push({role:'user',content:'如果还有待决定的问题，额外返回 next_decision，结构为 {"reply":"简短说明","question":"首个关键问题的完整内容","options":[{"label":"具体选择A","value":"选择A的完整意思"},{"label":"具体选择B","value":"选择B的完整意思"}],"recommendation":"推荐与原因","ready":false,"details":"详细依据可空"}。两个选项必须互斥且对应本问题。无关键问题则 next_decision 为 {"reply":"关键信息已足够","question":"","options":[],"recommendation":"","ready":true,"details":""}。'});
   const body = {
 
     model,
@@ -842,7 +845,7 @@ async function callDeepSeek(task, input, env, requestBody, requestId = "unknown"
 
     temperature: task === "chat" ? 0.5 : 0.2,
 
-    ...(task !== "chat" ? { response_format: { type: "json_object" } } : {})
+    ...((task !== "chat"||guidedChat) ? { response_format: { type: "json_object" } } : {})
 
   };
 
@@ -980,7 +983,7 @@ async function callDeepSeek(task, input, env, requestBody, requestId = "unknown"
 
   let data = null;
 
-  if (task !== "chat") {
+  if (task !== "chat"||guidedChat) {
 
     if (finishReason === "length") {
 
@@ -1404,7 +1407,7 @@ export default {
 
         service: "travel-companion-ai",
 
-        version: "2026-11-01-context-map-7",
+        version: "2026-11-01-decisions-8",
 
         configured: Boolean(env.DEEPSEEK_API_KEY),
 

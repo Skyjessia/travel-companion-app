@@ -153,3 +153,17 @@ test('context compaction removes duplicate metadata and keeps all days, cities a
  const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');const f={lastAiPlan:{city_sequence:Array.from({length:9},(_,i)=>({city:'城'+i,country:'中国'})),intercity_transport:[]}};vm.createContext(f);vm.runInContext(source.slice(source.indexOf('function compactPlanContext('),source.indexOf('function buildPlanContext(')),f);
  const context={current_plan:{days:Array.from({length:14},(_,i)=>({day_label:'D'+i,local_food:[{name:'特色菜',source:'x'.repeat(20000)}]}))},candidate_choices:{p9:'locked'},candidate_pools:[{city:'城0',candidates:Array.from({length:12},(_,i)=>({id:'p'+i,name:'景点'+i,type:'景点',assessment:{reason:'匹配',extra:'x'.repeat(5000)}}))}]};f.compactPlanContext(context,'plan_discussion');assert.equal(context.current_plan.days.length,14);assert.equal(context.current_plan.city_sequence.length,9);assert.ok(context.candidate_pools[0].candidates.some(p=>p.id==='p9'));assert.ok(JSON.stringify(context).length<6000);
 });
+
+test('decision validation keeps full questions and exact dynamic choices',()=>{
+ const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');const f={};vm.createContext(f);vm.runInContext(source.slice(source.indexOf('function cleanPlanDecision('),source.indexOf('function renderGuidedPlanChoices(')),f);
+ const q='完整问题'.repeat(200);const d=f.cleanPlanDecision({question:q,options:[{label:'怀化加一晚',value:'省下的一晚加到怀化'},{label:'贵阳加一晚',value:'省下的一晚加到贵阳'}]});assert.equal(d.question,q);assert.equal(d.options[1].label,'贵阳加一晚');assert.equal(f.cleanPlanDecision({question:q,options:[]}),null);
+});
+test('entry explains pending choices but allows an explicit current-plan preview',()=>{
+ const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');const f={planDiscussionBusy:false,candidatePoolBusy:false,lastAiPlan:{},planHasStructuredData:()=>true,planUploadsBusy:false,planReferencesPending:false,poolSelectedIds:()=>new Set(),candidateChoices:{p1:'locked'}};vm.createContext(f);vm.runInContext(source.slice(source.indexOf('function planEntryBlocker('),source.indexOf('function showPlanEntryStatus(')),f);assert.match(f.planEntryBlocker(false),/尚未应用/);assert.equal(f.planEntryBlocker(true),'');f.planDiscussionBusy=true;assert.match(f.planEntryBlocker(true),/仍在处理/);
+});
+
+test('guided discussion endpoint requests structured JSON and exposes dynamic decision data',async()=>{
+ try{globalThis.fetch=async(_url,options)=>{const b=JSON.parse(options.body);assert.equal(b.response_format.type,'json_object');assert.ok(b.messages.some(m=>typeof m.content==='string'&&m.content.includes('本轮唯一需要决定的问题')));return json({choices:[{finish_reason:'stop',message:{content:JSON.stringify({reply:'已理解',question:'多出的一晚放哪？',options:[{label:'怀化',value:'怀化加一晚'},{label:'贵阳',value:'贵阳加一晚'}],ready:false})}}]});};
+ const response=await worker.fetch(new Request('https://example.test/api/assistant',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task:'chat',message:'帮我比较',context:{mode:'plan_discussion'}})}),{DEEPSEEK_API_KEY:'test'});assert.equal(response.status,200);assert.equal((await response.json()).data.options[1].value,'贵阳加一晚');
+ }finally{globalThis.fetch=realFetch;}
+});
