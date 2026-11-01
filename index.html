@@ -182,10 +182,10 @@ button,input,textarea,select{font:inherit}
 <div class="home-footer-note">Plan · Explore · Remember</div>
 </section><section class="screen" id="planner">
 <div class="head"><h2>AI 旅行规划</h2><span class="sub">从目的地到每天怎么走</span></div>
-<p class="tiny" style="margin:0 2px 12px">先告诉我们这趟旅行的边界，剩下的交给 AI 一起梳理。信息不完整时，会先向你确认，不会擅自补全关键条件。</p>
-<div class="card poi-lab-intro"><div class="eyebrow">NEW · V1 POI DISCOVERY</div><h3 style="margin:5px 0">先发现值得去的地方</h3><p class="tiny">新版 Plan 将兴趣选择改为可点击标签，先用真实 POI 数据发现城市，再进入 AI 推荐与路线规划。</p><button class="btn light" style="width:100%" onclick="nav('poiLab')">探索城市候选地点 →</button></div>
+<p class="tiny" style="margin:0 2px 12px">先告诉我们这趟旅行的边界，剩下的交给 AI 一起梳理。先给你一版可修改的草案，再一起确认关键取舍。未定日期时，AI 会建议适合的出行时间段。</p>
+<div class="card poi-lab-intro"><div class="eyebrow">PLAN · PERSONAL PREFERENCES</div><h3 style="margin:5px 0">兴趣与城市景点备选</h3><p class="tiny">在下方直接选择兴趣开始规划；生成后，可按城市查看备选景点并加减调整。</p><button class="btn light" style="width:100%" onclick="nav('poiLab')">探索城市候选地点 →</button></div>
 
-<div class="card planner-form"><div class="row" style="justify-content:space-between;align-items:center"><h3>先告诉我旅行边界</h3><span class="pill">B · 从零规划</span></div><p class="tiny">告诉 AI 你的起点、终点、城市和旅行偏好。AI 会先检查信息是否完整，再生成可编辑的城市顺序、跨城交通研究方向和逐日路线。景点开放时间、票务与实际交通仍需按出行日期核验。</p><div class="field"><label>出发地 / 起点</label><input id="origin" value="阿拉木图" placeholder="例如：新加坡"></div><div class="field"><label>返程地 / 终点</label><input id="destination" value="塔什干" placeholder="例如：塔什干"></div><div class="field"><label>想去的城市</label><input id="cities" value="阿拉木图、撒马尔罕、布哈拉、塔什干"></div><div class="field"><label>旅行日期（可暂时留空）</label><div class="row"><input id="startDate" type="date"><input id="endDate" type="date"></div></div><div class="field"><label>旅行节奏</label><select id="pace"><option>舒适慢游</option><option>经典高效</option><option>深度文化</option><option>自然户外</option></select></div><div class="field"><label for="planDays">旅行天数（可留空，由 AI 建议）</label><input id="planDays" type="number" min="1" max="90" placeholder="例如：7"></div><div class="field"><label>你对哪些内容感兴趣？（最多选 3 个）</label><div class="poi-interest-grid" id="planInterestGrid">
+<div class="card planner-form"><div class="row" style="justify-content:space-between;align-items:center"><h3>先告诉我旅行边界</h3><span class="pill">B · 从零规划</span></div><p class="tiny">告诉 AI 你的起点、终点、城市和旅行偏好。AI 会根据兴趣与文字喜好生成草案，再用城市候选地点细化安排。景点开放时间、票务与实际交通仍需按出行日期核验。</p><div class="field"><label>出发地 / 起点</label><input id="origin" value="阿拉木图" placeholder="例如：新加坡"></div><div class="field"><label>返程地 / 终点</label><input id="destination" value="塔什干" placeholder="例如：塔什干"></div><div class="field"><label>想去的城市</label><input id="cities" value="阿拉木图、撒马尔罕、布哈拉、塔什干"></div><div class="field"><label>旅行日期（可暂时留空）</label><div class="row"><input id="startDate" type="date"><input id="endDate" type="date"></div></div><div class="field"><label>旅行节奏</label><select id="pace"><option>舒适慢游</option><option>经典高效</option><option>深度文化</option><option>自然户外</option></select></div><div class="field"><label for="planDays">旅行天数（可留空，由 AI 建议）</label><input id="planDays" type="number" min="1" max="90" placeholder="例如：7"></div><div class="field"><label>你对哪些内容感兴趣？（最多选 3 个）</label><div class="poi-interest-grid" id="planInterestGrid">
 <button type="button" class="poi-interest-chip" data-plan-interest="历史文化" aria-pressed="false" onclick="togglePlanInterest(this)">历史文化</button>
 <button type="button" class="poi-interest-chip" data-plan-interest="古建筑" aria-pressed="false" onclick="togglePlanInterest(this)">古建筑</button>
 <button type="button" class="poi-interest-chip" data-plan-interest="自然风光" aria-pressed="false" onclick="togglePlanInterest(this)">自然风光</button>
@@ -216,8 +216,9 @@ button,input,textarea,select{font:inherit}
 </section>
 
 <section class="screen" id="poiLab">
-<div class="head"><h2>景点发现实验</h2><span class="pill">V1 · POI LAB</span></div>
-<div class="card poi-lab-intro"><div class="eyebrow">DISCOVER YOUR CITY</div><h3 style="font-size:19px;margin:6px 0">先选你感兴趣的旅行内容</h3><p class="tiny">不用想复杂的提示词。告诉我们城市和兴趣，系统先去发现真实地点，再逐步帮你筛选值得去的地方。</p><div class="poi-search-note">本轮实验：先验证高德真实 POI 搜索。结果是地点候选数据，不代表最终推荐排名；下一步再接入 DeepSeek 做价值判断和个性化排序。</div></div>
+<div class="head"><h2>景点探索</h2><span class="pill">候选池</span></div>
+<button class="btn light" onclick="openPlanCandidates()">查看当前 Plan 的城市备选与加减 →</button>
+<div class="card poi-lab-intro"><div class="eyebrow">DISCOVER YOUR CITY</div><h3 style="font-size:19px;margin:6px 0">先选你感兴趣的旅行内容</h3><p class="tiny">不用想复杂的提示词。告诉我们城市和兴趣，系统先去发现真实地点，再逐步帮你筛选值得去的地方。</p><div class="poi-search-note">按兴趣发现候选地点。要把候选纳入方案，请在 Plan 生成后使用“城市景点备选”；这里保留独立搜索入口。</div></div>
 <div class="card"><div class="field"><label for="poiCity">这次想探索哪个城市？</label><input id="poiCity" value="贵阳" placeholder="例如：贵阳、长沙、成都"></div>
 <div class="field"><label>你对哪些内容感兴趣？（最多选 3 个）</label><div class="poi-interest-grid" id="poiInterestGrid">
 <button type="button" class="poi-interest-chip active" data-poi-interest="历史文化" aria-pressed="true" onclick="togglePoiInterest(this)">历史文化</button>
@@ -228,12 +229,12 @@ button,input,textarea,select{font:inherit}
 <button type="button" class="poi-interest-chip" data-poi-interest="摄影打卡" aria-pressed="false" onclick="togglePoiInterest(this)">摄影打卡</button>
 <button type="button" class="poi-interest-chip" data-poi-interest="小众探索" aria-pressed="false" onclick="togglePoiInterest(this)">小众探索</button>
 </div></div>
-<div class="field"><label for="poiExtra">补充偏好（本轮暂不使用）</label><textarea id="poiExtra" placeholder="例如：不想去太商业化的地方；喜欢当地人日常生活的街区；不想走太多路。"></textarea><p class="tiny" style="margin:5px 0 0">这段补充文字暂时只用于界面体验，不会发送给服务器；本轮只测试城市与兴趣标签的 POI 搜索。</p></div>
+<div class="field"><label for="poiExtra">补充偏好</label><textarea id="poiExtra" placeholder="例如：不想去太商业化的地方；喜欢当地人日常生活的街区；不想走太多路。"></textarea><p class="tiny" style="margin:5px 0 0">文字喜好会用于生成具体搜索方向；搜索来源不等于兴趣匹配。</p></div>
 <button id="poiSearchButton" class="btn" style="width:100%" onclick="searchPoi()">开始搜索真实地点 →</button>
-<div id="poiSearchStatus" class="poi-lab-status" aria-live="polite">已选择 2 个兴趣方向。每个兴趣标签单独搜索一次，最多 3 次 POI 查询，控制测试额度。</div>
+<div id="poiSearchStatus" class="poi-lab-status" aria-live="polite">已选择 2 个兴趣方向。AI 将标签与文字喜好转成具体检索词，最多 6 次具体查询，控制测试额度。</div>
 </div>
 <div class="card" id="poiResultsCard" style="display:none"><div class="row" style="justify-content:space-between;align-items:center"><h3 style="margin:0">发现的地点</h3><span class="pill" id="poiResultCount">0 个候选</span></div><p class="tiny" id="poiResultSummary" style="margin:7px 0"></p><div id="poiResultList"></div><div class="poi-search-note" id="poiResultWarning"></div></div>
-<div class="card"><div class="poi-lab-actions"><button class="btn line" onclick="nav('planner')">返回原版 Plan</button><button class="btn light" onclick="nav('home')">返回首页</button></div><p class="tiny" style="margin:9px 0 0">原有规划、资料整理和旅行工作台均保留。这个入口是并行测试版，不会覆盖你的旧行程。</p></div>
+<div class="card"><div class="poi-lab-actions"><button class="btn line" onclick="nav('planner')">返回Plan 规划</button><button class="btn light" onclick="nav('home')">返回首页</button></div><p class="tiny" style="margin:9px 0 0">原有规划、资料整理和旅行工作台均保留。这个入口是并行测试版，不会覆盖你的旧行程。</p></div>
 </section>
 
 <section class="screen" id="trip"><div class="head"><h2>旅行工作台</h2><span class="pill">已加载示例内容</span></div><div class="card"><div class="eyebrow">CENTRAL ASIA SAMPLE</div><h3 style="font-size:17px">哈萨克斯坦 × 乌兹别克斯坦</h3><p class="tiny">示例城市组合：阿拉木图 → 塔什干 → 撒马尔罕 → 布哈拉。此顺序仅用于体验规划功能，实际顺序应由国际机票、跨境交通与日期决定。</p><div class="statgrid"><div class="stat"><b>4</b><span>城市</span></div><div class="stat"><b>5</b><span>游览日样例</span></div><div class="stat"><b id="stopCount">16</b><span>地点素材</span></div></div></div>
@@ -333,6 +334,11 @@ let lastAiPlan = null;
 let lastMaterialItems = [];
 let chatHistory = [];
 let planBrief = null;
+let candidatePools = {};
+let candidateChoices = {};
+let candidatePoolBusy = false;
+let candidatePoolNotice = '';
+let candidateExplorerCity = '';
 let planDiscussionHistory = [];
 let planVersions = [];
 let planVersionNumber = 0;
@@ -449,7 +455,8 @@ function savePlanSession(){
     localStorage.setItem("travelCompanionPlanSessionV1",JSON.stringify({
       brief:planBrief,plan:lastAiPlan,discussion:planDiscussionHistory.slice(-24),
       versions:planVersions.slice(-6),versionNumber:planVersionNumber,
-      referenceMaterials:planReferenceMaterials.slice(0,5)
+      referenceMaterials:planReferenceMaterials.slice(0,5),
+      candidatePools,candidateChoices,candidatePoolNotice
     }));
   }catch(e){console.warn("方案协商记录暂未保存",e)}
 }
@@ -552,6 +559,7 @@ function renderPlanResult(result){
     result.questions.forEach(x=>addTextNode(qs,"p","",`• ${x}`));out.appendChild(qs);
   }
   // M2: Always render the visible Plan Together panel after clarification questions and before references.
+  appendCandidateExplorer(out);
   appendPlanDiscussion(out);
   out.dataset.planDiscussionReady = "true";
   appendSources(out,result.sources||[]);
@@ -653,11 +661,11 @@ async function revisePlanFromDiscussion(){
   try{
     const result=await apiRequest({
       task:"plan",
-      message:"请根据原始旅行需求和用户与 AI 的完整讨论，生成或修订一份完整结构化旅行方案。如果 current_plan 存在，则在保留用户已确认约束的前提下修订；如果 current_plan 为空或不完整，则根据原始需求和讨论补充信息生成完整方案。不要擅自编造未确认的交通班次、营业时间或票价。请输出完整可编辑方案，字段保持 city_sequence、intercity_transport、days、checks、questions、summary；days 必须包含每日景点顺序、建议时间、游览时长、地点组合理由、交通衔接与待核验事项。若 context.reference_materials 有内容，必须将用户上传的 Word/PDF/文字资料与讨论内容一起整合，保留有价值的地点和个人备注，去重并区分主观体验与可核实事实。每个城市规划当地特色菜、代表性小吃和合适的用餐区域；每天在 By Day 中合理安排午餐/晚餐或市场美食体验，作为餐饮停留点。优先给出有来源支持的店铺或市场名称；无法核实时推荐菜品和区域，不编造店名、营业时间或价格。每天安排 2–4 个核心景点，并兼顾餐饮、休息和交通缓冲。每个城市在 checks 中至少输出一条以“美食推荐：”开头的当地特色菜、小吃、餐饮区域或有来源支持的店铺建议。若仍有关键条件未确定，请在 questions 中明确提出，不要猜测。",
+      message:"请根据原始旅行需求和用户与 AI 的完整讨论，生成或修订一份完整结构化旅行方案。如果 current_plan 存在，则在保留用户已确认约束的前提下修订；如果 current_plan 为空或不完整，则根据原始需求和讨论补充信息生成完整方案。不要擅自编造未确认的交通班次、营业时间或票价。请输出完整可编辑方案，字段保持 city_sequence、intercity_transport、days、checks、questions、summary；days 必须包含每日景点顺序、建议时间、游览时长、地点组合理由、交通衔接与待核验事项。若 context.reference_materials 有内容，必须将用户上传的 Word/PDF/文字资料与讨论内容一起整合，保留有价值的地点和个人备注，去重并区分主观体验与可核实事实。每个城市规划当地特色菜、代表性小吃和合适的用餐区域；餐饮作为可选建议写在 checks，不强制给每餐排时间或作为景点停留。优先给出有来源支持的店铺或市场名称；无法核实时推荐菜品和区域，不编造店名、营业时间或价格。每天安排 2–4 个核心景点，并兼顾餐饮、休息和交通缓冲。每个城市在 checks 中至少输出一条以“美食推荐：”开头的当地特色菜、小吃、餐饮区域或有来源支持的店铺建议。若仍有关键条件未确定，请在 questions 中明确提出，不要猜测。",
       history:planDiscussionHistory.slice(-12),
       context:buildPlanContext("revise_existing_plan")
     });
-    const revised=result.data;
+    const revised=Object.keys(candidatePools).length?checkCandidatePlan(result.data):result.data;
     if(!planHasStructuredData(revised)){
       const note=result.text||"AI 尚未返回完整的结构化方案，因此没有覆盖当前版本。请继续补充信息后重试。";
       appendPlanDiscussionMessage("assistant",note,result.sources||[]);savePlanSession();renderPlanResult(lastAiPlan);toast("未覆盖原方案：AI 返回内容尚不完整");return;
@@ -683,6 +691,12 @@ function restorePlanSession(){
     const saved=JSON.parse(localStorage.getItem("travelCompanionPlanSessionV1")||"null");
     if(!saved)return;
     planBrief=saved.brief||null;lastAiPlan=saved.plan||null;
+    candidatePools=saved.candidatePools||{};candidateChoices=saved.candidateChoices||{};candidatePoolNotice=saved.candidatePoolNotice||'';
+    if(planBrief){
+      for(const key of ['origin','destination','cities','startDate','endDate','pace','preferences']){const input=document.getElementById(key);if(input&&planBrief[key]!=null)input.value=planBrief[key];}
+      const days=document.getElementById('planDays');if(days)days.value=planBrief.durationDays||'';
+      document.querySelectorAll('[data-plan-interest]').forEach(button=>{const active=(planBrief.interests||[]).includes(button.dataset.planInterest);button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});
+    }
     planDiscussionHistory=Array.isArray(saved.discussion)?saved.discussion:[];
     planVersions=Array.isArray(saved.versions)?saved.versions:[];
     planVersionNumber=Number(saved.versionNumber)|| (lastAiPlan?1:0);
@@ -792,10 +806,10 @@ function buildPlanContext(mode,extra={}){
     summary:String(lastAiPlan.summary||"").slice(0,300),
     city_sequence:(lastAiPlan.city_sequence||[]).slice(0,7),
     intercity_transport:(lastAiPlan.intercity_transport||[]).slice(0,7),
-    days:(lastAiPlan.days||[]).slice(0,8).map(d=>({
+    days:(lastAiPlan.days||[]).map(d=>({
       day_label:d.day_label,city:d.city,title:d.title,
-      stops:(d.stops||[]).slice(0,3).map(s=>({
-        time:s.time,name:s.name,duration:s.duration,
+      stops:(d.stops||[]).map(s=>({
+        time:s.time,name:s.name,candidate_id:s.candidate_id,duration:s.duration,
         reason:String(s.reason||"").slice(0,70),
         verification:String(s.verification||"").slice(0,60)
       }))
@@ -816,22 +830,18 @@ function buildPlanContext(mode,extra={}){
     discussion:planDiscussionHistory.slice(-5).map(x=>({
       role:x.role,content:String(x.content||"").slice(0,220)
     })),
+    ...poolContext(),
     ...extra
   };
-  // Worker input currently caps context at 12k characters. Preserve document evidence first,
-  // then compact older plan details rather than allowing a JSON string to be cut mid-field.
+  // Keep valid JSON and explicit user choices; never silently truncate days or locks.
   let size=JSON.stringify(context).length;
-  while(size>11000&&context.discussion.length>2){context.discussion.shift();size=JSON.stringify(context).length;}
-  while(size>11000&&context.current_plan?.days?.length>5){context.current_plan.days.pop();size=JSON.stringify(context).length;}
-  while(size>11000&&context.current_plan?.days?.some(d=>d.stops.length>1)){
-    const day=[...context.current_plan.days].reverse().find(d=>d.stops.length>1);
-    if(!day)break;day.stops.pop();size=JSON.stringify(context).length;
-  }
-  while(size>11000&&context.reference_materials.length){
+  while(size>28000&&context.discussion.length>2){context.discussion.shift();size=JSON.stringify(context).length;}
+  while(size>28000&&context.reference_materials.length){
     const last=context.reference_materials[context.reference_materials.length-1];
-    if(last.text.length>500){last.text=last.text.slice(0,-500);size=JSON.stringify(context).length;}
-    else{context.reference_materials.pop();size=JSON.stringify(context).length;}
+    if(last.text.length>500)last.text=last.text.slice(0,-500);else context.reference_materials.pop();
+    size=JSON.stringify(context).length;
   }
+  if(size>28000)throw new Error('当前方案与候选过多，请减少城市或资料后再调整；原方案保留');
   return context;
 }
 async function finalizePlanAndOpenTrip(){
@@ -846,11 +856,11 @@ async function finalizePlanAndOpenTrip(){
   try{
     const result=await apiRequest({
       task:"plan",
-      message:"请生成本次旅行的最终可执行 By Day 方案。必须整合原始旅行需求、当前方案、用户与 AI 的讨论，以及 context.reference_materials 中的所有资料。保留用户已确认的安排和个人备注；去重并识别同一地点的不同写法；区分攻略作者的主观体验、资料中的事实陈述和已由可靠来源核实的信息。将适合的景点按地理区域与游览逻辑安排进每日路线，形成清晰的 City Walk 顺序。每天安排 2–4 个核心景点，并合理加入午餐、晚餐或当地市场美食体验；推荐当地特色菜、小吃和合适用餐区域，优先提供有可靠来源支持的店铺/市场名称，无法核实则只推荐菜品与区域，不编造店名、营业时间和价格。交通班次、票价、开放时间、距离和精确步行耗时不得编造；未核实项目标注待核实，真实步行距离留待下一阶段地图路线服务计算。输出完整结构化 JSON，字段保持 summary、city_sequence、intercity_transport、days、checks、questions；days 必须有 day_label、city、title、stops，每个 stop 必须有 time、name、duration、reason、verification。请确保每天的景点、餐饮、休息和城市间交通衔接合理。",
+      message:"请生成本次旅行的最终可执行 By Day 方案。必须整合原始旅行需求、当前方案、用户与 AI 的讨论，以及 context.reference_materials 中的所有资料。保留用户已确认的安排和个人备注；去重并识别同一地点的不同写法；区分攻略作者的主观体验、资料中的事实陈述和已由可靠来源核实的信息。将适合的景点按地理区域与游览逻辑安排进每日路线，形成清晰的 City Walk 顺序。每天安排 2–4 个核心景点，餐饮作为可选建议放 checks，不强制每餐停留；推荐当地特色菜、小吃和合适用餐区域，优先提供有可靠来源支持的店铺/市场名称，无法核实则只推荐菜品与区域，不编造店名、营业时间和价格。交通班次、票价、开放时间、距离和精确步行耗时不得编造；未核实项目标注待核实，真实步行距离留待下一阶段地图路线服务计算。输出完整结构化 JSON，字段保持 summary、city_sequence、intercity_transport、days、checks、questions；days 必须有 day_label、city、title、stops，每个 stop 必须有 time、name、duration、reason、verification。请确保每天的景点、餐饮、休息和城市间交通衔接合理。",
       history:planDiscussionHistory.slice(-12),
       context:buildPlanContext("final_by_day")
     });
-    const finalPlan=result.data;
+    const finalPlan=Object.keys(candidatePools).length?checkCandidatePlan(result.data):result.data;
     if(!planHasStructuredData(finalPlan)){
       throw new Error(result.text||"AI 返回的最终 By Day 结构不完整，原方案已保留，请继续补充后重试。");
     }
@@ -901,6 +911,7 @@ async function generatePlan(){
     document.getElementById("cities").value=brief.cities;
     toast("已从途经城市中去掉重复的起点或终点，终点仍保留在路线末尾");
   }
+  candidatePools={};candidateChoices={};candidatePoolNotice='';candidateExplorerCity='';
   planBrief=brief;planDiscussionHistory=[];planVersions=[];planVersionNumber=1;lastAiPlan=null;savePlanSession();updatePlanReferencePreview();
   try{
     const result=await apiRequest({task:"plan",message:"请作为旅行规划师与协商搭档生成可编辑的第一版 Plan。origin 是起点、destination 是终点、cities 为候选城市；仅给国家时可建议城市组合。具体文字喜好优先于宽泛标签，明确约束优先于软偏好。根据 trip_brief.interests、preferences、pace 和 durationDays 实际调整地点选择、停留时长与节奏；在 summary 和各地点 reason 解释与用户偏好的关联，不能只改变措辞。日期空白时，在 checks 中给出适合出行的月份或季节、原因和取舍，使用 D1/D2 排程，不假设用户已选定日期；天数空白时建议合理天数并注明假设。除非无法识别目的地，否则先生成有条件的初稿，questions 最多提出两个会明显改变方案的关键问题，不用预算等选填项阻塞。返回完整 city_sequence、intercity_transport、days、checks、questions。每天安排符合节奏的核心体验，考虑地理聚类与交通缓冲；没有路线服务核算，不声称最优路线或给精确交通分钟数。无需安排固定午餐晚餐时间或强制餐饮停留点，可在 checks 提供顺路的特色菜和餐饮区域选项；偏远户外活动需提示核实补给，不能未经查证断言没有餐饮。住宿建议先到区域及其取舍，遵守已有酒店约束。热门推荐线索与事实核验分开，未检索不能声称来自小红书或实时热榜。营业时间、票价、预约、班次、营业状态未取得本轮可靠证据一律待核实；具体日期确定后需复查。若有 reference_materials，吸收地点和个人备注，区分主观体验与事实。不擅自删除用户明确锁定的安排。",context:buildPlanContext("initial_plan")});
@@ -908,11 +919,18 @@ async function generatePlan(){
     if(lastAiPlan)lastAiPlan.sources=result.sources||[];
     if(planHasStructuredData(lastAiPlan)){planVersions=[];}
     renderPlanResult(lastAiPlan||{summary:result.text||"AI 已返回结果",text:result.text||"",checks:[],questions:[],days:[]});
-    savePlanSession();updatePlanReferencePreview();toast("AI 已生成初步方案，请继续讨论或整合资料");
+    savePlanSession();updatePlanReferencePreview();toast("第一版草案已生成，正在尝试细化首个国内城市的候选");
+    const firstDomestic=(lastAiPlan?.city_sequence||[]).find(c=>/^(中国|中华人民共和国|China|中国大陆)$/i.test(String(c.country||'').trim()));
+    if(firstDomestic){if(await discoverCityPool(firstDomestic,true))await refinePlanWithPool();}
+    else {candidatePoolNotice='国外城市先保留 AI 草案，候选地点及路线尚待地图服务核实。';savePlanSession();renderPlanResult(lastAiPlan);}
+
   }catch(e){showAiError(out,e)}
   finally{setBusy(button,false)}
 }
 function applyAiPlan(){
+  if(planDiscussionBusy||candidatePoolBusy){toast('请等待当前调整完成');return;}
+  const selected=poolSelectedIds();
+  if(Object.entries(candidateChoices).some(([id,choice])=>choice==='locked'?!selected.has(id):choice==='excluded'&&selected.has(id))){toast('还有未应用的加减选择，请先按选择调整 Plan');return;}
   if(!lastAiPlan){toast("还没有可应用的 AI 方案");return}
   const plan=lastAiPlan;
   const cityMap=new Map();
@@ -936,6 +954,115 @@ function togglePlanInterest(button){
   if(!button.classList.contains('active')&&selected.length>=3){toast('最多选择 3 个兴趣方向');return;}
   const active=button.classList.toggle('active');button.setAttribute('aria-pressed',String(active));
 }
+function openPlanCandidates(){
+  if(!lastAiPlan){nav('planner');toast('先生成第一版 Plan，再探索城市备选');return;}
+  nav('planner');document.getElementById('candidateExplorer')?.scrollIntoView({behavior:'smooth'});
+}
+function poolSelectedIds(){
+  return new Set((lastAiPlan?.days||[]).flatMap(d=>(d.stops||[]).map(s=>s.candidate_id).filter(Boolean)));
+}
+function checkCandidatePlan(plan){
+  if(!planHasStructuredData(plan))throw new Error('AI 返回的方案不完整，原方案已保留');
+  const selected=new Set();
+  const context=poolContext();
+  for(const pool of context.candidate_pools){
+    const allowed=new Map(pool.candidates.map(p=>[p.id,p]));
+    for(const d of plan.days||[]){if(d.city!==pool.city)continue;
+      for(const s of d.stops||[]){
+        const p=allowed.get(s.candidate_id);
+        if(!p||candidateChoices[p.id]==='excluded'||selected.has(p.id))throw new Error('候选身份、排除或去重检查未通过，原方案已保留');
+        s.name=p.name;s.location=p.location;s.verification='地点已匹配高德；开放时间、票务和预约待核验';selected.add(p.id);
+      }
+    }
+    for(const p of pool.candidates)if(candidateChoices[p.id]==='locked'&&!selected.has(p.id))throw new Error('AI 未保留锁定地点，原方案已保留；请先讨论时间或路线取舍');
+  }
+  return plan;
+}
+function poolContext(){
+  const selected=poolSelectedIds();
+  return {candidate_choices:{...candidateChoices},candidate_pools:Object.values(candidatePools).filter(p=>p.pois?.length).map(pool=>{
+    // User choices and current stops always survive the model context limit.
+    const important=pool.pois.filter(p=>candidateChoices[p.id]||selected.has(p.id));
+    const rest=pool.pois.filter(p=>!candidateChoices[p.id]&&!selected.has(p.id));
+    const buckets=(pool.queries||[]).filter(q=>!q.error).map(q=>rest.filter(p=>(p.search_provenance||[]).some(x=>x.keyword===q.keyword)));
+    const balanced=[];const used=new Set();
+    for(let i=0;i<20&&balanced.length<30;i++)for(const bucket of buckets){const p=bucket[i];if(p&&!used.has(p.id)&&balanced.length<30){balanced.push(p);used.add(p.id);}}
+    for(const p of rest)if(!used.has(p.id)&&balanced.length<30){balanced.push(p);used.add(p.id);}
+    return {city:pool.city,candidates:[...important,...balanced].map(p=>({id:p.id,name:p.name,type:p.type,location:p.location,search_keywords:(p.search_provenance||[]).map(q=>q.keyword).slice(0,2),fact_status:'地点身份已匹配；其他事实待核验'}))};
+  })};
+}
+function setCandidateChoice(id,choice){
+  if(planDiscussionBusy||candidatePoolBusy){toast('请等待当前规划完成');return;}
+  candidateExplorerCity=Object.values(candidatePools).find(p=>p.pois.some(x=>x.id===id))?.city||candidateExplorerCity;
+  if(candidateChoices[id]===choice)delete candidateChoices[id];else candidateChoices[id]=choice;
+  savePlanSession();renderPlanResult(lastAiPlan);
+}
+function appendCandidateExplorer(out){
+  const panel=document.createElement('section');panel.className='ai-result-card';panel.id='candidateExplorer';
+  addTextNode(panel,'h3','','兴趣探索 · 城市景点备选');
+  addTextNode(panel,'p','tiny','AI 未选入的有效候选仍保留。＋设为必去，－设为不去；选择后点“按选择调整 Plan”。现有方案在新方案通过检查前保持不变。');
+  if(candidatePoolNotice)addTextNode(panel,'p','notice',candidatePoolNotice);
+  const selected=poolSelectedIds();
+  for(const c of lastAiPlan?.city_sequence||[]){
+    const pool=candidatePools[c.city];
+    const details=document.createElement('details');details.open=c.city===candidateExplorerCity;details.ontoggle=()=>{if(details.open)candidateExplorerCity=c.city;};
+    const heading=document.createElement('summary');heading.textContent=c.city+' · '+(pool?pool.pois.length+' 个候选':'尚未发现候选');details.appendChild(heading);
+    const load=document.createElement('button');load.type='button';load.className='btn light small';load.textContent=pool?'重新发现候选':'发现这个城市的候选';load.disabled=candidatePoolBusy||planDiscussionBusy;load.onclick=()=>discoverCityPool(c);details.appendChild(load);
+    if(pool){
+      addTextNode(details,'p','tiny',pool.warning||'地点匹配不等于营业状态核验；搜索来源不代表匹配兴趣。');
+      for(const p of pool.pois){
+        const row=document.createElement('div');row.className='stop';
+        const status=candidateChoices[p.id]==='locked'?(selected.has(p.id)?'必去 · 已安排':'必去 · 待调整'):candidateChoices[p.id]==='excluded'?(selected.has(p.id)?'不去 · 待调整':'不去 · 已排除'):selected.has(p.id)?'当前 Plan 已选':'备选 · 当前未安排';
+        addTextNode(row,'strong','',p.name);addTextNode(row,'span','pill',status);
+        addTextNode(row,'p','tiny',[p.type,p.address].filter(Boolean).join(' · '));
+        const reason=(lastAiPlan?.days||[]).flatMap(d=>d.stops||[]).find(s=>s.candidate_id===p.id)?.reason;
+        addTextNode(row,'p','tiny',reason?'入选理由：'+reason:'尚未选入当前方案；未入选原因尚未记录。');
+        addTextNode(row,'p','tiny','搜索线索：'+[...new Set((p.search_provenance||[]).map(q=>q.keyword))].join('、')+' · 开放/票务/预约待核验');
+        const plus=document.createElement('button');plus.className='btn light small';plus.textContent=candidateChoices[p.id]==='locked'?'撤销必去':'＋ 我想去';plus.onclick=()=>setCandidateChoice(p.id,'locked');
+        const minus=document.createElement('button');minus.className='btn line small';minus.textContent=candidateChoices[p.id]==='excluded'?'撤销不去':'－ 不安排';minus.onclick=()=>setCandidateChoice(p.id,'excluded');
+        plus.disabled=minus.disabled=candidatePoolBusy||planDiscussionBusy;row.append(plus,minus);details.appendChild(row);
+      }
+      const diagnostic=document.createElement('details');const title=document.createElement('summary');title.textContent='查看搜索依据';diagnostic.appendChild(title);
+      for(const q of pool.queries||[])addTextNode(diagnostic,'p','tiny',q.interest+' → '+q.keyword+'：'+(q.error?'查询失败':q.returned+' 个结果'));
+      details.appendChild(diagnostic);
+    }
+    panel.appendChild(details);
+  }
+  const revise=document.createElement('button');revise.type='button';revise.className='btn';revise.textContent=candidatePoolBusy||planDiscussionBusy?'正在处理…':'按选择调整 Plan';revise.disabled=candidatePoolBusy||planDiscussionBusy||!Object.values(candidatePools).some(p=>p.pois.length);revise.onclick=()=>refinePlanWithPool();panel.appendChild(revise);out.appendChild(panel);
+}
+async function discoverCityPool(city,quiet=false){
+  if(candidatePoolBusy||planDiscussionBusy)return false;
+  candidateExplorerCity=city.city;
+  if(!/^(中国|中华人民共和国|China|中国大陆)$/i.test(String(city.country||'').trim())){
+    candidatePoolNotice='当前先验证国内城市的高德候选流程；'+city.city+' 继续保留 AI 草案，地点与路线待地图服务核实。';
+    renderPlanResult(lastAiPlan);return false;
+  }
+  candidatePoolBusy=true;candidatePoolNotice='正在根据 '+city.city+' 的兴趣和喜好发现候选…';renderPlanResult(lastAiPlan);
+  try{
+    const data=await apiPoiRequest({city:city.city,interests:planBrief?.interests?.length?planBrief.interests:['历史文化','地方生活'],preferences:[planBrief?.preferences||'',...planDiscussionHistory.filter(m=>m.role==='user').slice(-3).map(m=>m.content)].join('；').slice(0,1500)});
+    if(data.contractVersion!==2)throw new Error('需要先部署新版 Worker（plan-pool-2），当前服务仍是旧版；原方案保留');
+    const pool={city:city.city,pois:data.pois||[],queries:data.queries||[],warning:data.warning||'',fetchedAt:new Date().toISOString()};
+    // Retain previously chosen candidates across a repeat search.
+    const old=candidatePools[city.city];const ids=new Set(pool.pois.map(p=>p.id));
+    for(const p of old?.pois||[])if((candidateChoices[p.id]||poolSelectedIds().has(p.id))&&!ids.has(p.id))pool.pois.push(p);
+    candidatePools[city.city]=pool;
+    candidatePoolNotice=pool.pois.length?'候选已发现；地点身份已匹配，等待 AI 根据偏好选取和排程。':'没有找到可用候选，保留当前草案。';savePlanSession();return pool.pois.length>0;
+  }catch(error){candidatePoolNotice=error.message;return false;}
+  finally{candidatePoolBusy=false;renderPlanResult(lastAiPlan);}
+}
+async function refinePlanWithPool(){
+  if(planDiscussionBusy||candidatePoolBusy)return;
+  planDiscussionBusy=true;candidatePoolNotice='AI 正在结合候选、兴趣和你的选择调整 Plan…';renderPlanResult(lastAiPlan);
+  try{
+    const result=await apiRequest({task:'plan',message:'根据 candidate_pools 生成完整修订方案。有候选的城市仅从候选中选择，每个 stop 返回 candidate_id；locked 必须保留、excluded 不得选。具体文字喜好优先于宽泛标签。解释各地点的匹配依据，信息不足不编造背景。结合节奏和地理位置取舍，检查锁定点造成的拥挤或远距离，冲突写 questions 并提示用户取舍，不擅自丢弃。餐饮与住宿建议放 checks，不强制安排每餐停留。未定日期给适合的月份与取舍，开放、预约、门票待日期确定后核验。未加载候选的城市保留原草案并标注未核验。保持完整城市顺序和每日安排。',context:buildPlanContext('candidate_refinement')});
+    const revised=checkCandidatePlan(result.data);
+    planVersions.push({version:planVersionNumber||1,plan:JSON.parse(JSON.stringify(lastAiPlan))});planVersions=planVersions.slice(-6);planVersionNumber++;
+    lastAiPlan=revised;lastAiPlan.sources=result.sources||[];
+    candidatePoolNotice='方案已更新。地点身份已匹配的城市可查看入选理由；未入选候选仍保留。真实交通路线及动态信息尚待核验。';savePlanSession();
+  }catch(error){candidatePoolNotice='调整未完成：'+error.message+'。原方案保留，你的加减选择仍在。';}
+  finally{planDiscussionBusy=false;renderPlanResult(lastAiPlan);}
+}
+
 const POI_INTEREST_LIMIT = 3;
 function togglePoiInterest(button){
   const selected=[...document.querySelectorAll('[data-poi-interest].active')];
@@ -945,14 +1072,14 @@ function togglePoiInterest(button){
   button.setAttribute('aria-pressed',String(!isActive));
   const count=document.querySelectorAll('[data-poi-interest].active').length;
   const status=document.getElementById('poiSearchStatus');
-  if(status)status.textContent='已选择 '+count+' 个兴趣方向。搜索时最多调用 3 次 POI 查询，控制测试额度。';
+  if(status)status.textContent='已选择 '+count+' 个兴趣方向。搜索时最多调用 6 次具体查询，控制测试额度。';
 }
 async function apiPoiRequest(payload){
   async function send(){
     const controller=new AbortController();
-    const timer=setTimeout(()=>controller.abort(),30000);
+    const timer=setTimeout(()=>controller.abort(),110000);
     try{return await fetch(API_BASE+'/api/poi/search',{method:'POST',headers:apiHeaders(),body:JSON.stringify(payload),signal:controller.signal});}
-    catch(error){if(error.name==='AbortError')throw new Error('高德 POI 查询超过 30 秒，请稍后重试。');if(error instanceof TypeError)throw new Error('无法连接 POI 服务。请检查网络或稍后重试。');throw error;}
+    catch(error){if(error.name==='AbortError')throw new Error('候选发现超过等待时间，请稍后重试。');if(error instanceof TypeError)throw new Error('无法连接 POI 服务。请检查网络或稍后重试。');throw error;}
     finally{clearTimeout(timer);}
   }
   let response=await send();
@@ -972,7 +1099,7 @@ function renderPoiSearchResults(data){
     const title=document.createElement('strong');title.textContent=(index+1)+'. '+(poi.name||'未命名地点');item.appendChild(title);
     const address=document.createElement('p');address.textContent=poi.address||[poi.pname,poi.cityname,poi.adname].filter(Boolean).join(' · ')||'地址暂缺';item.appendChild(address);
     const meta=document.createElement('div');meta.className='poi-result-meta';
-    [poi.type||'类别待补',...(poi.interests||[]),poi.location?('坐标 '+poi.location):'坐标待补'].forEach(value=>{const tag=document.createElement('span');tag.textContent=value;meta.appendChild(tag)});
+    [poi.type||'类别待补',...(poi.search_provenance||[]).map(q=>'搜索：'+q.keyword),poi.location?('坐标 '+poi.location):'坐标待补'].forEach(value=>{const tag=document.createElement('span');tag.textContent=value;meta.appendChild(tag)});
     item.appendChild(meta);list.appendChild(item);
   });
   if(!pois.length){const empty=document.createElement('p');empty.className='tiny';empty.textContent='本次没有返回地点。可以换一个兴趣标签或缩短关键词再试。';list.appendChild(empty);}
@@ -986,9 +1113,9 @@ async function searchPoi(){
   button.disabled=true;button.textContent='正在发现地点…';
   status.textContent='正在连接高德 POI 服务。API Key 保存在 Worker，不会暴露在网页端。';
   document.getElementById('poiResultsCard').style.display='none';
-  try{const data=await apiPoiRequest({city,interests});renderPoiSearchResults(data);status.textContent='查询完成：'+(data.total||0)+' 个去重后的地点候选。请先检查地点质量，再进入 AI 推荐测试。';}
+  try{const data=await apiPoiRequest({city,interests,preferences:document.getElementById('poiExtra').value.trim()});renderPoiSearchResults(data);status.textContent='查询完成：'+(data.total||0)+' 个去重后的地点候选。请先检查地点质量，再进入 AI 推荐测试。';}
   catch(error){status.textContent='本次查询未完成：'+error.message;toast('POI 测试未完成');}
-  finally{button.disabled=false;button.textContent='发现贵阳的真实地点 →';}
+  finally{button.disabled=false;button.textContent='开始搜索真实地点 →';}
 }
 
 async function readImageFilesFromInput(inputId){
