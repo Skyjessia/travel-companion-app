@@ -829,6 +829,7 @@ async function callDeepSeek(task, input, env, requestBody, requestId = "unknown"
   const guidedChat=task==='chat'&&requestBody?.context?.mode==='plan_discussion';
   if(guidedChat)messages.push({role:'user',content:'仅输出合法 JSON（json）：{"reply":"简短回应刚才的选择","question":"本轮唯一需要决定的问题，信息足够则为空","options":[{"label":"具体选项A，不带A前缀","value":"用户选A的完整意思"},{"label":"具体选项B，不带B前缀","value":"用户选B的完整意思"}],"recommendation":"推荐A或B的简短原因","ready":false,"details":"可选详细依据"}。问题非空时必须有两个互斥且紧扣该问题的具体选项，不能用泛化的少走路或多点文化代替回答。信息足够时 ready=true、question为空、options=[]，不要无限追问。每次只推进一个关键决定，尊重已有约束，不重复已回答问题。'});
   if(task==='plan')messages.push({role:'user',content:'如果还有待决定的问题，额外返回 next_decision，结构为 {"reply":"简短说明","question":"首个关键问题的完整内容","options":[{"label":"具体选择A","value":"选择A的完整意思"},{"label":"具体选择B","value":"选择B的完整意思"}],"recommendation":"推荐与原因","ready":false,"details":"详细依据可空"}。两个选项必须互斥且对应本问题。无关键问题则 next_decision 为 {"reply":"关键信息已足够","question":"","options":[],"recommendation":"","ready":true,"details":""}。'});
+  if(task==='plan')messages.push({role:'user',content:'地图落点要求：游览stop.name必须是具体可检索地点的正式名称。活动描述放reason，另给location_name为准确地图名称；activity_kind只能是sight/transport/rest。交通写from/to与活动描述，不伪装景点；沿河、周边、老城漫步不得用作唯一地点名，需具体到景点、步道或起点。无可靠具体点就提出需要决定的问题，不编坐标。每个游览点优先使用候选id，保持游览顺序。next_decision的问题及A/B必须同一轮一起生成并推荐其中之一，不要求用户先生成比较。'});
   const body = {
 
     model,
@@ -1179,6 +1180,7 @@ function validatePoolPlan(plan, context) {
     for(const day of plan.days||[]){
       if(day.city!==pool.city)continue;
       for(const stop of day.stops||[]){
+        if(!stop.candidate_id&&(['transport','rest'].includes(stop.activity_kind)||/转场|自由活动|返回.*休息|^休息$/.test(stop.name||'')))continue;
         const poi=allowed.get(stop.candidate_id);
         if(!poi||choices[poi.id]==="excluded"||seen.has(poi.id))return "候选地点身份、去重或排除约束未通过检查。";
         seen.add(poi.id);stop.name=poi.name;stop.location=poi.location;stop.location_source="amap";stop.coordinate_system="GCJ02";
@@ -1407,7 +1409,7 @@ export default {
 
         service: "travel-companion-ai",
 
-        version: "2026-11-01-decisions-8",
+        version: "2026-11-01-map-ready-9",
 
         configured: Boolean(env.DEEPSEEK_API_KEY),
 

@@ -321,13 +321,15 @@ function displayCoordinate(location,system='GCJ02'){
   if(system==='GCJ02'){for(let i=0;i<6;i++){const g=wgsToGcj(lng,lat);lng-=g[0]-point[0];lat-=g[1]-point[1];}}
   return [lat,lng];
 }
+function isMapActivity(stop){return ['transport','rest'].includes(stop.activity_kind)||/转场|自由活动|返回.*休息|^休息$|^乘(?:车|火车|高铁|飞机)/.test(stop.name||'');}
 function stopMapDescriptor(stop,city,country,kind='sight'){
-  let poi=null;
-  if(stop.candidate_id)for(const pool of Object.values(candidatePools)){poi=pool.pois?.find(p=>p.id===stop.candidate_id);if(poi)break;}
-  const location=poi?.location||(stop.location_source==='amap'?stop.location:null);
-  country=country||(/^(中国|China)$/i.test(planBrief?.country||'')?planBrief.country:'');
-  if(!country&&Object.keys(candidatePools).includes(city))country='中国';
-  return {key:mapKey(kind,stop.name,city,country),name:stop.name,city,country,kind,id:stop.candidate_id||poi?.id||'',location:parseMapCoordinate(location)?location:null,coordinate_system:stop.coordinate_system||'GCJ02',status:location?'matched':'pending'};
+ let poi=null;const pool=candidatePools[city];
+ if(stop.candidate_id)for(const p of Object.values(candidatePools)){poi=p.pois?.find(p=>p.id===stop.candidate_id);if(poi)break;}
+ const name=String(stop.location_name||stop.name||'').trim();
+ if(!poi){const same=(pool?.pois||[]).filter(p=>p.name===name);if(same.length===1)poi=same[0];}
+ const location=poi?.location||(stop.location_source==='amap'?stop.location:null);
+ if(!country&&pool)country='中国';const actual=poi?.name||name;
+ return {key:mapKey(kind,actual,city,country),name:actual,displayName:stop.name,city,country,kind,id:poi?.id||stop.candidate_id||'',location:parseMapCoordinate(location)?location:null,coordinate_system:stop.coordinate_system||'GCJ02',status:location?'matched':'pending',activity:isMapActivity(stop)};
 }
 function rememberMapLocation(item){
   mapLocationMemory[item.key]={...item,fetchedAt:Date.now()};
@@ -378,7 +380,7 @@ function refreshLiveMap(record,fit=true){
   for(const p of points){
     const popup=document.createElement('div');addTextNode(popup,'strong','',p.name);addTextNode(popup,'p','tiny',p.kind==='city'?'城市定位':p.kind==='food'?'已选餐饮地点；营业待核验':'已选景点；开放与票务待核验');
     const label=document.createElement('span');label.textContent=(p.kind==='food'?'🍴 ':String(p.index+1)+'. ')+p.name;
-    L.circleMarker(p.latlng,{radius:p.kind==='city'?8:7,color:'#fff',weight:2,fillColor:p.kind==='food'?'#bc8956':'#2d766b',fillOpacity:1}).addTo(record.layers).bindTooltip(label,{permanent:record.whole,direction:'top',className:'trip-map-tooltip'}).bindPopup(popup);
+    L.circleMarker(p.latlng,{radius:p.kind==='city'?8:7,color:'#fff',weight:2,fillColor:p.kind==='food'?'#bc8956':'#2d766b',fillOpacity:1}).addTo(record.layers).bindTooltip(label,{permanent:true,direction:'top',className:'trip-map-tooltip'}).bindPopup(popup);
   }
   // Connect only adjacent resolved waypoints; never bridge missing locations.
   for(let i=1;i<points.length;i++)if(points[i].index===points[i-1].index+1&&points[i].kind!=='food'&&points[i-1].kind!=='food')L.polyline([points[i-1].latlng,points[i].latlng],{color:'#b08a62',weight:3,dashArray:'7 7',opacity:.8}).addTo(record.layers);
@@ -451,8 +453,9 @@ function renderTrip(){
   });
   appendLiveMap(mapHolder,'dailyActualMap',()=>day.stops.flatMap(stop=>{
     const meta=stop[3]||{};const kind=meta.kind||((stop[0]==='可选风味'||/餐厅|饭店|酒楼|小吃店|面馆|火锅/.test(stop[1]))?'food':'sight');
+    if(meta.activity||isMapActivity({name:stop[1]}))return [];
     if(kind==='food'&&!meta.id&&stop[0]==='可选风味')return [];
-    return [{...meta,key:meta.key||mapKey(kind,stop[1],city.name,city.country),name:stop[1],city:city.name,country:city.country,kind}];
+    return [{...meta,key:meta.key||mapKey(kind,stop[1],city.name,city.country),name:meta.name||stop[1],city:city.name,country:city.country,kind}];
   }));
   const details=document.createElement('details');addTextNode(details,'summary','','查看全程地图与跨城交通');
   appendTransportOverview(details,{city_sequence:trip.cities.map(c=>({city:c.name,country:c.country})),intercity_transport:trip.transport||[],days:trip.days.map(d=>({day_label:d.label,city:trip.cities.find(c=>c.id===d.city)?.name,stops:d.stops.map(s=>({name:s[1]}))}))},'tripWholeRouteMap');details.ontoggle=()=>{if(details.open)requestAnimationFrame(()=>{for(const r of liveTripMaps.values())if(details.contains(r.element))refreshLiveMap(r);});};whole.appendChild(details);
@@ -675,6 +678,16 @@ function guidedPlanChoices(text){
  choices.push({label:'每天轻松一点',message:'请在原有天数内减少每天赶路和景点数量，保留核心体验与锁定地点，先建议具体取舍。'},{label:'多点当地生活',message:'我想增加当地街区、市场或文化体验，请推荐具体地点和取舍，避免泛泛的地方生活占位。'});
  return choices.slice(0,5);
 }
+let dailyEntryBusy=false;
+const decisionRequests=new Set();
+async function prepareCurrentDecision(){
+ const latest=[...planDiscussionHistory].reverse().find(m=>m.role==='assistant');const key=planVersionNumber+'|'+(latest?.content||(lastAiPlan?.questions||[]).join('|'));
+ if(dailyEntryBusy||decisionRequests.has(key)||planDiscussionBusy||candidatePoolBusy||!lastAiPlan)return;decisionRequests.add(key);const version=planVersionNumber;
+ planDiscussionBusy=true;startPlanWork('正在整理当前问题和推荐选项');
+ try{const result=await apiRequest({task:'chat',message:'请直接把当前首个未解决的问题变成完整问题、互斥的具体A/B以及推荐原因。比较由你先完成，不要求用户先点生成比较。已有决定不要重复问。',context:buildPlanContext('plan_discussion')});const decision=cleanPlanDecision(result.data);if(!decision)throw new Error('选项结构不完整');if(version===planVersionNumber){appendPlanDiscussionMessage('assistant',[decision.reply,decision.question,decision.recommendation].filter(Boolean).join('\n'));planDiscussionHistory.at(-1).decision=decision;savePlanSession();}}
+ catch(error){showPlanEntryStatus('当前问题选项整理未完成：'+error.message+'；当前方案仍可查看。');const root=document.getElementById('planGuidedChoices');if(root){root.replaceChildren();const retry=document.createElement('button');retry.textContent='重试加载当前问题选项';retry.onclick=()=>{decisionRequests.delete(key);prepareCurrentDecision();};root.appendChild(retry);}}
+ finally{planDiscussionBusy=false;stopPlanWork();const current=[...planDiscussionHistory].reverse().find(m=>m.role==='assistant');if(current?.decision)renderLatestPlanReply();}
+}
 function cleanPlanDecision(data){
  if(!data||typeof data!=='object')return null;
  const question=typeof data.question==='string'?data.question.trim():'';
@@ -686,7 +699,7 @@ function renderGuidedPlanChoices(text,decision){
  const root=document.getElementById('planGuidedChoices');if(!root)return;root.replaceChildren();
  const add=(label,message)=>{const b=document.createElement('button');b.textContent=label;b.disabled=planDiscussionBusy||candidatePoolBusy;b.onclick=()=>sendPlanMessage(message);root.appendChild(b);};
  if(decision?.question){decision.options.forEach((o,i)=>add((i?'B · ':'A · ')+o.label,'针对问题：'+decision.question+'\n我的选择：'+o.value));add('帮我选','针对问题：'+decision.question+'\n请按我的原始兴趣和约束替我推荐一个选项，说明建议采用哪一个；如无关键冲突，可继续形成方案。');}
- else if(!decision?.ready)add('帮我比较 A / B','请针对当前尚未解决的首个关键问题，给出两个具体可选方案 A / B 并推荐其中一个，不要改变已经确认的约束。');
+ else if(!decision?.ready)addTextNode(root,'p','tiny','正在整理与当前问题对应的具体选项…');
  const update=document.getElementById('planDiscussionRevise');if(update)update.textContent=decision?.ready?'生成推荐方案':'按已确认想法更新方案';
 }
 function renderLatestPlanReply(){
@@ -698,6 +711,7 @@ function renderLatestPlanReply(){
  else if(lastAiPlan?.questions?.length){addTextNode(root,'strong','','当前待确认的问题');lastAiPlan.questions.forEach(q=>addTextNode(root,'p','',q));}
  else addTextNode(root,'p','tiny','可以直接进入每日行程，或让 AI 帮你比较其他选择。');
  root.scrollTop=0;
+ if(!decision&&!planDiscussionBusy&&!candidatePoolBusy&&((lastAiPlan?.questions||[]).length||latest)&&!/没有完成|未完成|失败|出错/.test(latest?.content||''))Promise.resolve().then(prepareCurrentDecision);
 }
 async function updatePlanFromInput(){
   if(planDiscussionBusy||planUploadsBusy)return;
@@ -1212,7 +1226,7 @@ async function generatePlan(){
   finally{setBusy(button,false)}
 }
 function planEntryBlocker(useCurrentOnly){
- if(planDiscussionBusy||candidatePoolBusy)return 'AI 仍在处理，请等待上方工作状态结束后再进入。';
+ if(dailyEntryBusy||planDiscussionBusy||candidatePoolBusy)return 'AI 仍在处理，请等待上方工作状态结束后再进入。';
  if(!planHasStructuredData(lastAiPlan))return '当前还没有完整的每日安排，请先生成推荐方案。';
  if(useCurrentOnly===true)return '';
  if(planUploadsBusy||planReferencesPending)return '新上传资料尚未应用。可以先查看当前方案，或展开更多定制整合资料后再进入。';
@@ -1220,8 +1234,25 @@ function planEntryBlocker(useCurrentOnly){
  return '';
 }
 function showPlanEntryStatus(message){const root=document.getElementById('planEntryStatus');if(root){root.textContent=message;root.scrollIntoView({block:'nearest',behavior:'smooth'});}else toast(message);}
-function applyAiPlan(useCurrentOnly=false){
+async function resolvePlanSights(plan){
+ const requests=[];for(const day of plan.days||[]){const country=(plan.city_sequence||[]).find(c=>c.city===day.city)?.country||'';for(const stop of day.stops||[]){if(isMapActivity(stop))continue;const descriptor=stopMapDescriptor(stop,day.city,country);if(!/^(中国|中华人民共和国|China|中国大陆)$/i.test(country))continue;requests.push({day,stop,descriptor});}}
+ const unknown=requests.filter(r=>!r.descriptor.location);const unique=[...new Map(unknown.map(r=>[r.descriptor.key,r.descriptor])).values()];
+ for(let i=0;i<unique.length;i+=10){const response=await fetch(API_BASE+'/api/map/resolve',{method:'POST',headers:apiHeaders(),body:JSON.stringify({items:unique.slice(i,i+10)}),signal:AbortSignal.timeout(125000)});const data=await response.json();if(!response.ok)throw new Error(data.error||'地点匹配服务未完成');for(const item of data.results||[])rememberMapLocation(item);}
+ const missing=[];for(const r of requests){const match=r.descriptor.location?r.descriptor:mapLocationMemory[r.descriptor.key];if(match?.status==='matched'&&parseMapCoordinate(match.location)){r.stop.location=match.location;r.stop.location_source='amap';r.stop.coordinate_system=match.coordinate_system||'GCJ02';if(match.id){r.stop.candidate_id=match.id;const pool=candidatePools[r.day.city];if(pool&&!pool.pois.some(p=>p.id===match.id))pool.pois.push({id:match.id,name:match.name||r.descriptor.name,location:match.location,type:'地图名称匹配',search_provenance:[]});}r.stop.location_name=match.name||r.descriptor.name;}else missing.push({day_label:r.day.day_label,city:r.day.city,name:r.stop.name,locked:candidateChoices[r.stop.candidate_id]==='locked'});}return missing;
+}
+async function prepareDailyPlan(){
+ planDiscussionBusy=true;renderLatestPlanReply();startPlanWork('正在匹配每天的具体景点');
+ try{let missing=await resolvePlanSights(lastAiPlan);
+ if(missing.length){startPlanWork('正在补全无法定位的景点推荐');const context=buildPlanContext('map_repair',{map_issues:missing});const result=await apiRequest({task:'plan',message:'修订完整行程：map_issues中的名称未唯一定位，不能继续原样输出。非锁定游览点替换成同城、符合兴趣的具体景点，优先候选池中带id和坐标的地点；沿河体验须明确具体游览段或起点并写location_name。交通不得作为游览点，activity_kind=transport并写from/to；休息用rest。锁定点不可删除，无法确定则questions要求用户确认。保留全部城市、天数、其他已确认选择与餐饮。',context});const revised=Object.keys(candidatePools).length?checkCandidatePlan(result.data):result.data;if(!planHasStructuredData(revised))throw new Error('未返回完整行程');missing=await resolvePlanSights(revised);if(missing.length){showPlanEntryStatus('这些游览点仍未唯一匹配，尚未替换原方案：'+missing.map(x=>x.day_label+' '+x.name).join('、')+'。请在当天备选中选具体景点后更新。');return false;}
+ planVersions.push({version:planVersionNumber,plan:JSON.parse(JSON.stringify(lastAiPlan))});planVersions=planVersions.slice(-6);planVersionNumber++;lastAiPlan=revised;savePlanSession();renderPlanResult(lastAiPlan);}
+ savePlanSession();return true;
+ }catch(error){showPlanEntryStatus('景点匹配未完成：'+error.message+'。当前方案已保留，请重试进入。');return false;}
+ finally{planDiscussionBusy=false;stopPlanWork();const note=document.getElementById('planEntryStatus')?.textContent||'';renderPlanResult(lastAiPlan);if(note.includes('未完成')||note.includes('未唯一匹配')){const status=document.getElementById('planEntryStatus');if(status)status.textContent=note;}}
+}
+async function applyAiPlan(useCurrentOnly=false){
  const blocked=planEntryBlocker(useCurrentOnly);if(blocked){showPlanEntryStatus(blocked);return;}
+ dailyEntryBusy=true;
+ if(!await prepareDailyPlan()){dailyEntryBusy=false;return;}
  const before=JSON.parse(JSON.stringify(trip));const beforeCity=activeCity,beforeDay=activeDay;
  try{
   const plan=lastAiPlan;trip.planDerived=true;trip.planVersion=planVersionNumber;trip.transport=plan.intercity_transport||[];
@@ -1241,6 +1272,7 @@ function applyAiPlan(useCurrentOnly=false){
   activeCity=trip.cities[0].id;activeDay=trip.days[0].id;
   persist(true);nav("trip");toast("AI 方案已载入工作台；请继续核实交通和开放时间");
  }catch(error){trip=before;activeCity=beforeCity;activeDay=beforeDay;nav('planner');showPlanEntryStatus('每日行程载入失败：'+error.message+'。当前方案保留，可重试；请将此提示发给我们。');}
+ finally{dailyEntryBusy=false;const status=document.getElementById('planEntryStatus');if(status&&!/失败|未完成|未唯一匹配/.test(status.textContent))status.textContent=planEntryBlocker(false);}
 }
 function togglePlanInterest(button){
   const selected=document.querySelectorAll('[data-plan-interest].active');
@@ -1262,6 +1294,7 @@ function checkCandidatePlan(plan){
     const allowed=new Map(pool.candidates.map(p=>[p.id,p]));
     for(const d of plan.days||[]){if(d.city!==pool.city)continue;
       for(const s of [...(d.stops||[]),...(d.local_food||[]).filter(f=>f.candidate_id)]){
+        if(!s.candidate_id&&isMapActivity(s))continue;
         const p=allowed.get(s.candidate_id);
         if(!p||candidateChoices[p.id]==='excluded'||selected.has(p.id))throw new Error('候选身份、排除或去重检查未通过，原方案已保留');
         s.name=p.name;s.location=p.location;s.location_source='amap';s.coordinate_system='GCJ02';s.verification='地点已匹配高德；开放时间、票务和预约待核验';selected.add(p.id);

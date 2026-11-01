@@ -50,7 +50,7 @@ function frontend(){
  const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
  const snippet=source.slice(source.indexOf('function poolSelectedIds(){'),source.indexOf('function appendCandidateExplorer('));
  const poolFn=source.slice(source.indexOf('function poolContext(){'),source.indexOf('function setCandidateChoice('));
- const sandbox={Set,Map,Error,candidatePools:{贵阳:{city:'贵阳',pois:[candidate],rankingStatus:'ranked',recommendations:[{id:'p1',reason:'兴趣匹配',role:'sight'}],queries:[]}},candidateChoices:{},candidatePoolBusy:false,candidateExplorerCity:'',planDiscussionBusy:false,lastAiPlan:plan(),planHasStructuredData:p=>!!p?.days?.length,savePlanSession:()=>{},renderPlanResult:()=>{},toast:()=>{}};
+ const sandbox={Set,Map,Error,isMapActivity:s=>["transport","rest"].includes(s.activity_kind)||/转场|自由活动|返回.*休息/.test(s.name||""),candidatePools:{贵阳:{city:'贵阳',pois:[candidate],rankingStatus:'ranked',recommendations:[{id:'p1',reason:'兴趣匹配',role:'sight'}],queries:[]}},candidateChoices:{},candidatePoolBusy:false,candidateExplorerCity:'',planDiscussionBusy:false,lastAiPlan:plan(),planHasStructuredData:p=>!!p?.days?.length,savePlanSession:()=>{},renderPlanResult:()=>{},toast:()=>{}};
  vm.createContext(sandbox);vm.runInContext(snippet,sandbox);return sandbox;
 }
 test('candidate add, exclude and undo survive in model context',()=>{
@@ -84,7 +84,7 @@ test('locked dining candidate can be arranged as optional daily local food',()=>
 });
 test('initial Plan discovers every domestic city before a single refinement',async()=>{
  const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
- const snippet=source.slice(source.indexOf('async function generatePlan(){'),source.indexOf('function applyAiPlan('));
+ const snippet=source.slice(source.indexOf('async function generatePlan(){'),source.indexOf('async function applyAiPlan('));
  const fields={origin:'长沙',destination:'衡阳',cities:'',startDate:'',endDate:'',pace:'舒适慢游',preferences:'历史与地方生活',planDays:'3'};
  const nodes=Object.fromEntries(Object.entries(fields).map(([k,v])=>[k,{value:v}]));nodes.generated={style:{},innerHTML:''};
  const found=[];let refinements=0;
@@ -159,11 +159,29 @@ test('decision validation keeps full questions and exact dynamic choices',()=>{
  const q='完整问题'.repeat(200);const d=f.cleanPlanDecision({question:q,options:[{label:'怀化加一晚',value:'省下的一晚加到怀化'},{label:'贵阳加一晚',value:'省下的一晚加到贵阳'}]});assert.equal(d.question,q);assert.equal(d.options[1].label,'贵阳加一晚');assert.equal(f.cleanPlanDecision({question:q,options:[]}),null);
 });
 test('entry explains pending choices but allows an explicit current-plan preview',()=>{
- const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');const f={planDiscussionBusy:false,candidatePoolBusy:false,lastAiPlan:{},planHasStructuredData:()=>true,planUploadsBusy:false,planReferencesPending:false,poolSelectedIds:()=>new Set(),candidateChoices:{p1:'locked'}};vm.createContext(f);vm.runInContext(source.slice(source.indexOf('function planEntryBlocker('),source.indexOf('function showPlanEntryStatus(')),f);assert.match(f.planEntryBlocker(false),/尚未应用/);assert.equal(f.planEntryBlocker(true),'');f.planDiscussionBusy=true;assert.match(f.planEntryBlocker(true),/仍在处理/);
+ const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');const f={dailyEntryBusy:false,planDiscussionBusy:false,candidatePoolBusy:false,lastAiPlan:{},planHasStructuredData:()=>true,planUploadsBusy:false,planReferencesPending:false,poolSelectedIds:()=>new Set(),candidateChoices:{p1:'locked'}};vm.createContext(f);vm.runInContext(source.slice(source.indexOf('function planEntryBlocker('),source.indexOf('function showPlanEntryStatus(')),f);assert.match(f.planEntryBlocker(false),/尚未应用/);assert.equal(f.planEntryBlocker(true),'');f.planDiscussionBusy=true;assert.match(f.planEntryBlocker(true),/仍在处理/);
 });
 
 test('guided discussion endpoint requests structured JSON and exposes dynamic decision data',async()=>{
  try{globalThis.fetch=async(_url,options)=>{const b=JSON.parse(options.body);assert.equal(b.response_format.type,'json_object');assert.ok(b.messages.some(m=>typeof m.content==='string'&&m.content.includes('本轮唯一需要决定的问题')));return json({choices:[{finish_reason:'stop',message:{content:JSON.stringify({reply:'已理解',question:'多出的一晚放哪？',options:[{label:'怀化',value:'怀化加一晚'},{label:'贵阳',value:'贵阳加一晚'}],ready:false})}}]});};
  const response=await worker.fetch(new Request('https://example.test/api/assistant',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task:'chat',message:'帮我比较',context:{mode:'plan_discussion'}})}),{DEEPSEEK_API_KEY:'test'});assert.equal(response.status,200);assert.equal((await response.json()).data.options[1].value,'贵阳加一晚');
  }finally{globalThis.fetch=realFetch;}
+});
+
+test('map descriptors reuse exact candidate identity and classify transfer separately',()=>{
+ const f=mapHelpers();f.candidatePools={贵阳:{pois:[{id:'p1',name:'测试博物馆',location:'106.7,26.5'}]}};
+ const d=f.stopMapDescriptor({name:'参观测试博物馆',location_name:'测试博物馆'},'贵阳','中国');assert.equal(d.id,'p1');assert.equal(d.name,'测试博物馆');assert.equal(d.location,'106.7,26.5');assert.equal(f.isMapActivity({name:'芙蓉镇至贵阳转场'}),true);assert.equal(f.isMapActivity({name:'测试博物馆'}),false);
+});
+test('daily preflight matches real sights, skips transfers, and reports unresolved descriptions',async()=>{
+ const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');const f=mapHelpers();Object.assign(f,{API_BASE:'https://example.test',apiHeaders:()=>({}),AbortSignal,mapLocationMemory:{},rememberMapLocation:item=>{f.mapLocationMemory[item.key]=item;},candidateChoices:{},fetch:async(_url,options)=>{const items=JSON.parse(options.body).items;assert.equal(items.length,2);return json({results:items.map(p=>p.name==='测试博物馆'?{...p,status:'matched',id:'real',location:'106.7,26.5'}:{...p,status:'ambiguous'})});}});
+ vm.runInContext(source.slice(source.indexOf('async function resolvePlanSights('),source.indexOf('async function prepareDailyPlan(')),f);
+ const p={city_sequence:[{city:'贵阳',country:'中国'}],days:[{day_label:'D1',city:'贵阳',stops:[{name:'芙蓉镇至贵阳转场'},{name:'测试博物馆'},{name:'南明河沿岸'}]}]};const missing=await f.resolvePlanSights(p);assert.equal(missing.length,1);assert.equal(missing[0].name,'南明河沿岸');assert.equal(p.days[0].stops[1].location_source,'amap');assert.equal(p.days[0].stops[1].candidate_id,'real');
+});
+
+test('candidate validation accepts explicit transfer activities while retaining locked sights',()=>{
+ const p=plan();p.days[0].stops.unshift({name:'A至B转场',activity_kind:'transport',from:'A',to:'B'});assert.equal(validatePoolPlan(p,context),'');p.days[0].stops=p.days[0].stops.slice(0,1);assert.ok(validatePoolPlan(p,context));
+});
+
+test('failed geographic repair keeps the previous plan instead of publishing unresolved replacements',async()=>{
+ const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');const old={summary:'原方案'};const node={textContent:''};const f={lastAiPlan:old,planDiscussionBusy:false,startPlanWork:()=>{},stopPlanWork:()=>{},renderLatestPlanReply:()=>{},renderPlanResult:()=>{},candidatePools:{},planVersions:[],planVersionNumber:1,savePlanSession:()=>{},showPlanEntryStatus:t=>node.textContent=t,document:{getElementById:()=>node},resolvePlanSights:async()=>[{day_label:'D1',city:'贵阳',name:'沿岸泛称'}],buildPlanContext:()=>({}),apiRequest:async()=>({data:{summary:'未匹配替换'}}),planHasStructuredData:()=>true};vm.createContext(f);vm.runInContext(source.slice(source.indexOf('async function prepareDailyPlan('),source.indexOf('async function applyAiPlan(')),f);assert.equal(await f.prepareDailyPlan(),false);assert.equal(f.lastAiPlan,old);assert.equal(f.planVersionNumber,1);assert.match(node.textContent,/未唯一匹配/);assert.equal(f.planDiscussionBusy,false);
 });
