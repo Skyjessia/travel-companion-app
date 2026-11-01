@@ -146,11 +146,14 @@
         });
       }
     });
+    return completeFinalMetadata(result,expected,review,transportChoices);
+  }
+  function completeFinalMetadata(result,expected,review,transportChoices){
     result.intercity_transport=(review?.transport||[]).map(leg=>{const selected=transportChoices[leg.id]||'pending';const choice=selected==='pending'?{mode:'待定'}:leg.options.find(o=>o.id===selected);if(!choice)throw new Error('请重新选择 '+leg.from+' → '+leg.to+' 的交通方式，或设为待定。');return {from:leg.from,to:leg.to,day_label:leg.day_label,mode:selected==='pending'?'待定':choice.mode,status:selected==='pending'?'pending':'suggested',notes:leg.notes,verification:selected==='pending'?'交通待定；需确认方式、班次及换乘，当前不是已可执行的交通安排':'建议方式；班次、票价与衔接时间待核实'};});
-    result.map_pending=clone(expected.map_pending||[]);result.checks=[...new Set([...(expected.checks||[]),...(input.checks||[])])];for(const leg of result.intercity_transport)if(leg.status==='pending')result.checks.push('交通待定：'+leg.from+' → '+leg.to+'；出发前请确认交通方式、班次与换乘缓冲。');if(review?.deferred)result.checks.push('综合评估尚未完成；本版保留用户当前景点安排，出发前需继续检查节奏与衔接。');result.checks=[...new Set(result.checks)];result.questions=[];return result;
+    result.map_pending=clone(expected.map_pending||[]);result.checks=[...new Set([...(expected.checks||[]),...(result.checks||[])])];for(const leg of result.intercity_transport)if(leg.status==='pending')result.checks.push('交通待定：'+leg.from+' → '+leg.to+'；出发前请确认交通方式、班次与换乘缓冲。');if(review?.deferred)result.checks.push('综合评估尚未完成；本版保留用户当前景点安排，出发前需继续检查节奏与衔接。');result.checks=[...new Set(result.checks)];result.questions=[];return result;
   }
   function assembleConfirmedPlan(plan,review,transportChoices){
-    const final=assertFinalPlan(plan,plan,review,transportChoices);
+    const final=completeFinalMetadata(clone(plan),plan,review,transportChoices);
     final.ai_refinement_status='not_requested';
     final.checks=[...new Set([...final.checks,'行程按用户已确认的地点、时段和交通选择直接整理；更细的交通耗时与时间优化尚待补充。'])];
     return final;
