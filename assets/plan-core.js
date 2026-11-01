@@ -132,15 +132,29 @@
     result.days.forEach((day,i)=>{
       const before=expected.days[i];if(day.city!==before.city||day.day_label!==before.day_label||!Array.isArray(day.stops))throw new Error('AI 改变了日期归属，请重试。');
       for(const field of ['stops','local_food']){
-        const original=before[field]||[],actual=day[field]||[];const actualKeys=actual.map(s=>s.candidate_id||'name:'+normalize(s.name)).sort();
-        const aliases=original.map(s=>s.candidate_id||'name:'+normalize(s.name)).sort();
-        if(JSON.stringify(aliases)!==JSON.stringify(actualKeys))throw new Error('AI 改变了 '+day.day_label+' 已确认的地点，未覆盖原选择，请重试。');
-        day[field]=actual.map(s=>{const old=original.find(p=>(p.candidate_id||'name:'+normalize(p.name))===(s.candidate_id||'name:'+normalize(s.name)));if(old.workflow_time_locked&&!String(s.time||'').includes(old.time))throw new Error('AI 改变了你指定的时间段，请重试。');return {...s,name:old.name,candidate_id:old.candidate_id||'',location:old.location||'',location_name:old.location_name||old.name,location_source:old.location_source||'unverified',location_status:old.location_status||(old.location_source==='amap'&&old.location?'matched':'pending'),coordinate_system:old.coordinate_system||'',activity_kind:old.activity_kind||'sight',verification:old.verification||'待核验',workflow_key:stopKey(old)};});
+        const original=before[field]||[],actual=day[field]||[];
+        if(!Array.isArray(actual)||actual.length!==original.length)throw new Error('AI 返回的 '+day.day_label+' '+(field==='local_food'?'美食':'景点')+' 数量与已确认安排不一致，原行程保留。');
+        const remaining=new Set(original.map((_,index)=>index));
+        const id=s=>s.candidate_id==null?'':String(s.candidate_id).trim();
+        day[field]=actual.map(s=>{
+          let matches=[...remaining].filter(index=>id(s)&&id(original[index])===id(s));
+          if(!matches.length)matches=[...remaining].filter(index=>normalize(original[index].name)===normalize(s.name)&&!(id(s)&&id(original[index])&&id(s)!==id(original[index])));
+          if(matches.length!==1)throw new Error('AI 返回的 '+day.day_label+' 地点身份不一致：'+(text(s.name,80)||'未命名地点')+'；原行程保留。');
+          const index=matches[0],old=original[index];remaining.delete(index);
+          if(old.workflow_time_locked&&!String(s.time||'').includes(old.time))throw new Error('AI 改变了你指定的时间段，原行程保留。');
+          return {...s,name:old.name,candidate_id:old.candidate_id||'',location:old.location||'',location_name:old.location_name||old.name,location_source:old.location_source||'unverified',location_status:old.location_status||(old.location_source==='amap'&&old.location?'matched':'pending'),coordinate_system:old.coordinate_system||'',activity_kind:old.activity_kind||'sight',verification:old.verification||'待核验',workflow_key:stopKey(old)};
+        });
       }
     });
     result.intercity_transport=(review?.transport||[]).map(leg=>{const selected=transportChoices[leg.id]||'pending';const choice=selected==='pending'?{mode:'待定'}:leg.options.find(o=>o.id===selected);if(!choice)throw new Error('请重新选择 '+leg.from+' → '+leg.to+' 的交通方式，或设为待定。');return {from:leg.from,to:leg.to,day_label:leg.day_label,mode:selected==='pending'?'待定':choice.mode,status:selected==='pending'?'pending':'suggested',notes:leg.notes,verification:selected==='pending'?'交通待定；需确认方式、班次及换乘，当前不是已可执行的交通安排':'建议方式；班次、票价与衔接时间待核实'};});
     result.map_pending=clone(expected.map_pending||[]);result.checks=[...new Set([...(expected.checks||[]),...(input.checks||[])])];for(const leg of result.intercity_transport)if(leg.status==='pending')result.checks.push('交通待定：'+leg.from+' → '+leg.to+'；出发前请确认交通方式、班次与换乘缓冲。');if(review?.deferred)result.checks.push('综合评估尚未完成；本版保留用户当前景点安排，出发前需继续检查节奏与衔接。');result.checks=[...new Set(result.checks)];result.questions=[];return result;
   }
-  const api={STAGES,SLOTS,clone,normalize,fingerprint,dayKey,stopKey,isActivity,createFlow,restoreFlow,editFor,invalidate,materialize,addCandidate,removeStop,restoreStop,setSlot,confirmDay,confirmRemaining,reviewSnapshot,transportLegs,normalizeTransport,validateReview,applyReview,adoptReviewedPlan,finalCandidateChoices,assertFinalPlan};
+  function assembleConfirmedPlan(plan,review,transportChoices){
+    const final=assertFinalPlan(plan,plan,review,transportChoices);
+    final.ai_refinement_status='not_requested';
+    final.checks=[...new Set([...final.checks,'行程按用户已确认的地点、时段和交通选择直接整理；更细的交通耗时与时间优化尚待补充。'])];
+    return final;
+  }
+  const api={STAGES,SLOTS,clone,normalize,fingerprint,dayKey,stopKey,isActivity,createFlow,restoreFlow,editFor,invalidate,materialize,addCandidate,removeStop,restoreStop,setSlot,confirmDay,confirmRemaining,reviewSnapshot,transportLegs,normalizeTransport,validateReview,applyReview,adoptReviewedPlan,finalCandidateChoices,assertFinalPlan,assembleConfirmedPlan};
   root.PlanCore=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(globalThis);

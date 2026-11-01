@@ -1448,7 +1448,7 @@ export default {
 
         service: "travel-companion-ai",
 
-        version: "2026-11-01-transport-pending-12",
+        version: "2026-11-01-confirmed-plan-13",
 
         configured: Boolean(env.DEEPSEEK_API_KEY),
 
