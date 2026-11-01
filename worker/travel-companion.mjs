@@ -386,7 +386,7 @@ function makeInput(task, body) {
 
     const instructions = String(body.message || "请根据旅行信息生成完整、可编辑的逐日旅行方案。").slice(0, 5000);
 
-    const context = JSON.stringify(body.context || {}, null, 2).slice(0, 32000);
+    const context = JSON.stringify(body.context || {}, null, 2).slice(0, 48000);
 
     return [{
 
@@ -406,7 +406,7 @@ function makeInput(task, body) {
 
     .map(x => ({ role: x.role, content: x.content.slice(0, 4000) }));
 
-  const context = JSON.stringify(body.context || {}).slice(0, 32000);
+  const context = JSON.stringify(body.context || {}).slice(0, 48000);
 
   const userText = `当前旅行上下文（仅供参考）：\n${context}\n\n用户现在的问题：\n${String(body.message || "请结合我上传的图片分析。").slice(0, 4000)}`;
 
@@ -1122,6 +1122,43 @@ function isPlaceholderStop(name){
   return !String(name||'').trim()||/历史(?:人文|文化)(?:地点|景点)$|地方生活街区$|特色餐饮区域$|^待(?:选|定|确认|推荐).*|^当地(?:景点|特色餐饮|美食区域)$/.test(String(name).trim());
 }
 
+let amapSchedule=Promise.resolve();
+let amapLastStarted=0;
+async function waitAmapSlot(){
+  const slot=amapSchedule.then(async()=>{const delay=Math.max(0,550-(Date.now()-amapLastStarted));if(delay)await sleep(delay);amapLastStarted=Date.now();});
+  amapSchedule=slot.catch(()=>{});await slot;
+}
+const mapLocationCache=new Map();
+function normalizeMapName(value){return String(value||"").replace(/[\s·•（）()]/g,"").replace(/(?:省|市|县|自治县|自治区)$/g,"");}
+async function resolveMapItem(env,item){
+  const key=String(item.key||"").slice(0,160);
+  if(!["city","sight","food"].includes(item.kind))return {key,status:"invalid"};
+  if(!/^(中国|中华人民共和国|China|中国大陆)$/i.test(String(item.country||"").trim()))return {key,status:"unsupported",message:"本轮仅支持国内地点自动匹配"};
+  const name=String(item.name||"").trim(),city=String(item.city||"").trim();
+  if(!name||name.length>80||city.length>40)return {key,status:"invalid"};
+  const cacheKey=JSON.stringify([item.kind,name,city]);const cached=mapLocationCache.get(cacheKey);
+  if(cached&&Date.now()-cached.at<86400000)return {...cached.result,key};
+  let result;
+  if(item.kind==="city"){
+    const params=new URLSearchParams({key:env.AMAP_WEB_KEY,address:name,output:"JSON"});
+    const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),10000);
+    try{
+      await waitAmapSlot();const response=await fetch(`https://restapi.amap.com/v3/geocode/geo?${params}`,{signal:controller.signal});
+      const payload=await response.json();if(!response.ok||String(payload.status)!=="1")throw new Error("MAP_UPSTREAM");
+      const hits=(payload.geocodes||[]).filter(p=>p.location&&[p.city,p.district,p.province].some(v=>typeof v==='string'&&(normalizeMapName(v)===normalizeMapName(name)||(name.length>=2&&v.startsWith(name)&&/[市区县]/.test(String(p.level||''))))));
+      if(hits.length===1)result={name,location:hits[0].location,coordinate_system:"GCJ02",source:"高德地理编码",status:"matched",kind:"city"};
+      else result={name,status:"ambiguous",message:"城市位置未唯一匹配"};
+    }finally{clearTimeout(timer);}
+  }else{
+    const response=await queryAmapPoi(env,city,name);
+    const hits=response.pois.filter(p=>normalizeMapName(p.name)===normalizeMapName(name)&&p.location);
+    if(hits.length===1)result={name:hits[0].name,id:hits[0].id,location:hits[0].location,coordinate_system:"GCJ02",source:"高德名称精确匹配",status:"matched",kind:item.kind};
+    else result={name,status:"ambiguous",message:"地点未唯一匹配，暂不落点"};
+  }
+  if(result.status==='matched'){if(mapLocationCache.size>500)mapLocationCache.clear();mapLocationCache.set(cacheKey,{at:Date.now(),result});}
+  return {...result,key};
+}
+
 function validatePoolPlan(plan, context) {
   for(const day of plan.days||[]){
     if(!Array.isArray(day.stops)||(!day.stops.length&&!/抵达|返程|交通|自由活动|休息|出发/.test(String(day.title||"")))||day.stops.some(stop=>isPlaceholderStop(stop.name)))return "每日行程缺少具体地点，请重试生成；不把占位安排当作完成的方案。";
@@ -1139,14 +1176,14 @@ function validatePoolPlan(plan, context) {
       for(const stop of day.stops||[]){
         const poi=allowed.get(stop.candidate_id);
         if(!poi||choices[poi.id]==="excluded"||seen.has(poi.id))return "候选地点身份、去重或排除约束未通过检查。";
-        seen.add(poi.id);stop.name=poi.name;stop.location=poi.location;
+        seen.add(poi.id);stop.name=poi.name;stop.location=poi.location;stop.location_source="amap";stop.coordinate_system="GCJ02";
         stop.verification="地点已匹配高德；开放时间、门票与预约待核验";
       }
     }
     for(const day of plan.days||[]){
       if(day.city!==pool.city)continue;
       for(const food of day.local_food||[]){
-        if(food.candidate_id){const poi=allowed.get(food.candidate_id);if(!poi)return "餐饮地点不在候选中，请重试。";if(choices[poi.id]==="excluded"||seen.has(poi.id))return "餐饮候选重复或违背排除选择，请重试。";seen.add(poi.id);food.name=poi.name;food.location=poi.location;food.verification="地点已匹配；营业、菜单与价格待核验";}
+        if(food.candidate_id){const poi=allowed.get(food.candidate_id);if(!poi)return "餐饮地点不在候选中，请重试。";if(choices[poi.id]==="excluded"||seen.has(poi.id))return "餐饮候选重复或违背排除选择，请重试。";seen.add(poi.id);food.name=poi.name;food.location=poi.location;food.location_source="amap";food.coordinate_system="GCJ02";food.verification="地点已匹配；营业、菜单与价格待核验";}
         else {food.verification="地方风味建议；具体店铺及营业待核验";}
       }
     }
@@ -1201,7 +1238,7 @@ async function queryAmapPoi(env, city, keyword) {
 
   try {
 
-    response = await fetch(`https://restapi.amap.com/v3/place/text?${params.toString()}`, {
+    await waitAmapSlot();response = await fetch(`https://restapi.amap.com/v3/place/text?${params.toString()}`, {
 
       method: "GET",
 
@@ -1365,7 +1402,7 @@ export default {
 
         service: "travel-companion-ai",
 
-        version: "2026-11-01-plan-curation-3",
+        version: "2026-11-01-map-discussion-4",
 
         configured: Boolean(env.DEEPSEEK_API_KEY),
 
@@ -1387,10 +1424,23 @@ export default {
 
         poiSearchEndpoint: true,
         poiQueryPlanning: true,
-        candidatePoolContract: 3
+        candidatePoolContract: 3,
+        mapResolveEndpoint: true
 
       });
 
+    }
+
+    if(url.pathname==="/api/map/resolve"){
+      if(request.method!=="POST")return reply({error:"Method not allowed.",code:"METHOD_NOT_ALLOWED"},405);
+      if(env.BETA_ACCESS_CODE&&request.headers.get("X-Beta-Code")!==env.BETA_ACCESS_CODE)return reply({error:"需要正确的测试访问码。",code:"BETA_CODE_INVALID"},401);
+      if(overSoftLimit(request.headers.get("CF-Connecting-IP")||"unknown"))return reply({error:"请求过于频繁。",code:"RATE_LIMITED"},429);
+      if(!env.AMAP_WEB_KEY)return reply({error:"高德 Key 尚未配置。",code:"AMAP_KEY_NOT_CONFIGURED"},503);
+      let body;try{body=await request.json();}catch{return reply({error:"INVALID_JSON"},400);}
+      if(!Array.isArray(body?.items)||!body.items.length||body.items.length>10||JSON.stringify(body).length>8192)return reply({error:"每次匹配1–10个地点。",code:"INVALID_MAP_ITEMS"},400);
+      const results=[];
+      for(const item of body.items){if(results.length)await sleep(500);try{results.push(await resolveMapItem(env,item||{}));}catch{results.push({key:String(item?.key||""),status:"unavailable",message:"位置服务暂不可用"});}}
+      return reply({results,coordinate_system:"GCJ02",warning:"仅匹配地点位置，未核验营业与道路路线。"});
     }
 
     if (url.pathname === "/api/poi/search") {
@@ -1626,4 +1676,4 @@ export default {
   }
 
 };
-export {planPoiQueries,rankPoiCandidates,validatePoolPlan,isPlaceholderStop};
+export {planPoiQueries,rankPoiCandidates,validatePoolPlan,isPlaceholderStop,resolveMapItem};

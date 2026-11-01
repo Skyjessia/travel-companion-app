@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import fs from 'node:fs';
-import worker,{planPoiQueries,rankPoiCandidates,validatePoolPlan,isPlaceholderStop} from '../worker/travel-companion.mjs';
+import worker,{planPoiQueries,rankPoiCandidates,validatePoolPlan,isPlaceholderStop,resolveMapItem} from '../worker/travel-companion.mjs';
 const realFetch=globalThis.fetch;
 const json=x=>new Response(JSON.stringify(x),{headers:{'Content-Type':'application/json'}});
 const candidate={id:'p1',name:'测试博物馆',type:'博物馆',location:'106.7,26.5'};
@@ -89,9 +89,39 @@ test('initial Plan discovers every domestic city before a single refinement',asy
  const nodes=Object.fromEntries(Object.entries(fields).map(([k,v])=>[k,{value:v}]));nodes.generated={style:{},innerHTML:''};
  const found=[];let refinements=0;
  const sandbox={document:{getElementById:id=>nodes[id],querySelector:()=>({}),querySelectorAll:()=>[]},Set,Map,
-   addTextNode:()=>{},setBusy:()=>{},savePlanSession:()=>{},updatePlanReferencePreview:()=>{},toast:()=>{},buildPlanContext:()=>({}),renderPlanResult:()=>{},showAiError:(_o,e)=>{throw e;},
+   disposeTripMaps:()=>{},addTextNode:()=>{},setBusy:()=>{},savePlanSession:()=>{},updatePlanReferencePreview:()=>{},toast:()=>{},buildPlanContext:()=>({}),renderPlanResult:()=>{},showAiError:(_o,e)=>{throw e;},
    apiRequest:async()=>({data:{summary:'测试',city_sequence:[{city:'长沙',country:'中国'},{city:'衡阳',country:'中国'},{city:'京都',country:'日本'}],days:[{city:'长沙',stops:[{name:'具体地点'}]}]}}),
    planHasStructuredData:()=>true,discoverCityPool:async c=>{found.push(c.city);return true;},refinePlanWithPool:async()=>{refinements++;}
  };
  vm.createContext(sandbox);vm.runInContext(snippet,sandbox);await sandbox.generatePlan();assert.deepEqual(found,['长沙','衡阳']);assert.equal(refinements,1);
+});
+test('map resolver keeps ambiguous POIs off the map',async()=>{
+ try{globalThis.fetch=async()=>json({status:'1',pois:[{id:'a',name:'测试同名公园',location:'112,28'},{id:'b',name:'测试同名公园',location:'113,29'}]});const r=await resolveMapItem({AMAP_WEB_KEY:'test'},{key:'ambiguous',kind:'sight',name:'测试同名公园',city:'长沙',country:'中国'});assert.equal(r.status,'ambiguous');assert.equal(r.location,undefined);}finally{globalThis.fetch=realFetch;}
+});
+test('map resolver supports a uniquely matched county and reports its coordinate system',async()=>{
+ try{globalThis.fetch=async()=>json({status:'1',geocodes:[{district:'测试侗族自治县',city:'怀化市',province:'湖南省',level:'区县',location:'109.68,27.44'}]});const r=await resolveMapItem({AMAP_WEB_KEY:'test'},{key:'county',kind:'city',name:'测试',city:'测试',country:'中国'});assert.equal(r.status,'matched');assert.equal(r.coordinate_system,'GCJ02');}finally{globalThis.fetch=realFetch;}
+});
+test('foreign map lookup remains explicitly unsupported instead of guessing',async()=>{
+ try{globalThis.fetch=async()=>{throw new Error('must not call')};const r=await resolveMapItem({AMAP_WEB_KEY:'test'},{key:'foreign',kind:'city',name:'京都',city:'京都',country:'日本'});assert.equal(r.status,'unsupported');assert.equal(r.location,undefined);}finally{globalThis.fetch=realFetch;}
+});
+function mapHelpers(){
+ const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ const snippet=source.slice(source.indexOf('function mapKey('),source.indexOf('function rememberMapLocation('));
+ const sandbox={Math,Number,JSON,candidatePools:{}};vm.createContext(sandbox);vm.runInContext(snippet,sandbox);return sandbox;
+}
+test('coordinate display preserves longitude/latitude order and compensates GCJ offset',()=>{
+ const f=mapHelpers();const wgs=[116.397128,39.916527];const gcj=f.wgsToGcj(...wgs);const display=f.displayCoordinate(gcj.join(','),'GCJ02');assert.ok(Math.abs(display[0]-wgs[1])<1e-7);assert.ok(Math.abs(display[1]-wgs[0])<1e-7);
+ assert.deepEqual(Array.from(f.displayCoordinate('139.7,35.6','WGS84')),[35.6,139.7]);assert.equal(f.displayCoordinate('bad'),null);assert.equal(f.parseMapCoordinate('181,91'),null);
+});
+test('model-only coordinates are never trusted as matched map locations',()=>{
+ const f=mapHelpers();const unverified=f.stopMapDescriptor({name:'模型地点',location:'112,28'},'长沙','中国');assert.equal(unverified.location,null);
+ f.candidatePools={长沙:{pois:[{id:'actual',name:'地图地点',location:'112,28'}]}};const known=f.stopMapDescriptor({candidate_id:'actual',name:'地图地点'},'长沙','中国');assert.equal(known.location,'112,28');
+});
+
+test('revision clears busy state before rebuilding all action controls',async()=>{
+ const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ const snippet=source.slice(source.indexOf('async function revisePlanFromDiscussion(){'),source.indexOf('function restorePlanSession(){'));
+ const renders=[];const sandbox={planUploadsBusy:false,planBrief:{},planDiscussionHistory:[{role:'user',content:'慢一点'}],planDiscussionBusy:false,candidatePools:{},lastAiPlan:plan(),planVersions:[],planVersionNumber:1,planReferencesPending:false,
+ document:{getElementById:()=>({})},toast:()=>{},setBusy:()=>{},updatePlanReferencePreview:()=>{},addPlanBubbleToLog:()=>{},appendPlanDiscussionMessage:()=>{},savePlanSession:()=>{},buildPlanContext:()=>({}),planHasStructuredData:()=>true,apiRequest:async()=>({data:plan()}),renderPlanResult:()=>renders.push(sandbox.planDiscussionBusy)};
+ vm.createContext(sandbox);vm.runInContext(snippet,sandbox);await sandbox.revisePlanFromDiscussion();assert.equal(sandbox.planDiscussionBusy,false);assert.equal(renders.at(-1),false);assert.equal(sandbox.planVersionNumber,2);
 });
