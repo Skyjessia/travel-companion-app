@@ -10,7 +10,7 @@ const context={candidate_pools:[{city:'贵阳',candidates:[candidate]}],candidat
 const plan=()=>({summary:'测试',city_sequence:[{city:'贵阳'}],days:[{city:'贵阳',stops:[{candidate_id:'p1',name:'模型改名'}]}]});
 test('query planning receives preferences and produces distinct searches for interests',async()=>{
  try{
-  const captured=[];globalThis.fetch=async(url,opts)=>{const body=JSON.parse(opts.body);const input=JSON.parse(body.messages[1].content);captured.push(input);return json({choices:[{message:{content:JSON.stringify({queries:[{interest:input.interests[0],keyword:input.interests[0]==='历史文化'?'博物馆':'菜市场'}]})}}]});};
+  const captured=[];globalThis.fetch=async(url,opts)=>{const body=JSON.parse(opts.body);assert.match(body.messages[0].content,/json/i);const input=JSON.parse(body.messages[1].content);captured.push(input);return json({choices:[{message:{content:JSON.stringify({queries:[{interest:input.interests[0],keyword:input.interests[0]==='历史文化'?'博物馆':'菜市场'}]})}}]});};
   const a=await planPoiQueries({DEEPSEEK_API_KEY:'test'},'贵阳',['历史文化'],'不喜欢商业化');
   const b=await planPoiQueries({DEEPSEEK_API_KEY:'test'},'贵阳',['地方生活'],'想看当地生活');
   assert.equal(captured[0].preferences,'不喜欢商业化');assert.notEqual(a.queries[0].keyword,b.queries[0].keyword);
@@ -122,11 +122,25 @@ test('revision clears busy state before rebuilding all action controls',async()=
  const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
  const snippet=source.slice(source.indexOf('async function revisePlanFromDiscussion(){'),source.indexOf('function restorePlanSession(){'));
  const renders=[];const sandbox={planUploadsBusy:false,planBrief:{},planDiscussionHistory:[{role:'user',content:'慢一点'}],planDiscussionBusy:false,candidatePools:{},lastAiPlan:plan(),planVersions:[],planVersionNumber:1,planReferencesPending:false,
- document:{getElementById:()=>({})},toast:()=>{},setBusy:()=>{},updatePlanReferencePreview:()=>{},addPlanBubbleToLog:()=>{},appendPlanDiscussionMessage:()=>{},savePlanSession:()=>{},buildPlanContext:()=>({}),planHasStructuredData:()=>true,apiRequest:async()=>({data:plan()}),renderPlanResult:()=>renders.push(sandbox.planDiscussionBusy)};
+ startPlanWork:()=>{},stopPlanWork:()=>{},document:{getElementById:()=>({})},toast:()=>{},setBusy:()=>{},updatePlanReferencePreview:()=>{},addPlanBubbleToLog:()=>{},appendPlanDiscussionMessage:()=>{},savePlanSession:()=>{},buildPlanContext:()=>({}),planHasStructuredData:()=>true,apiRequest:async()=>({data:plan()}),renderPlanResult:()=>renders.push(sandbox.planDiscussionBusy)};
  vm.createContext(sandbox);vm.runInContext(snippet,sandbox);await sandbox.revisePlanFromDiscussion();assert.equal(sandbox.planDiscussionBusy,false);assert.equal(renders.at(-1),false);assert.equal(sandbox.planVersionNumber,2);
 });
 
 test('ranking retries a transient failure once and accepts fenced JSON',async()=>{
  let calls=0;
  try{globalThis.fetch=async()=>{calls++;if(calls===1)return new Response('',{status:503});return json({choices:[{message:{content:'```json\n'+JSON.stringify({recommendations:[{id:'p1',role:'sight',reason:'匹配历史兴趣'}]})+'\n```'}}]});};const r=await rankPoiCandidates({DEEPSEEK_API_KEY:'test'},'贵阳',['历史文化'],'',[candidate]);assert.equal(calls,2);assert.equal(r.status,'ranked');}finally{globalThis.fetch=realFetch;}
+});
+
+test('ranking JSON request satisfies provider prompt contract and does not retry HTTP 400',async()=>{
+ let calls=0;try{globalThis.fetch=async(_url,options)=>{calls++;const b=JSON.parse(options.body);assert.equal(b.response_format.type,'json_object');assert.match(b.messages[0].content,/json/i);return new Response('',{status:400});};const r=await rankPoiCandidates({DEEPSEEK_API_KEY:'test'},'贵阳',['历史文化'],'',[candidate]);assert.equal(calls,1);assert.match(r.warning,/DS_HTTP_400/);}finally{globalThis.fetch=realFetch;}
+});
+test('day comparison highlights changed and added days, reports removal, ignores verification wording',()=>{
+ const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');const snippet=source.slice(source.indexOf('function comparableDay('),source.indexOf('function renderPlanResult('));const f={Set,Map,JSON};vm.createContext(f);vm.runInContext(snippet,f);
+ const before={days:[{day_label:'D1',city:'贵阳',stops:[{name:'古迹',verification:'待核'}]},{day_label:'D2',city:'贵阳',stops:[]}]};
+ const same=JSON.parse(JSON.stringify(before));same.days[0].stops[0].verification='仍待核';assert.equal(f.planDayChanges(same,before).changed.size,0);
+ const after={days:[{day_label:'D1',city:'贵阳',stops:[{name:'新景点'}]},{day_label:'D3',city:'贵阳',stops:[]}]};const changes=f.planDayChanges(after,before);assert.deepEqual([...changes.changed],['D1','D3']);assert.deepEqual([...changes.removed],['D2']);
+});
+
+test('guided actions offer delegation and relevant constraints without typing',()=>{
+ const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');const snippet=source.slice(source.indexOf('function guidedPlanChoices('),source.indexOf('function renderGuidedPlanChoices('));const f={};vm.createContext(f);vm.runInContext(snippet,f);const choices=f.guidedPlanChoices('返程城市与住宿如何决定');assert.ok(choices.some(c=>c.label==='你帮我推荐'));assert.ok(choices.some(c=>c.label==='按原来的终点'));assert.ok(choices.some(c=>c.label==='交通方便、少换酒店'));assert.ok(choices.length<=5);assert.ok(choices.every(c=>c.message));
 });
