@@ -24,7 +24,7 @@ function buildRequest({city,country,brief={},previous={},plan={},choices={},dire
  const angle=d?d.angles[(turn-1)%d.angles.length]:['不同类型的游览体验','之前未展示的具体地点','代表性之外的小众选择'][(turn-1)%3];
  const nearby=d?.key==='nearby';
  const preferences=[d?'本轮选择方向：'+d.preference:'本轮按原兴趣寻找新的选择','本轮希望看的内容：'+angle,nearby?'以 '+city+' 为住宿与出发基地的城郊/周边候选；优先适合一日往返的具体游览点，不扩大为全省或长途跨城路线。往返交通、停留时间与开放条件尚待核实。':'本轮候选为不同地点，同一景区的入口、停车场、售票处及同质分店不视为新的游览选择。',d&&d.key!=='food'?'本轮以游览景点为主，餐馆不能替代游览体验。':'游览与餐饮分别标明。','原有明确约束仍保留：'+String(brief.preferences||'无补充').slice(0,400),excluded.length?'已看过、已安排或不感兴趣的地点，期待避开：'+excluded.slice(-24).map(x=>x.name).join('、'):''].filter(Boolean).join('；').slice(0,1450);
- return {payload:{city,country,interests:[...interests].slice(0,3),preferences},excludedIds,excludedNames,direction:d?.key||'',turn,center,seen:prior.seen||[],nearby};
+ return {payload:{city,country,interests:[...interests].slice(0,3),preferences},excludedIds,excludedNames,direction:d?.key||'',turn,center,seen:excluded,nearby};
 }
 function distanceKm(a,b){const rad=x=>x*Math.PI/180;const x=rad(b[1]-a[1]),y=rad(b[0]-a[0]);const s=Math.sin(x/2)**2+Math.cos(rad(a[1]))*Math.cos(rad(b[1]))*Math.sin(y/2)**2;return 6371*2*Math.asin(Math.min(1,Math.sqrt(s)));}
 function coordinate(value){if(typeof value!=='string')return null;const p=value.split(',').map(Number);return p.length===2&&p.every(Number.isFinite)&&Math.abs(p[0])<=180&&Math.abs(p[1])<=90?p:null;}
