@@ -268,6 +268,17 @@ function setCandidateChoice(id,choice){if(workflowBusy())return;const pool=Objec
 async function finalizePlanAndOpenTrip(){if(workflowBusy())return;if(planFlow?.stage==='final')return applyAiPlan();if(reviewIsCurrent()&&canProceedTransport())workflowStage('transport');else await reviewPlanWorkflow(true);}
 async function updatePlanFromInput(){return sendPlanMessage();}
 
+async function requestCompleteFirstDraft(request,{send,isValid,onRetry=()=>{}}){
+ const repairable=new Set(['PLAN_SCHEMA_INCOMPLETE','PLAN_DRAFT_INCOMPLETE']);
+ for(let attempt=0;attempt<2;attempt++){
+  try{
+   const payload=attempt?{...request,message:request.message+'\n上一次没有返回完整草案。请重新生成完整 JSON：city_sequence 和 days 都必须为非空数组，城市与每天安排一致。不要只返回摘要、问题或 next_decision。日期、预算等选填信息可注明假设，不要清空行程；具体信息仍按原要求标注待核实。'}:request;
+   const result=await send(payload);
+   if(isValid(result?.data))return result;
+   const error=new Error('AI 返回的内容缺少城市或每日安排，本次没有生成方案。你的输入已保留，可以直接重新生成。');error.code='PLAN_DRAFT_INCOMPLETE';error.requestId=result?.requestId;throw error;
+  }catch(error){if(attempt===1||!repairable.has(error.code))throw error;onRetry();}
+ }
+}
 async function generatePlan(){
   if(workflowBusy()||planGenerationBusy)return;
   const backup={brief:planBrief,plan:lastAiPlan,flow:planFlow,version:planVersionNumber,versions:planVersions,pools:candidatePools,choices:candidateChoices,history:planDiscussionHistory};
@@ -307,7 +318,7 @@ async function generatePlan(){
   candidatePools={};candidateChoices={};candidatePoolNotice='';candidateExplorerCity='';candidateInlineDay='';candidatePage={};candidateBatchTurns={};candidateGuidanceCity='';
   planGenerationBusy=true;planFlow=null;planFlowError='';planFlowRetry=null;planBrief=brief;planDiscussionHistory=[];planVersions=[];planVersionNumber=1;lastAiPlan=null;savePlanSession();updatePlanReferencePreview();
   try{
-    const result=await apiRequest({task:"plan",message:"请作为旅行规划师与协商搭档生成可编辑的第一版 Plan。origin 是起点、destination 是终点、cities 为候选城市；仅给国家时可建议城市组合。具体文字喜好优先于宽泛标签，明确约束优先于软偏好。根据 trip_brief.interests、preferences、pace 和 durationDays 实际调整地点选择、停留时长与节奏；在 summary 和各地点 reason 解释与用户偏好的关联，不能只改变措辞。日期空白时，在 checks 中给出适合出行的月份或季节、原因和取舍，使用 D1/D2 排程，不假设用户已选定日期；天数空白时建议合理天数并注明假设。除非无法识别目的地，否则先生成有条件的初稿，questions 最多提出两个会明显改变方案的关键问题，不用预算等选填项阻塞。返回完整 city_sequence、intercity_transport、days、checks、questions。每天安排符合节奏的核心体验，考虑地理聚类与交通缓冲；没有路线服务核算，不声称最优路线或给精确交通分钟数。无需安排固定午餐晚餐时间或强制餐饮停留点，必须在每天 local_food 提供顺路的特色菜和餐饮区域选项，具体店铺需候选 id，否则只给菜品或区域并标待核验；偏远户外活动需提示核实补给，不能未经查证断言没有餐饮。住宿建议先到区域及其取舍，遵守已有酒店约束。热门推荐线索与事实核验分开，未检索不能声称来自小红书或实时热榜。营业时间、票价、预约、班次、营业状态未取得本轮可靠证据一律待核实；具体日期确定后需复查。若有 reference_materials，吸收地点和个人备注，区分主观体验与事实。不擅自删除用户明确锁定的安排。",context:buildPlanContext("initial_plan")});
+    const result=await requestCompleteFirstDraft({task:"plan",message:"请作为旅行规划师与协商搭档生成可编辑的第一版 Plan。origin 是起点、destination 是终点、cities 为候选城市；仅给国家时可建议城市组合。具体文字喜好优先于宽泛标签，明确约束优先于软偏好。根据 trip_brief.interests、preferences、pace 和 durationDays 实际调整地点选择、停留时长与节奏；在 summary 和各地点 reason 解释与用户偏好的关联，不能只改变措辞。日期空白时，在 checks 中给出适合出行的月份或季节、原因和取舍，使用 D1/D2 排程，不假设用户已选定日期；天数空白时建议合理天数并注明假设。除非无法识别目的地，否则先生成有条件的初稿，questions 最多提出两个会明显改变方案的关键问题，不用预算等选填项阻塞。返回完整 city_sequence、intercity_transport、days、checks、questions。每天安排符合节奏的核心体验，考虑地理聚类与交通缓冲；没有路线服务核算，不声称最优路线或给精确交通分钟数。无需安排固定午餐晚餐时间或强制餐饮停留点，必须在每天 local_food 提供顺路的特色菜和餐饮区域选项，具体店铺需候选 id，否则只给菜品或区域并标待核验；偏远户外活动需提示核实补给，不能未经查证断言没有餐饮。住宿建议先到区域及其取舍，遵守已有酒店约束。热门推荐线索与事实核验分开，未检索不能声称来自小红书或实时热榜。营业时间、票价、预约、班次、营业状态未取得本轮可靠证据一律待核实；具体日期确定后需复查。若有 reference_materials，吸收地点和个人备注，区分主观体验与事实。不擅自删除用户明确锁定的安排。",context:buildPlanContext("initial_plan")},{send:apiRequest,isValid:planHasStructuredData,onRetry:()=>{out.replaceChildren();addTextNode(out,'div','ai-loading','✦ AI 第一次返回的安排不完整，正在自动重新生成一次…');if(button)button.textContent='正在补齐方案…';}});
     lastAiPlan=result.data&&typeof result.data==="object"?result.data:null;
     if(lastAiPlan){lastAiPlan.sources=result.sources||[];planReferencesPending=false;}
     if(!planHasStructuredData(lastAiPlan))throw new Error('AI 尚未给出完整的城市与每日安排，请重试。');planVersions=[];
@@ -315,6 +326,6 @@ async function generatePlan(){
     planFlow=PF.createFlow(lastAiPlan,planVersionNumber);savePlanSession();updatePlanReferencePreview();toast('第一版推荐已生成，可以逐天选择喜欢的安排');
 
 
-  }catch(e){if(backup.plan){planBrief=backup.brief;lastAiPlan=backup.plan;planFlow=backup.flow;planVersionNumber=backup.version;planVersions=backup.versions;candidatePools=backup.pools;candidateChoices=backup.choices;planDiscussionHistory=backup.history;planFlowError='新草案生成未完成：'+e.message+'。之前的方案和选择已保留。';savePlanSession();}else showAiError(out,e);}
+  }catch(e){if(backup.plan){planBrief=backup.brief;lastAiPlan=backup.plan;planFlow=backup.flow;planVersionNumber=backup.version;planVersions=backup.versions;candidatePools=backup.pools;candidateChoices=backup.choices;planDiscussionHistory=backup.history;planFlowError='新草案生成未完成：'+e.message+'。之前的方案和选择已保留。';savePlanSession();}else{lastAiPlan=null;planFlow=null;savePlanSession();showAiError(out,e,generatePlan);}}
   finally{planGenerationBusy=false;setBusy(button,false);if(lastAiPlan)renderPlanResult(lastAiPlan);}
 }

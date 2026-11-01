@@ -1,0 +1,12 @@
+import test from 'node:test';import assert from 'node:assert/strict';import vm from 'node:vm';import fs from 'node:fs';
+const source=fs.readFileSync(new URL('../assets/plan-workflow.js',import.meta.url),'utf8');
+const start=source.indexOf('async function requestCompleteFirstDraft('),end=source.indexOf('async function generatePlan(){',start);
+const scope=vm.createContext({});vm.runInContext(source.slice(start,end),scope);
+const recover=scope.requestCompleteFirstDraft;
+const valid=data=>!!data?.city_sequence?.length&&!!data?.days?.length;
+const complete={data:{city_sequence:[{city:'甲城'}],days:[{day_label:'D1',city:'甲城',stops:[{name:'博物馆'}]}]}};
+test('empty successful draft retries exactly once and retains original travel constraints',async()=>{const request={task:'plan',message:'保留既定偏好',context:{trip_brief:{destination:'甲城',durationDays:3,preferences:'少走路'}}},calls=[];let progress=0;const result=await recover(request,{isValid:valid,onRetry:()=>progress++,send:async payload=>{calls.push(payload);return calls.length===1?{data:{city_sequence:[],days:[]}}:complete;}});assert.equal(result,complete);assert.equal(calls.length,2);assert.equal(progress,1);assert.deepEqual(calls[1].context,request.context);assert.match(calls[1].message,/保留既定偏好/);assert.equal(request.message,'保留既定偏好');});
+test('second empty result is rejected, never promoted to a plan or retried indefinitely',async()=>{let calls=0;await assert.rejects(recover({message:'test'},{isValid:valid,send:async()=>{calls++;return {data:{city_sequence:[],days:[]},requestId:'test-request'};}}),e=>e.code==='PLAN_DRAFT_INCOMPLETE'&&e.requestId==='test-request');assert.equal(calls,2);});
+test('server incomplete schema response gets one repair request',async()=>{let calls=0;await recover({message:'test'},{isValid:valid,send:async()=>{if(++calls===1)throw Object.assign(new Error('incomplete'),{code:'PLAN_SCHEMA_INCOMPLETE'});return complete;}});assert.equal(calls,2);});
+test('network, quota and authorization errors do not cause repeated requests',async()=>{for(const code of ['RATE_LIMITED','BETA_CODE_INVALID',undefined]){let calls=0;const error=Object.assign(new Error('failure'),{code});await assert.rejects(recover({message:'test'},{isValid:valid,send:async()=>{calls++;throw error;}}),e=>e===error);assert.equal(calls,1);}});
+test('valid first draft completes without retry',async()=>{let calls=0;assert.equal(await recover({message:'test'},{isValid:valid,send:async()=>{calls++;return complete;}}),complete);assert.equal(calls,1);});

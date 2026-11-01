@@ -279,7 +279,7 @@ button,input,textarea,select{font:inherit}
 <div class="toast" id="toast"></div><div class="modal" id="modal" onclick="if(event.target.id==='modal')closeModal()"><div class="modalbox"><div class="modalhead"><strong id="modalTitle">地点详情</strong><button onclick="closeModal()">关闭 ✕</button></div><div id="modalBody"></div></div></div></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="assets/plan-core.js?v=14.1"></script>
-<script src="assets/plan-workflow.js?v=14.1"></script>
+<script src="assets/plan-workflow.js?v=14.5"></script>
 <script src="assets/journey-ready.js?v=14.4"></script>
 <script>
 const seed={
@@ -569,7 +569,7 @@ async function apiRequest(payload){
     if(response.status===401 || response.status===403)throw new Error("测试访问码无效或无权限，请向分享者确认。");
     if(response.status===429)throw new Error("AI 服务请求过于频繁，请稍后再试。");
     if(payload.task==='review'&&data.code==='UNSUPPORTED_TASK')throw new Error('请先将 Worker 更新为 plan-workflow-11，再重试综合评估；每天的选择已保留。');
-    if(response.status>=500)throw new Error((data.error||"AI 服务暂时出错，请稍后重试。")+(data.code?"（"+data.code+"）":""));
+    if(response.status>=500){const error=new Error(data.error||"AI 服务暂时出错，请稍后重试。");error.code=data.code;error.requestId=data.requestId;throw error;}
     throw new Error(data.error || `请求失败（${response.status}）`);
   }
   return data;
@@ -597,12 +597,14 @@ function appendSources(container,sources){
   });
   container.appendChild(wrap);
 }
-function showAiError(container,error){
+function showAiError(container,error,retry){
   container.innerHTML="";
   const box=document.createElement("div");box.className="notice";box.textContent="AI 暂时没有完成这次请求："+error.message;
   container.appendChild(box);
-  const tip=document.createElement("p");tip.className="tiny";tip.textContent="请检查 Cloudflare Worker 是否正常部署、对应模型 API Key 是否已配置，以及 API 账户是否有可用额度。";
+  const tip=document.createElement("p");tip.className="tiny";tip.textContent="填写的内容仍保留在上方。可以直接重试；如果仍未完成，请把下方问题编号发给我们检查。";
   container.appendChild(tip);
+  if(typeof retry==='function'){const button=document.createElement('button');button.className='btn';button.textContent='重新生成方案';button.onclick=retry;container.appendChild(button);}
+  const diagnostic=document.createElement('details');diagnostic.className='pf-details';addTextNode(diagnostic,'summary','','查看问题编号');addTextNode(diagnostic,'p','tiny',[error.code||'REQUEST_NOT_COMPLETED',error.requestId?('请求编号：'+error.requestId):'本次未收到服务请求编号'].join(' · '));container.appendChild(diagnostic);
 }
 async function checkAiHealth(){
   const el=document.getElementById("aiStatus");
