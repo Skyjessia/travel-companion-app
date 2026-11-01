@@ -219,7 +219,7 @@ button,input,textarea,select{font:inherit}
 <button type="button" class="poi-interest-chip" data-poi-interest="摄影打卡" aria-pressed="false" onclick="togglePoiInterest(this)">摄影打卡</button>
 <button type="button" class="poi-interest-chip" data-poi-interest="小众探索" aria-pressed="false" onclick="togglePoiInterest(this)">小众探索</button>
 </div></div>
-<div class="field"><label for="poiExtra">补充偏好（本轮仅记录，下一步交给 AI）</label><textarea id="poiExtra" placeholder="例如：不想去太商业化的地方；喜欢当地人日常生活的街区；不想走太多路。"></textarea></div>
+<div class="field"><label for="poiExtra">补充偏好（本轮暂不使用）</label><textarea id="poiExtra" placeholder="例如：不想去太商业化的地方；喜欢当地人日常生活的街区；不想走太多路。"></textarea><p class="tiny" style="margin:5px 0 0">这段补充文字暂时只用于界面体验，不会发送给服务器；本轮只测试城市与兴趣标签的 POI 搜索。</p></div>
 <button id="poiSearchButton" class="btn" style="width:100%" onclick="searchPoi()">开始搜索真实地点 →</button>
 <div id="poiSearchStatus" class="poi-lab-status" aria-live="polite">已选择 2 个兴趣方向。每个兴趣标签单独搜索一次，最多 3 次 POI 查询，控制测试额度。</div>
 </div>
