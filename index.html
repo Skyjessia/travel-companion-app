@@ -152,7 +152,7 @@ button,input,textarea,select{font:inherit}
   <p>从一个目的地和想法开始。把收藏的攻略、Word 文档和自己的偏好交给 AI，一起讨论、整理资料、规划路线，最后生成每天怎么走的 By Day 行程。</p>
   <div class="stage-tags"><span>需求梳理</span><span>攻略整合</span><span>每日路线</span><span>当地美食</span></div>
   <div class="stage-actions"><button class="btn" onclick="nav('planner')">开始规划一趟旅行 →</button></div>
-  <button class="stage-secondary" onclick="nav('materials')">已经有很多攻略？先整理我的资料 →</button>
+
 
 </section>
 
@@ -197,16 +197,11 @@ button,input,textarea,select{font:inherit}
 <button type="button" class="poi-interest-chip" data-plan-interest="小众探索" aria-pressed="false" onclick="togglePlanInterest(this)">小众探索</button>
 </div></div>
 <div class="field"><label>偏好补充</label><textarea id="preferences" placeholder="例如：历史文化、美食、建筑；不想每天换酒店；每天步行不要太多"></textarea></div><button class="btn" style="width:100%" onclick="generatePlan()">开始与 AI 规划</button></div><div id="generated" class="card" style="display:none"></div>
-<details class="card plan-reference-card" id="planReferenceCard"><summary>补充攻略资料（可选）</summary>
-  <div class="row" style="justify-content:space-between;align-items:center;gap:8px"><div><h3 style="margin:0">把自己做过的功课也交给 AI</h3><div class="tiny">第二轮讨论后，可在这里补充整理好的 Word、PDF 或文字资料。</div></div><span class="pill">资料整合</span></div>
-  <p class="tiny" style="margin:9px 0">上传已经收藏或整理的攻略，AI 会与本次讨论、城市规划和 By Day 一并整合。保留你的原始资料，不会把未经核实的帖子内容当成事实。</p>
-  <div class="filebox"><label for="planReferenceFiles" style="display:block;font-weight:750;margin-bottom:7px">上传旅行资料（支持 DOCX / PDF / TXT / MD）</label><input id="planReferenceFiles" type="file" multiple accept=".docx,.pdf,.txt,.md,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf,text/plain,text/markdown" onchange="handlePlanReferenceFiles(this.files)"><div class="plan-reference-status">最多 5 份文件；单份不超过 10 MB。Word 请使用 .docx 格式，暂不支持旧版 .doc。</div></div>
-  <div id="planReferenceList" class="plan-reference-list"><div class="tiny">尚未添加文件。也可以不上传，直接使用 AI 与你的讨论内容生成最终行程。</div></div>
-  <div class="plan-reference-actions"><button id="planFinalizeButton" class="btn" onclick="finalizePlanAndOpenTrip()" disabled>整合资料并生成 By Day →</button><button class="btn line small" onclick="clearPlanReferenceMaterials()">清空资料</button></div>
-  <div id="planReferenceHint" class="plan-reference-status">完成第一轮规划和第二轮讨论后，点击上方按钮，AI 会整合资料、推荐当地美食并生成最终每日行程，然后进入行程工作台。</div>
-  <p class="tiny" style="margin:8px 0 0">隐私提示：文件在浏览器本地提取文字；提取后的文字会随规划请求发送给 AI 服务，并保存在当前设备的浏览器记录中。文件原件不会作为文档附件长期保存。不要上传证件或敏感个人资料。</p>
-</details>
-<details class="card"><summary>其他工具与示例</summary><button class="btn line small" onclick="nav('materials')">整理已有资料</button><button class="btn line small" onclick="nav('poiLab')">独立地点搜索</button><button class="btn line small" onclick="openTrip()">查看示例行程</button></details>
+<div id="planReferenceCard" hidden>
+  <div class="filebox"><label for="planReferenceFiles" style="display:block;font-weight:750;margin-bottom:7px">＋ 补充攻略资料（截图或文档）</label><input id="planReferenceFiles" type="file" multiple accept="image/jpeg,image/png,image/webp,.docx,.pdf,.txt,.md" onchange="handleUnifiedPlanUploads(this)"><div class="plan-reference-status">截图最多4张、每张3 MB；文档最多5份、每份10 MB。支持 JPG、PNG、WEBP、DOCX、PDF、TXT、MD。</div></div>
+  <div id="planReferenceList" class="plan-reference-list"></div>
+  <div id="planReferenceHint" class="plan-reference-status">资料会与当前方案和讨论一起整合。</div>
+</div>
 </section>
 
 <section class="screen" id="poiLab">
@@ -290,7 +285,7 @@ function persist(silent=false){try{localStorage.setItem('travelCompanionV04',JSO
 function toast(s){let t=document.getElementById('toast');t.textContent=s;t.classList.add('show');clearTimeout(window._toastTimer);window._toastTimer=setTimeout(()=>t.classList.remove('show'),2400)}
 function nav(id){document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('.bottom button').forEach(x=>x.classList.toggle('active',x.dataset.screen===id));window.scrollTo({top:0,behavior:'smooth'});if(id==='trip')renderTrip();if(id==='materials')renderBank();if(id==='archive')renderArchive();if(id==='footprint')renderFootprint()}
 const requestedScreen = new URLSearchParams(window.location.search).get('screen');
-if(requestedScreen === 'poiLab') nav('poiLab');
+if(requestedScreen === 'poiLab') nav('planner');
 function openTrip(){nav('trip')}
 function renderTrip(){document.getElementById('cityTabs').innerHTML=trip.cities.map(c=>`<button class="chip ${c.id===activeCity?'active':''}" onclick="selectCity('${c.id}')">${c.name}</button>`).join('');let c=trip.cities.find(x=>x.id===activeCity)||trip.cities[0];document.getElementById('cityInfo').innerHTML=`<div class="row" style="justify-content:space-between"><strong>${c.name} · ${c.country}</strong><span class="pill gold">示例建议</span></div><p class="tiny">${c.summary}</p><p class="tiny"><b>停留时间：</b>${c.days}</p><div class="tiny"><b>候选地点：</b>${c.spots.join('、')}</div>`;document.getElementById('dayTabs').innerHTML=trip.days.map(d=>`<button class="tab ${d.id===activeDay?'active':''}" onclick="selectDay('${d.id}')">${d.label}</button>`).join('');let d=trip.days.find(x=>x.id===activeDay)||trip.days[0];let count=trip.days.reduce((n,x)=>n+x.stops.length,0);document.getElementById('stopCount').textContent=count;document.getElementById('dayContent').innerHTML=`<div class="row" style="justify-content:space-between"><strong>${d.title}</strong><span class="pill">${d.stops.length} 个安排</span></div>`+d.stops.map((s,i)=>`<div class="timeline"><div class="time">${s[0]}</div><div class="timeline-content"><strong>${s[1]}</strong><p>${s[2]}</p><button class="btn line small" style="margin-top:6px" onclick="showSpot('${escapeAttr(s[1])}')">查看地点说明</button></div></div><div class="stop-actions" style="margin:0 0 8px 57px"><button onclick="moveStop(${i},-1)">↑ 上移</button><button onclick="moveStop(${i},1)">↓ 下移</button><button onclick="removeStop(${i})">移除</button></div>`).join('')}
 function selectCity(id){activeCity=id;let day=trip.days.find(x=>x.city===id);if(day)activeDay=day.id;renderTrip()}
@@ -342,6 +337,8 @@ let planVersionNumber = 0;
 let planDiscussionBusy = false;
 let planDiscussionPreviewUrls = [];
 let planReferenceMaterials = [];
+let planUploadsBusy = false;
+let planReferencesPending = false;
 
 const API_BASE = "https://travel-companion-ai.skyjessia01.workers.dev";
 
@@ -452,7 +449,7 @@ function savePlanSession(){
     localStorage.setItem("travelCompanionPlanSessionV1",JSON.stringify({
       brief:planBrief,plan:lastAiPlan,discussion:planDiscussionHistory.slice(-24),
       versions:planVersions.slice(-6),versionNumber:planVersionNumber,
-      referenceMaterials:planReferenceMaterials.slice(0,5),
+      referenceMaterials:planReferenceMaterials.slice(0,5),planReferencesPending,
       candidatePools,candidateChoices,candidatePoolNotice
     }));
   }catch(e){console.warn("方案协商记录暂未保存",e)}
@@ -472,7 +469,7 @@ function appendPlanDiscussion(out){
   const head=document.createElement("div");head.className="plan-discussion-head";
   const headTitle=document.createElement("div");
   addTextNode(headTitle,"strong","","第二轮 · 和 AI 一起打磨方案");
-  addTextNode(headTitle,"div","tiny","PLAN TOGETHER · 先讨论，再决定是否更新");
+  addTextNode(headTitle,"div","tiny","PLAN TOGETHER · 讨论与资料，一起调整");
   head.appendChild(headTitle);
   addTextNode(head,"span","plan-current-version",planHasStructuredData(lastAiPlan)?`当前版本 V${planVersionNumber}`:"补充信息阶段");
   panel.appendChild(head);
@@ -495,12 +492,12 @@ function appendPlanDiscussion(out){
   panel.appendChild(log);
   const compose=document.createElement("div");compose.className="plan-chat-compose";
   const uploadRow=document.createElement("div");uploadRow.className="plan-upload-row";
-  const uploadLabel=document.createElement("label");uploadLabel.className="btn line small";uploadLabel.htmlFor="planDiscussionFiles";uploadLabel.textContent="＋ 上传小红书 / 攻略截图";uploadLabel.style.cursor="pointer";
-  const fileInput=document.createElement("input");fileInput.type="file";fileInput.id="planDiscussionFiles";fileInput.accept="image/jpeg,image/png,image/webp";fileInput.multiple=true;fileInput.style.display="none";fileInput.addEventListener("change",updatePlanDiscussionFilePreview);
-  uploadRow.append(uploadLabel,fileInput);compose.appendChild(uploadRow);
+  const fileInput=document.createElement("input");fileInput.type="file";fileInput.id="planDiscussionFiles";fileInput.accept="image/jpeg,image/png,image/webp";fileInput.multiple=true;fileInput.hidden=true;
+  compose.appendChild(fileInput);
+  const reference=document.getElementById('planReferenceCard');if(reference){reference.hidden=false;compose.appendChild(reference);}
   const filePreview=document.createElement("div");filePreview.className="plan-upload-preview";filePreview.id="planDiscussionFilePreview";compose.appendChild(filePreview);
-  addTextNode(compose,"div","plan-upload-note","支持 JPG / PNG / WEBP · 最多 4 张 · 每张不超过 3 MB。AI 会读取截图文字并结合当前行程分析；请勿上传护照、身份证等敏感资料。");
-  const input=document.createElement("textarea");input.id="planDiscussionInput";input.placeholder="例如：我希望撒马尔罕多住一晚；也可以上传小红书截图，让 AI 结合当前行程分析……";
+  addTextNode(compose,"div","plan-upload-note","截图随消息发送给 AI，文档先在本地提取文字；只补充你希望用于本次规划的资料。");
+  const input=document.createElement("textarea");input.id="planDiscussionInput";input.placeholder="例如：第二天有点赶，想减少一个景点；也可以粘贴攻略文字或补充资料……";
   input.onkeydown=(e)=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendPlanMessage()}};
   compose.appendChild(input);
   const actions=document.createElement("div");actions.className="plan-discussion-actions";
@@ -520,7 +517,9 @@ function appendPlanDiscussion(out){
   log.scrollTop=log.scrollHeight;
 }
 function renderPlanResult(result){
-  const out=document.getElementById('generated');out.style.display='block';out.innerHTML='';
+  const out=document.getElementById('generated');
+  const reference=document.getElementById('planReferenceCard');if(reference&&out.contains(reference)){out.after(reference);reference.hidden=true;}
+  out.style.display='block';out.innerHTML='';
   document.getElementById('planner')?.classList.add('has-plan');
   addTextNode(out,'div','eyebrow','你的旅行 · 可继续调整');
   addTextNode(out,'h3','',result.summary||'旅行草案');
@@ -627,7 +626,7 @@ async function sendPlanMessage(prefill){
   const input=document.getElementById("planDiscussionInput");
   const fileInput=document.getElementById("planDiscussionFiles");
   const typedMessage=(prefill??input?.value??"").trim();
-  if(planDiscussionBusy)return;
+  if(planDiscussionBusy||planUploadsBusy){toast('请等待资料读取完成');return;}
   let images=[];
   try{images=await readImageFilesFromInput("planDiscussionFiles");}catch(e){toast(e.message);return;}
   if(!typedMessage&&!images.length){toast("请先输入想讨论的内容，或上传旅行攻略截图。");return;}
@@ -664,6 +663,7 @@ async function sendPlanMessage(prefill){
   }
 }
 async function revisePlanFromDiscussion(){
+  if(planUploadsBusy){toast("请等待资料读取完成");return;}
   if(!planBrief||!planDiscussionHistory.some(m=>m.role==="user")){toast("请先告诉 AI 你希望补充或调整什么");return}
   if(planDiscussionBusy)return;
   const button=document.getElementById("planDiscussionRevise");
@@ -685,7 +685,7 @@ async function revisePlanFromDiscussion(){
     if(hadCompletePlan)planVersions.push({version:planVersionNumber||1,plan:JSON.parse(JSON.stringify(lastAiPlan))});
     planVersions=planVersions.slice(-6);
     planVersionNumber=hadCompletePlan?(planVersionNumber||1)+1:1;
-    lastAiPlan=revised;lastAiPlan.sources=result.sources||[];
+    lastAiPlan=revised;lastAiPlan.sources=result.sources||[];planReferencesPending=false;
     const summary=`已生成方案 V${planVersionNumber}。城市、交通和每日安排已按本轮讨论重新整理；请检查差异和待确认事项。`;
     appendPlanDiscussionMessage("assistant",summary,result.sources||[]);
     savePlanSession();renderPlanResult(lastAiPlan);toast("新方案已生成，旧版本已保留");
@@ -711,7 +711,7 @@ function restorePlanSession(){
     planDiscussionHistory=Array.isArray(saved.discussion)?saved.discussion:[];
     planVersions=Array.isArray(saved.versions)?saved.versions:[];
     planVersionNumber=Number(saved.versionNumber)|| (lastAiPlan?1:0);
-    planReferenceMaterials=Array.isArray(saved.referenceMaterials)?saved.referenceMaterials.slice(0,5):[];
+    planReferenceMaterials=Array.isArray(saved.referenceMaterials)?saved.referenceMaterials.slice(0,5):[];planReferencesPending=Boolean(saved.planReferencesPending);
     if(lastAiPlan)renderPlanResult(lastAiPlan);
     updatePlanReferencePreview();
   }catch(e){console.warn("读取方案协商记录失败",e)}
@@ -740,9 +740,25 @@ function updatePlanReferencePreview(){
   if(button)button.disabled=!planHasStructuredData(lastAiPlan)||planDiscussionBusy;
   if(hint){
     const count=planReferenceMaterials.length;
-    hint.textContent=count?`已保留 ${count} 份资料。点击后 AI 将结合资料、讨论记录和原始需求，重新生成完整 By Day 并进入工作台。`:"没有上传文件也可以继续。点击后 AI 会根据原始需求与讨论记录生成最终 By Day 并进入工作台。";
+    hint.textContent=count?`已保留 ${count} 份文档。点击“按讨论意见更新方案”，与当前行程一起整合。`:"可补充截图、文档，或直接在下方粘贴攻略文字。";
   }
 }
+async function handleUnifiedPlanUploads(input){
+  if(planUploadsBusy||planDiscussionBusy){toast('请等待当前处理完成');input.value='';return;}
+  const files=[...(input.files||[])];const images=files.filter(f=>f.type.startsWith('image/'));const docs=files.filter(f=>!f.type.startsWith('image/'));
+  if(images.length>4||images.some(f=>!['image/jpeg','image/png','image/webp'].includes(f.type)||f.size>3*1024*1024)){toast('截图最多4张，每张3 MB，支持 JPG/PNG/WEBP');input.value='';return;}
+  planUploadsBusy=true;
+  try{
+    const before=planReferenceMaterials.length;
+    if(docs.length)await handlePlanReferenceFiles(docs);
+    if(planReferenceMaterials.length>before){
+      planReferencesPending=true;appendPlanDiscussionMessage('user','我补充了攻略文档，请结合当前行程分析：'+planReferenceMaterials.slice(before).map(f=>f.name).join('、'));renderPlanDiscussionLog();
+      const revise=document.getElementById('planDiscussionRevise');if(revise)revise.disabled=false;savePlanSession();
+    }
+    if(images.length){const dt=new DataTransfer();images.forEach(f=>dt.items.add(f));document.getElementById('planDiscussionFiles').files=dt.files;updatePlanDiscussionFilePreview();}
+  }finally{planUploadsBusy=false;input.value='';}
+}
+
 async function extractPlanReferenceFile(file){
   const ext=(file.name.split(".").pop()||"").toLowerCase();
   if(ext==="txt"||ext==="md")return await file.text();
@@ -793,7 +809,7 @@ async function handlePlanReferenceFiles(fileList){
       if(text.length<extracted.length)toast("资料较长，已保留前段内容；建议把重点章节单独整理后再上传。");
     }
     savePlanSession();updatePlanReferencePreview();
-    if(status)status.textContent="文档文字已提取并保留在当前规划会话中；点击最终生成时会与 AI 讨论一并整合。";
+    if(status)status.textContent="文档文字已提取并保留在当前规划会话中；点击“按讨论意见更新方案”时一并整合。";
     toast("资料已添加到本次旅行规划");
   }catch(e){
     if(status)status.textContent=e.message;
@@ -803,7 +819,7 @@ async function handlePlanReferenceFiles(fileList){
   }
 }
 function removePlanReferenceMaterial(index){
-  planReferenceMaterials.splice(index,1);savePlanSession();updatePlanReferencePreview();
+  planReferenceMaterials.splice(index,1);if(!planReferenceMaterials.length)planReferencesPending=false;savePlanSession();updatePlanReferencePreview();
 }
 function clearPlanReferenceMaterials(){
   if(!planReferenceMaterials.length){toast("目前没有已添加的资料");return}
@@ -892,7 +908,9 @@ async function finalizePlanAndOpenTrip(){
 }
 async function generatePlan(){
   const button=document.querySelector('#planner .planner-form .btn');
-  const out=document.getElementById("generated");out.style.display="block";out.innerHTML="";
+  const out=document.getElementById("generated");
+  const reference=document.getElementById("planReferenceCard");if(reference&&out.contains?.(reference)){out.after(reference);reference.hidden=true;}
+  out.style.display="block";out.innerHTML="";
   addTextNode(out,"div","ai-loading","✦ AI 正在根据兴趣与喜好生成第一版方案…");
   setBusy(button,true,"AI 规划中…");
   const brief={
@@ -927,7 +945,7 @@ async function generatePlan(){
   try{
     const result=await apiRequest({task:"plan",message:"请作为旅行规划师与协商搭档生成可编辑的第一版 Plan。origin 是起点、destination 是终点、cities 为候选城市；仅给国家时可建议城市组合。具体文字喜好优先于宽泛标签，明确约束优先于软偏好。根据 trip_brief.interests、preferences、pace 和 durationDays 实际调整地点选择、停留时长与节奏；在 summary 和各地点 reason 解释与用户偏好的关联，不能只改变措辞。日期空白时，在 checks 中给出适合出行的月份或季节、原因和取舍，使用 D1/D2 排程，不假设用户已选定日期；天数空白时建议合理天数并注明假设。除非无法识别目的地，否则先生成有条件的初稿，questions 最多提出两个会明显改变方案的关键问题，不用预算等选填项阻塞。返回完整 city_sequence、intercity_transport、days、checks、questions。每天安排符合节奏的核心体验，考虑地理聚类与交通缓冲；没有路线服务核算，不声称最优路线或给精确交通分钟数。无需安排固定午餐晚餐时间或强制餐饮停留点，必须在每天 local_food 提供顺路的特色菜和餐饮区域选项，具体店铺需候选 id，否则只给菜品或区域并标待核验；偏远户外活动需提示核实补给，不能未经查证断言没有餐饮。住宿建议先到区域及其取舍，遵守已有酒店约束。热门推荐线索与事实核验分开，未检索不能声称来自小红书或实时热榜。营业时间、票价、预约、班次、营业状态未取得本轮可靠证据一律待核实；具体日期确定后需复查。若有 reference_materials，吸收地点和个人备注，区分主观体验与事实。不擅自删除用户明确锁定的安排。",context:buildPlanContext("initial_plan")});
     lastAiPlan=result.data&&typeof result.data==="object"?result.data:null;
-    if(lastAiPlan)lastAiPlan.sources=result.sources||[];
+    if(lastAiPlan){lastAiPlan.sources=result.sources||[];planReferencesPending=false;}
     if(planHasStructuredData(lastAiPlan)){planVersions=[];}
     renderPlanResult(lastAiPlan||{summary:result.text||"AI 已返回结果",text:result.text||"",checks:[],questions:[],days:[]});
     savePlanSession();updatePlanReferencePreview();toast("第一版草案已生成，正在逐城筛选推荐并细化行程");
@@ -942,6 +960,7 @@ async function generatePlan(){
   finally{setBusy(button,false)}
 }
 function applyAiPlan(){
+  if(planUploadsBusy||planReferencesPending){toast('新增资料尚未整合，请先按讨论意见更新方案');return;}
   if(planDiscussionBusy||candidatePoolBusy){toast('请等待当前调整完成');return;}
   const selected=poolSelectedIds();
   if(Object.entries(candidateChoices).some(([id,choice])=>choice==='locked'?!selected.has(id):choice==='excluded'&&selected.has(id))){toast('还有未应用的加减选择，请先按选择调整 Plan');return;}
@@ -1099,7 +1118,7 @@ async function refinePlanWithPool(){
     const result=await apiRequest({task:'plan',message:'根据 candidate_pools 生成完整修订方案。有候选的城市仅从候选中选择，每个 stop 返回 candidate_id；locked 必须保留、excluded 不得选。具体文字喜好优先于宽泛标签。解释各地点的匹配依据，信息不足不编造背景。结合节奏和地理位置取舍，检查锁定点造成的拥挤或远距离，冲突写 questions 并提示用户取舍，不擅自丢弃。核心景点必须是具体名称，不能用历史人文地点、地方生活街区等占位。每一天 local_food 展示本地特色菜、顺路餐饮区域或候选店铺，说明选择理由，不强制每餐时间；具体店铺必须来自候选 id，菜品和区域可无 id 并标待核验。住宿建议写 checks。未定日期给适合的月份与取舍，开放、预约、门票待日期确定后核验。未加载候选的城市保留原草案并标注未核验。保持完整城市顺序和每日安排。',context:buildPlanContext('candidate_refinement')});
     const revised=checkCandidatePlan(result.data);
     planVersions.push({version:planVersionNumber||1,plan:JSON.parse(JSON.stringify(lastAiPlan))});planVersions=planVersions.slice(-6);planVersionNumber++;
-    lastAiPlan=revised;lastAiPlan.sources=result.sources||[];
+    lastAiPlan=revised;lastAiPlan.sources=result.sources||[];planReferencesPending=false;
     candidatePoolNotice='方案已按偏好与选择更新；城市备选保留其他精选，开放时间、预约和交通仍待核验。';savePlanSession();
   }catch(error){candidatePoolNotice='调整未完成：'+error.message+'。原方案保留，你的加减选择仍在。';}
   finally{planDiscussionBusy=false;renderPlanResult(lastAiPlan);}
@@ -1361,3 +1380,4 @@ async function loadChatHistory(){
 renderTrip();renderBank();renderArchiveSummary();loadChatHistory();restorePlanSession();checkAiHealth();
 
 </script></body></html>
+
