@@ -2,7 +2,16 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8"><meta name="app-version" content="2026-11-01-editorial-responsive-14"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#173f46"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://cdn.jsdelivr.net/npm/mammoth@1.9.0/mammoth.browser.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<title>Travel Companion · Plan Together</title>
+<title>Travel Companion · 一起规划，轻松出发</title>
+<link rel="canonical" href="https://skyjessia.github.io/travel-companion-app/">
+<meta name="description" content="和 AI 一起规划每天怎么走，带着行程轻松出发，收藏走过的世界。">
+<meta property="og:type" content="website"><meta property="og:locale" content="zh_CN">
+<meta property="og:site_name" content="Travel Companion"><meta property="og:title" content="Travel Companion · 一起规划，轻松出发">
+<meta property="og:description" content="从计划，到旅途，再到回忆。AI 陪你一起整理每天的路线与出发准备。">
+<meta property="og:url" content="https://skyjessia.github.io/travel-companion-app/">
+<meta property="og:image" content="https://skyjessia.github.io/travel-companion-app/assets/share-card.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Travel Companion 分享卡，扫码开始规划旅行">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="assets/plan-workflow.css?v=14.1">
 <style>
 :root{--navy:#173f46;--teal:#2d766b;--mint:#e8f1ec;--gold:#c18d53;--paper:#fbfaf6;--bg:#edf1ed;--ink:#20363a;--muted:#75858a;--line:#e4e8e1;--red:#a65b4e;--shadow:0 12px 32px rgba(23,63,70,.08)}
@@ -133,7 +142,7 @@ button,input,textarea,select{font:inherit}
 .candidate-preference-input{display:block;width:100%;min-height:76px;margin:10px 0;padding:10px;border:1px solid var(--line);border-radius:10px;font:inherit;resize:vertical}
 .pace-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.field .pace-choice{display:flex;align-items:center;gap:9px;margin:0;padding:13px 11px;border:1px solid var(--line);border-radius:12px;cursor:pointer;background:#fff;font-size:12px}.field .pace-choice input{width:18px;height:18px;margin:0;accent-color:var(--teal);flex-shrink:0}.pace-choice:has(input:checked){border-color:#82b6a2;background:var(--mint);color:var(--teal)}.pace-choice:has(input:focus-visible){outline:2px solid var(--teal);outline-offset:2px}#candidateInlineExplorer{margin:12px 0 0;background:#f8faf6;box-shadow:none}
 .real-trip-map{height:285px;border-radius:15px;border:1px solid var(--line);background:#eef3ee;z-index:1;margin:12px 0}.trip-map-tooltip{font:11px/1.4 inherit;color:var(--navy);border-radius:8px}.transport-overview{margin:18px 0;padding:15px;border:1px solid var(--line);border-radius:15px;background:#f7faf6}.transport-segment{padding:10px 0;border-top:1px solid var(--line)}.transport-segment strong{display:block;margin-bottom:5px}.transport-summary{font-weight:700;color:var(--teal);font-size:12px}.enter-daily-button{display:block;width:100%;padding:18px;font-size:17px;min-height:58px}.material-absorb{margin:16px 0;padding:14px;border:1px solid #dfe7dc;border-radius:13px;background:#fff}.discussion-history{margin:14px 0}.plan-discussion-actions .btn:first-child{flex:1;min-height:43px}
-.plan-day-updated{border:2px solid #c8a164!important;background:#fffdf5!important}.plan-day-updated>span.pill{background:#f7e7c4;color:#78521c}#planLatestReply{margin:14px 0;padding:16px;background:#f1f6f0;border-radius:14px}#planLatestReply p{white-space:pre-wrap;line-height:1.8}#planWorkStatus{border:1px solid #8cb9a8} .discussion-history .plan-discussion-log{max-height:340px}#planLatestReply{max-height:380px;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}#planGuidedChoices{display:grid;grid-template-columns:1fr;gap:9px}#planGuidedChoices button{text-align:left;white-space:normal;line-height:1.6;padding:13px}.decision-question{font-weight:650}#planEntryStatus:empty{display:none}.route-city-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}.route-city-summary p{margin:3px 0;font-size:11px}</style><link rel="stylesheet" href="assets/journey-ready.css?v=14.2"></head>
+.plan-day-updated{border:2px solid #c8a164!important;background:#fffdf5!important}.plan-day-updated>span.pill{background:#f7e7c4;color:#78521c}#planLatestReply{margin:14px 0;padding:16px;background:#f1f6f0;border-radius:14px}#planLatestReply p{white-space:pre-wrap;line-height:1.8}#planWorkStatus{border:1px solid #8cb9a8} .discussion-history .plan-discussion-log{max-height:340px}#planLatestReply{max-height:380px;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}#planGuidedChoices{display:grid;grid-template-columns:1fr;gap:9px}#planGuidedChoices button{text-align:left;white-space:normal;line-height:1.6;padding:13px}.decision-question{font-weight:650}#planEntryStatus:empty{display:none}.route-city-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}.route-city-summary p{margin:3px 0;font-size:11px}</style><link rel="stylesheet" href="assets/journey-ready.css?v=14.3"></head>
 <body><div class="app">
 <header class="hero">
   <div class="brand">TRAVEL COMPANION · AI</div>
@@ -147,6 +156,7 @@ button,input,textarea,select{font:inherit}
   <h2>一段旅行，三个阶段。</h2>
   <p>出发前一起规划，路上随时陪伴，回来后点亮走过的世界。</p>
 </div>
+<div class="share-actions"><button class="btn line" onclick="shareTravelCompanion()">分享给朋友 ↗</button><a class="btn line" href="assets/share-card.png" download="Travel-Companion-分享卡.png">保存分享卡 ↓</a></div>
 <div id="aiStatus" class="home-ai-status">正在检查 AI 服务连接…</div>
 
 <section class="stage-card plan" data-mark="01">
@@ -270,7 +280,7 @@ button,input,textarea,select{font:inherit}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="assets/plan-core.js?v=14.1"></script>
 <script src="assets/plan-workflow.js?v=14.1"></script>
-<script src="assets/journey-ready.js?v=14.1"></script>
+<script src="assets/journey-ready.js?v=14.3"></script>
 <script>
 const seed={
  cities:[

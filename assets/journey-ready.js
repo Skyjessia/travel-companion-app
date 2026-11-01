@@ -59,3 +59,9 @@ function renderJourneyAssistant(){
  const next=stops[stops.indexOf(selected)+1];const target=next||selected;readyNode(panel,'p','tiny',next?'下一站 · '+next.s[1]:'当天最后一站 · 可在地图中查看这个景点的位置');const links=JourneyReady.mapLinks(target.s[1],city?.name||'');const maps=readyNode(panel,'div','ready-actions');for(const [provider,title] of (/中国|China|中国大陆/i.test(city?.country||'中国')?[['amap','在高德查看'],['google','在 Google 地图查看']]:[['google','在 Google 地图查看']])){const a=readyNode(maps,'a','btn line',title);a.href=links[provider];a.target='_blank';a.rel='noopener noreferrer';}readyNode(panel,'p','tiny','打开地图后选择导航；实际路线、耗时和交通以地图服务为准。');
  readyButton(panel,'出发准备清单 →',()=>openDeparturePreparation(),'btn light ready-wide');
 }
+
+async function shareTravelCompanion(){
+ const url='https://skyjessia.github.io/travel-companion-app/';
+ if(navigator.share){try{await navigator.share({title:'Travel Companion · 一起规划，轻松出发',text:'和 AI 一起规划每天怎么走，带着行程轻松出发。',url});return;}catch(error){if(error.name==='AbortError')return;}}
+ try{await navigator.clipboard.writeText(url);toast('分享链接已复制，发给朋友就可以了');}catch(error){prompt('复制这个固定链接，发给朋友',url);}
+}
