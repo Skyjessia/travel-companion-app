@@ -337,13 +337,13 @@ function makeTaskInstructions(task) {
 当前任务：对用户已经逐天选择的旅行做整体评估，不直接生成或修改完整行程。你先比较取舍，只把真正需要决定的事项交给用户，一次最多8个。普通用户可保留初步建议；不要因选填预算、酒店品牌等不断追问。没有地图道路服务或实时检索，不得声称最短路线、精确车程、已核实营业或已预订。
 仅返回 JSON 对象：
 {"summary":"整体评价与需要留意的事情，简短","day_notes":[{"day_label":"D1","note":"当天节奏和地理衔接建议"}],"decisions":[{"id":"decision-1","question":"需要决定的完整问题","recommended":"A","reason":"推荐A的原因","options":[{"label":"具体决定A","reason":"取舍和影响","changes":[]},{"label":"具体决定B","reason":"取舍和影响","changes":[]}]}],"transport":[{"id":"来自workflow.transport_legs的id","recommended":"A","options":[{"mode":"明确的交通方式","reason":"适用条件与取舍"},{"mode":"另一种可行方式","reason":"适用条件与取舍"}],"notes":"具体班次与衔接待核实"}],"bookings":[{"title":"需要预约或准备的事项","category":"ticket或hotel或transport","day_label":"D1或相关日期","action":"用户下一步需到哪个类型的官方渠道核实什么，不编链接、票价、车次、放票时间","priority":"early或normal"}]}。
-同一问题的A/B必须直接给出决定内容和影响，不输出“帮我比较A/B”“生成比较”等中间操作。无实质冲突时 decisions=[]，不要为凑问答制造问题。options 按数组位置分别代表A/B；changes为空表示保留。
+每个问题都要给足两个可直接决定的 options；recommended 使用单个字母 A 或 B，不是索引数字或选项全文。若推荐暂不明确可以留空，不要让用户先生成比较。同一问题的A/B必须直接给出决定内容和影响，不输出“帮我比较A/B”“生成比较”等中间操作。无实质冲突时 decisions=[]，不要为凑问答制造问题。options 按数组位置分别代表A/B；changes为空表示保留。
 只允许针对 current_plan 已有具体地点给出下列 changes 操作：
 移除 {"type":"remove","day_key":"day.workflow_day_key原样","stop_key":"stop.workflow_key原样","field":"stops或local_food"}；
 调整时间段 {"type":"time","day_key":"原day键","stop_key":"原stop键","field":"stops","value":"上午或中午或下午或傍晚或晚上或时间灵活"}；
 移到同一城市的另一天 {"type":"move","day_key":"原day键","stop_key":"原stop键","field":"stops或local_food","target_day_key":"同城目标day键"}。
 不编造键，不操作交通与休息项目，不新增未经用户挑选的景点。不同问题不得重复操作同一个地点；推荐删除用户想去的地点时，必须解释并让用户点选后才删除。若涉及城市边界等不能用上述操作表达的实质冲突，在summary明确提醒先返回每天安排或修改需求，不能假装已解决。
-必须为 workflow.transport_legs 的每一个id返回对应交通建议，顺序一致且不遗漏。每段通常两个可行方式；确实只有一个合理建议时可只返回一个，不虚构不适用的替代。具体方式应区别火车、飞机、自驾、包车等，不用“A/B”作为mode。推荐与理由要结合这条路线。bookings涵盖行程内需要留意的景点预约、住宿房源、交通班次/换乘缓冲；无法判定是否需门票时写“查询是否需预约”。这些都是待办提醒，不声称已核验，不要求先订完才出方案。`;
+交通细节在第四步决定，不得阻塞景点评估。尽量为 workflow.transport_legs 的每一个id返回对应交通建议，顺序一致；无法给建议的路段允许 options=[]、recommended="pending"，保留路段并标待定。不要为了补齐编造交通服务。每段通常两个可行方式；确实只有一个合理建议时可只返回一个，不虚构不适用的替代。具体方式应区别火车、飞机、自驾、包车等，不用“A/B”作为mode。推荐与理由要结合这条路线。bookings涵盖行程内需要留意的景点预约、住宿房源、交通班次/换乘缓冲；无法判定是否需门票时写“查询是否需预约”。这些都是待办提醒，不声称已核验，不要求先订完才出方案。`;
 
   if (task === "plan") return `${BASE_INSTRUCTIONS}
 
@@ -1448,7 +1448,7 @@ export default {
 
         service: "travel-companion-ai",
 
-        version: "2026-11-01-plan-workflow-11",
+        version: "2026-11-01-transport-pending-12",
 
         configured: Boolean(env.DEEPSEEK_API_KEY),
 
@@ -1472,6 +1472,8 @@ export default {
         poiQueryPlanning: true,
         internationalCandidates: true,
         planWorkflowContract: 2,
+        pendingTransportSupported: true,
+        nonBlockingMapResolution: true,
         planReviewEndpoint: true,
         candidatePoolContract: 3,
         mapResolveEndpoint: true
@@ -1674,7 +1676,7 @@ export default {
 
     try {
 
-      if(task==="plan"&&Array.isArray(body.context?.candidate_pools))body.message=String(body.message||"")+"\n候选池规则：对于 candidate_pools 中有候选的城市，days.stops 仅选择该城市 candidates 中的地点，必须为每个 stop 输出 candidate_id（原样使用 id），不编造或更换身份。reason 说明兴趣和文字偏好的具体匹配依据；资料不足则明确写明，不编造背景。尊重 candidate_choices：locked 必须保留、excluded 不得加入；冲突在 questions 解释。每个地点全程只安排一次。餐饮写每个 day.local_food，不作为核心景点 stop；住宿、交通补充写 checks。具体店铺需要 candidate_id；仅介绍地方菜或区域时 id 留空并标注具体店铺待核验。没有候选池的城市可保留草案并标明未核验。不声称已经计算真实路线。";
+      if(task==="plan"&&body.context?.mode!=="workflow_finalize"&&Array.isArray(body.context?.candidate_pools))body.message=String(body.message||"")+"\n候选池规则：对于 candidate_pools 中有候选的城市，days.stops 仅选择该城市 candidates 中的地点，必须为每个 stop 输出 candidate_id（原样使用 id），不编造或更换身份。reason 说明兴趣和文字偏好的具体匹配依据；资料不足则明确写明，不编造背景。尊重 candidate_choices：locked 必须保留、excluded 不得加入；冲突在 questions 解释。每个地点全程只安排一次。餐饮写每个 day.local_food，不作为核心景点 stop；住宿、交通补充写 checks。具体店铺需要 candidate_id；仅介绍地方菜或区域时 id 留空并标注具体店铺待核验。没有候选池的城市可保留草案并标明未核验。不声称已经计算真实路线。";
       const input = makeInput(task, body);
 
       const result = await callDeepSeek(task, input, env, body, requestId);
@@ -1702,8 +1704,10 @@ export default {
         catch(error){return reply({error:error.message||'AI 评估结构不完整，请重试。',code:'WORKFLOW_REVIEW_INVALID'},502);}
       }
       if(task==="plan"&&result.status===200&&result.body.data){
-        const invalid=validatePoolPlan(result.body.data,body.context);
-        if(invalid)return reply({error:invalid,code:"CANDIDATE_CONSTRAINT_FAILED"},502);
+        if(body.context?.mode==='workflow_finalize'){
+          try{const transport=Array.isArray(body.context.workflow?.transport)?body.context.workflow.transport:[];result.body.data=globalThis.PlanCore.assertFinalPlan(result.body.data,body.context.current_plan,{transport,deferred:body.context.workflow?.review_deferred===true},Object.fromEntries(transport.map(t=>[t.id,t.selected||'pending'])));}
+          catch(error){return reply({error:error.message||'最终方案与已确认选择不一致。',code:'WORKFLOW_FINAL_INVALID'},502);}
+        }else{const invalid=validatePoolPlan(result.body.data,body.context);if(invalid)return reply({error:invalid,code:"CANDIDATE_CONSTRAINT_FAILED"},502);}
       }
       return reply(result.body, result.status);
 

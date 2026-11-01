@@ -53,19 +53,19 @@
   function confirmDay(base,flow,index){const p=materialize(base,flow),day=p.days[index];flow.confirmed[dayKey(base.days[index],index)]=fingerprint(day);}
   function confirmRemaining(base,flow){base.days.forEach((_,i)=>confirmDay(base,flow,i));}
   function reviewSnapshot(plan){
-    return {summary:text(plan.summary,500),city_sequence:clone(plan.city_sequence||[]),intercity_transport:clone(plan.intercity_transport||[]),checks:(plan.checks||[]).map(x=>text(x,500)),questions:(plan.questions||[]).map(x=>text(x,500)),days:(plan.days||[]).map((d,i)=>({day_label:d.day_label,city:d.city,title:d.title,workflow_day_key:d.workflow_day_key||dayKey(d,i),travel_notes:text(d.travel_notes,500),stops:(d.stops||[]).map(packStop),local_food:(d.local_food||[]).map(packStop)}))};
+    return {summary:text(plan.summary,500),map_pending:clone(plan.map_pending||[]),city_sequence:clone(plan.city_sequence||[]),intercity_transport:clone(plan.intercity_transport||[]),checks:(plan.checks||[]).map(x=>text(x,500)),questions:(plan.questions||[]).map(x=>text(x,500)),days:(plan.days||[]).map((d,i)=>({day_label:d.day_label,city:d.city,title:d.title,workflow_day_key:d.workflow_day_key||dayKey(d,i),travel_notes:text(d.travel_notes,500),stops:(d.stops||[]).map(packStop),local_food:(d.local_food||[]).map(packStop)}))};
   }
-  function packStop(s){return {name:s.name,candidate_id:s.candidate_id||'',workflow_key:stopKey(s),time:s.time||'时间灵活',workflow_time_locked:Boolean(s.workflow_time_locked),duration:text(s.duration,80),reason:text(s.reason,160),area:text(s.area,100),location_name:s.location_name||s.name,location:s.location||'',location_source:s.location_source||'unverified',coordinate_system:s.coordinate_system||'',activity_kind:s.activity_kind||'sight',from:s.from||'',to:s.to||'',verification:text(s.verification,160)};}
+  function packStop(s){return {name:s.name,candidate_id:s.candidate_id||'',workflow_key:stopKey(s),time:s.time||'时间灵活',workflow_time_locked:Boolean(s.workflow_time_locked),duration:text(s.duration,80),reason:text(s.reason,160),area:text(s.area,100),location_name:s.location_name||s.name,location:s.location||'',location_source:s.location_source||'unverified',location_status:s.location_status||'pending',coordinate_system:s.coordinate_system||'',activity_kind:s.activity_kind||'sight',from:s.from||'',to:s.to||'',verification:text(s.verification,160)};}
   function transportLegs(plan){
     const given=plan.intercity_transport||[];
     const inferred=[];for(let i=1;i<(plan.days||[]).length;i++)if(plan.days[i-1].city!==plan.days[i].city)inferred.push({from:plan.days[i-1].city,to:plan.days[i].city,mode:'交通方式待建议',day_label:plan.days[i].day_label});
     return (given.length?given:inferred).map((leg,i)=>({...leg,id:'leg-'+i,day_label:leg.day_label||(plan.days||[]).find(d=>d.city===leg.to)?.day_label||''}));
   }
   function validateReview(input,plan){
-    if(!input||typeof input!=='object'||!text(input.summary)||!Array.isArray(input.decisions)||input.decisions.length>8||!Array.isArray(input.transport)||!Array.isArray(input.bookings))throw new Error('AI 评估结构不完整，请重试；每天的选择已保留。');
+    if(!input||typeof input!=='object'||!text(input.summary)||!Array.isArray(input.decisions)||input.decisions.length>8)throw new Error('AI 评估结构不完整，请重试；每天的选择已保留。');
     const days=new Map(plan.days.map((d,i)=>[d.workflow_day_key||dayKey(d,i),d])),ids=new Set();
     const decisions=input.decisions.map((d,i)=>{
-      if(!text(d.question)||!Array.isArray(d.options)||d.options.length!==2||!['A','B'].includes(d.recommended))throw new Error('AI 尚未给出明确的 A/B 取舍，请重试评估。');
+      if(!text(d.question)||!Array.isArray(d.options)||d.options.length!==2)throw new Error('AI 尚未给出明确的 A/B 取舍，请重试评估。');
       const id=text(d.id,80)||'decision-'+i;if(ids.has(id))throw new Error('AI 问题重复，请重试评估。');ids.add(id);
       const options=d.options.map((o,j)=>{
         if(!text(o.label)||!text(o.reason)||/帮我比较|生成.*比较/.test(o.label)||!Array.isArray(o.changes)||o.changes.length>12)throw new Error('AI 选项不完整，请重试评估。');
@@ -78,19 +78,26 @@
         });return {id:j?'B':'A',label:text(o.label,150),reason:text(o.reason,350),changes};
       });
       if(normalize(options[0].label)===normalize(options[1].label))throw new Error('AI 返回了相同的两个选项，请重试评估。');
-      return {id,question:text(d.question,1000),reason:text(d.reason,600),recommended:d.recommended,options};
+      const proposed=typeof d.recommended==='string'?d.recommended.trim().toUpperCase():'';return {id,question:text(d.question,1000),reason:text(d.reason,600),recommended:['A','B'].includes(proposed)?proposed:'',options};
     });
-    const legs=transportLegs(plan);if(input.transport.length!==legs.length)throw new Error('部分跨城交通建议缺失，请重试评估。');
-    const transport=legs.map(leg=>{
-      const rows=input.transport.filter(t=>t.id===leg.id);if(rows.length!==1)throw new Error('交通建议未匹配行程，请重试评估。');const row=rows[0];
-      if(!Array.isArray(row.options)||!row.options.length||row.options.length>2)throw new Error('交通方式建议不完整。');
-      const options=row.options.map((o,i)=>{if(!text(o.mode)||!text(o.reason))throw new Error('交通建议缺少方式或理由。');return {id:i?'B':'A',mode:text(o.mode,80),reason:text(o.reason,500)};});
-      if(!options.some(o=>o.id===row.recommended))throw new Error('交通推荐选项缺失。');
-      return {...leg,options,recommended:row.recommended,notes:text(row.notes,600)};
-    });
-    const bookings=input.bookings.slice(0,24).map((b,i)=>{if(!text(b.title)||!text(b.action))throw new Error('准备清单内容不完整。');return {id:'booking-'+i,title:text(b.title,160),action:text(b.action,500),day_label:text(b.day_label,80),category:['ticket','hotel','transport'].includes(b.category)?b.category:'ticket',priority:b.priority==='early'?'early':'normal',verification:'待按出行日期核实'};});
-    return {summary:text(input.summary,1200),day_notes:(Array.isArray(input.day_notes)?input.day_notes:[]).slice(0,plan.days.length).map(n=>({day_label:text(n.day_label,80),note:text(n.note,500)})),decisions,transport,bookings};
+    const transport=normalizeTransport(input.transport,plan);
+    const bookings=(Array.isArray(input.bookings)?input.bookings:[]).filter(b=>b&&text(b.title)&&text(b.action)).slice(0,24).map((b,i)=>({id:'booking-'+i,title:text(b.title,160),action:text(b.action,500),day_label:text(b.day_label,80),category:['ticket','hotel','transport'].includes(b.category)?b.category:'ticket',priority:b.priority==='early'?'early':'normal',verification:'待按出行日期核实'}));
+    return {summary:text(input.summary,1200),deferred:input.deferred===true,day_notes:(Array.isArray(input.day_notes)?input.day_notes:[]).slice(0,plan.days.length).map(n=>({day_label:text(n.day_label,80),note:text(n.note,500)})),decisions,transport,bookings};
   }
+  function normalizeTransport(input,plan){
+    const rows=Array.isArray(input)?input:[];
+    return transportLegs(plan).map(leg=>{
+      const matches=rows.filter(row=>row&&row.id===leg.id),row=matches.length===1?matches[0]:{};
+      const ids=new Set();
+      const options=(Array.isArray(row.options)?row.options:[]).filter(o=>o&&o.id!=='pending').slice(0,2).map((o,i)=>({id:['A','B'].includes(o.id)?o.id:(i?'B':'A'),mode:text(o.mode,80),reason:text(o.reason,500)||'适用条件、费用和衔接仍需核实。'})).filter(o=>{if(!o.mode||o.mode==='待定'||ids.has(o.id))return false;ids.add(o.id);return true;});
+      const recommendation=typeof row.recommended==='string'?row.recommended.trim().toUpperCase():'';
+      const valid=options.some(o=>o.id===recommendation);
+      const recommended=valid?recommendation:'pending';
+      options.push({id:'pending',mode:'待定',reason:'先保留这段行程，之后再确认交通方式、班次和换乘。'});
+      return {...leg,options,recommended,status:valid?'suggested':'pending',pending_reason:valid?'':text(row.pending_reason,300)||(matches.length!==1?'这段交通建议尚未完整返回。':'AI 尚未给出可对应的推荐选项；不是你的路线有错。'),notes:text(row.notes,600)||'具体方式、班次、票价及衔接时间待按出行日期核实。'};
+    });
+  }
+
   function applyReview(plan,review,answers){
     const result=clone(plan),dayMap=new Map(result.days.map((d,i)=>[d.workflow_day_key||dayKey(d,i),d]));
     for(const d of review?.decisions||[]){const answer=answers[d.id];if(!answer)continue;const option=d.options.find(o=>o.id===answer);if(!option)throw new Error('选择未匹配当前问题。');
@@ -128,12 +135,12 @@
         const original=before[field]||[],actual=day[field]||[];const actualKeys=actual.map(s=>s.candidate_id||'name:'+normalize(s.name)).sort();
         const aliases=original.map(s=>s.candidate_id||'name:'+normalize(s.name)).sort();
         if(JSON.stringify(aliases)!==JSON.stringify(actualKeys))throw new Error('AI 改变了 '+day.day_label+' 已确认的地点，未覆盖原选择，请重试。');
-        day[field]=actual.map(s=>{const old=original.find(p=>(p.candidate_id||'name:'+normalize(p.name))===(s.candidate_id||'name:'+normalize(s.name)));if(old.workflow_time_locked&&!String(s.time||'').includes(old.time))throw new Error('AI 改变了你指定的时间段，请重试。');return {...s,name:old.name,candidate_id:old.candidate_id||'',location:old.location||'',location_name:old.location_name||old.name,location_source:old.location_source||'unverified',coordinate_system:old.coordinate_system||'',activity_kind:old.activity_kind||'sight',verification:old.verification||'待核验',workflow_key:stopKey(old)};});
+        day[field]=actual.map(s=>{const old=original.find(p=>(p.candidate_id||'name:'+normalize(p.name))===(s.candidate_id||'name:'+normalize(s.name)));if(old.workflow_time_locked&&!String(s.time||'').includes(old.time))throw new Error('AI 改变了你指定的时间段，请重试。');return {...s,name:old.name,candidate_id:old.candidate_id||'',location:old.location||'',location_name:old.location_name||old.name,location_source:old.location_source||'unverified',location_status:old.location_status||(old.location_source==='amap'&&old.location?'matched':'pending'),coordinate_system:old.coordinate_system||'',activity_kind:old.activity_kind||'sight',verification:old.verification||'待核验',workflow_key:stopKey(old)};});
       }
     });
-    result.intercity_transport=(review?.transport||[]).map(leg=>{const choice=leg.options.find(o=>o.id===transportChoices[leg.id]);if(!choice)throw new Error('请确认 '+leg.from+' → '+leg.to+' 的交通方式。');return {from:leg.from,to:leg.to,day_label:leg.day_label,mode:choice.mode,notes:leg.notes,verification:'建议方式；班次、票价与衔接时间待核实'};});
-    result.checks=[...new Set([...(expected.checks||[]),...(input.checks||[])])];result.questions=[];return result;
+    result.intercity_transport=(review?.transport||[]).map(leg=>{const selected=transportChoices[leg.id]||'pending';const choice=selected==='pending'?{mode:'待定'}:leg.options.find(o=>o.id===selected);if(!choice)throw new Error('请重新选择 '+leg.from+' → '+leg.to+' 的交通方式，或设为待定。');return {from:leg.from,to:leg.to,day_label:leg.day_label,mode:selected==='pending'?'待定':choice.mode,status:selected==='pending'?'pending':'suggested',notes:leg.notes,verification:selected==='pending'?'交通待定；需确认方式、班次及换乘，当前不是已可执行的交通安排':'建议方式；班次、票价与衔接时间待核实'};});
+    result.map_pending=clone(expected.map_pending||[]);result.checks=[...new Set([...(expected.checks||[]),...(input.checks||[])])];for(const leg of result.intercity_transport)if(leg.status==='pending')result.checks.push('交通待定：'+leg.from+' → '+leg.to+'；出发前请确认交通方式、班次与换乘缓冲。');if(review?.deferred)result.checks.push('综合评估尚未完成；本版保留用户当前景点安排，出发前需继续检查节奏与衔接。');result.checks=[...new Set(result.checks)];result.questions=[];return result;
   }
-  const api={STAGES,SLOTS,clone,normalize,fingerprint,dayKey,stopKey,isActivity,createFlow,restoreFlow,editFor,invalidate,materialize,addCandidate,removeStop,restoreStop,setSlot,confirmDay,confirmRemaining,reviewSnapshot,transportLegs,validateReview,applyReview,adoptReviewedPlan,finalCandidateChoices,assertFinalPlan};
+  const api={STAGES,SLOTS,clone,normalize,fingerprint,dayKey,stopKey,isActivity,createFlow,restoreFlow,editFor,invalidate,materialize,addCandidate,removeStop,restoreStop,setSlot,confirmDay,confirmRemaining,reviewSnapshot,transportLegs,normalizeTransport,validateReview,applyReview,adoptReviewedPlan,finalCandidateChoices,assertFinalPlan};
   root.PlanCore=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(globalThis);
