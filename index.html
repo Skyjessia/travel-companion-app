@@ -325,6 +325,8 @@ function stopMapDescriptor(stop,city,country,kind='sight'){
   let poi=null;
   if(stop.candidate_id)for(const pool of Object.values(candidatePools)){poi=pool.pois?.find(p=>p.id===stop.candidate_id);if(poi)break;}
   const location=poi?.location||(stop.location_source==='amap'?stop.location:null);
+  country=country||(/^(中国|China)$/i.test(planBrief?.country||'')?planBrief.country:'');
+  if(!country&&Object.keys(candidatePools).includes(city))country='中国';
   return {key:mapKey(kind,stop.name,city,country),name:stop.name,city,country,kind,id:stop.candidate_id||poi?.id||'',location:parseMapCoordinate(location)?location:null,coordinate_system:stop.coordinate_system||'GCJ02',status:location?'matched':'pending'};
 }
 function rememberMapLocation(item){
@@ -363,6 +365,7 @@ function disposeTripMaps(container){
 }
 function refreshLiveMap(record,fit=true){
   if(!record.element.isConnected||!record.element.getBoundingClientRect().width)return;
+  if(record.sketch){renderRouteSketch(record);return;}
   if(typeof L==='undefined'){record.status.textContent='地图组件未加载，地点列表仍可使用。';return;}
   const descriptors=record.getItems().map(locateMapDescriptor);
   const points=descriptors.map((item,index)=>({...item,index,latlng:displayCoordinate(item.location,item.coordinate_system)})).filter(p=>p.latlng);
@@ -390,13 +393,33 @@ function appendLiveMap(parent,id,getItems,whole=false){
   const map=document.createElement('div');map.id=id;map.className='real-trip-map';map.setAttribute('aria-label',whole?'全程城市地图':'当天景点与餐饮地图');
   const status=document.createElement('p');status.className='tiny';status.textContent='正在匹配地图位置…';parent.append(map,status);
   const retry=document.createElement('button');retry.className='btn line small';retry.textContent='重新匹配地图位置';retry.onclick=()=>{for(const item of getItems())if(mapLocationMemory[item.key]?.status!=='matched')delete mapLocationMemory[item.key];refreshLiveMap(record);};parent.appendChild(retry);
+  if(!whole){const complete=document.createElement('button');complete.className='btn light small';complete.textContent='补全当天具体地点';complete.onclick=async()=>{const day=trip.days.find(d=>d.id===activeDay);nav('planner');appendPlanDiscussionMessage('user','请补全 '+(day?.label||'当天')+' '+(day?.title||'')+' 的具体景点：泛称、如某某、周边景区等需要选定具体名称并匹配候选身份；自由休息无需落点。若尚不能确定，请在一起决定中提问，不要假装已定位。');await revisePlanFromDiscussion();};parent.appendChild(complete);}
   const record={element:map,status,getItems,whole,map:null};liveTripMaps.set(map,record);requestAnimationFrame(()=>refreshLiveMap(record));
 }
 function planCityMapItems(plan){return (plan.city_sequence||[]).map(c=>({key:mapKey('city',c.city,c.city,c.country),name:c.city,city:c.city,country:c.country,kind:'city'}));}
 function modeGroup(mode){if(/或|\/|、/.test(mode||''))return mode; if(/铁路|火车|高铁|动车/.test(mode))return '铁路';if(/自驾/.test(mode))return '自驾';if(/包车|租车|驾车|汽车/.test(mode))return '包车/汽车';if(/航班|飞机|航空/.test(mode))return '飞机';return mode||'待选择';}
+function renderRouteSketch(record){
+ const ns='http://www.w3.org/2000/svg', root=record.element;root.replaceChildren();
+ const items=record.getItems().map(locateMapDescriptor), points=items.map((p,i)=>({...p,i,xy:parseMapCoordinate(p.location)}));
+ const known=points.filter(p=>p.xy);const geographic=known.length===points.length&&known.length>1;
+ const svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 800 '+Math.max(420,points.length*100));svg.setAttribute('role','img');svg.setAttribute('aria-label','手绘风格行程总览');svg.style='width:100%;display:block;background:#faf7ef;border-radius:18px';
+ const height=Math.max(420,points.length*100), colors=['#779d88','#c18b68','#b09d83','#c5a154','#a38eb3','#7e9fb4'];
+ const minX=Math.min(...known.map(p=>p.xy[0])), maxX=Math.max(...known.map(p=>p.xy[0])), minY=Math.min(...known.map(p=>p.xy[1])),maxY=Math.max(...known.map(p=>p.xy[1]));
+ const positions=points.map((p,i)=>geographic?[130+(p.xy[0]-minX)/(maxX-minX||1)*410,90+(maxY-p.xy[1])/(maxY-minY||1)*(height-210)]:[i%2?430:170,65+i*100]);
+ function el(tag,attrs,text){const n=document.createElementNS(ns,tag);for(const [k,v] of Object.entries(attrs))n.setAttribute(k,v);if(text)n.textContent=text;svg.appendChild(n);return n;}
+ el('text',{x:735,y:40,fill:'#a89982','font-size':18},'北 ↑');
+ positions.forEach(([x,y],i)=>{const color=colors[i%colors.length];if(i){const [px,py]=positions[i-1];el('path',{d:`M ${px} ${py} Q ${(px+x)/2+25} ${(py+y)/2} ${x} ${y}`,fill:'none',stroke:color,'stroke-width':4,'stroke-dasharray':'10 9','stroke-linecap':'round'});}el('circle',{cx:x,cy:y,r:22,fill:'#fff',stroke:color,'stroke-width':4});el('text',{x,y:y+7,'text-anchor':'middle',fill:color,'font-size':21,'font-weight':'bold'},String(i+1));const days=(record.plan.days||[]).filter(d=>d.city===points[i].name).map(d=>d.day_label);el('text',{x:x+32,y:y-5,fill:'#223c40','font-size':22,'font-weight':'bold'},points[i].name);el('text',{x:x+32,y:y+22,fill:'#8c8171','font-size':15},days.join(' · ')||'停留待定');});
+ root.appendChild(svg);record.status.textContent=geographic?'按城市位置绘制的手绘风格示意；Day 为停留日，虚线不代表真实道路。':'行程顺序示意，城市坐标尚未完整匹配，暂不代表地理比例。';
+}
+function appendRouteSketch(parent,plan,id){const element=document.createElement('div');element.id=id;const status=document.createElement('p');status.className='tiny';parent.append(element,status);const record={element,status,getItems:()=>planCityMapItems(plan),sketch:true,plan};liveTripMaps.set(element,record);requestAnimationFrame(()=>refreshLiveMap(record));}
+function appendPlanQuestions(parent,questions){
+ const box=document.createElement('section');box.className='notice';addTextNode(box,'strong','','一起决定');addTextNode(box,'p','tiny','直接回答下面的问题，再更新方案；暂时未定也可以填写“请建议”，或先继续查看草案。');const fields=[];
+ questions.forEach((question,i)=>{const label=document.createElement('label');label.textContent=question;label.htmlFor='planAnswer'+i;const input=document.createElement('textarea');input.id='planAnswer'+i;input.className='candidate-preference-input';input.placeholder='我的想法／请 AI 建议';box.append(label,input);fields.push({question,input});});
+ const submit=document.createElement('button');submit.className='btn';submit.textContent='提交回答并调整方案';submit.disabled=planDiscussionBusy||candidatePoolBusy;submit.onclick=async()=>{const answers=fields.filter(x=>x.input.value.trim()).map(x=>x.question+'\n我的回答：'+x.input.value.trim());if(!answers.length){toast('先回答一个问题，或填写“请建议”');fields[0]?.input.focus();return;}appendPlanDiscussionMessage('user',answers.join('\n\n'));savePlanSession();await revisePlanFromDiscussion();};box.appendChild(submit);parent.appendChild(box);
+}
 function appendTransportOverview(parent,plan,mapId){
   const card=document.createElement('section');card.className='transport-overview';addTextNode(card,'h3','','全程地图与交通');
-  appendLiveMap(card,mapId,()=>planCityMapItems(plan),true);
+  appendRouteSketch(card,plan,mapId);
   const segments=plan.intercity_transport||[];
   if(!segments.length)addTextNode(card,'p','tiny','跨城交通方式待讨论确认。');
   const modes=new Map();for(const segment of segments){const group=modeGroup(segment.mode);modes.set(group,(modes.get(group)||0)+1);}
@@ -732,7 +755,7 @@ function renderPlanResult(result){
     if(candidateInlineDay===dayKey)appendCandidateExplorer(card,day.city);
     out.appendChild(card);
   }
-  if((result.questions||[]).length){const q=document.createElement('div');q.className='notice';addTextNode(q,'strong','','一起决定');result.questions.forEach(x=>addTextNode(q,'p','',x));out.appendChild(q);}
+  if((result.questions||[]).length)appendPlanQuestions(out,result.questions);
   appendPlanDiscussion(out);out.dataset.planDiscussionReady='true';
   const actions=document.createElement('div');actions.className='ai-action-row';
   const apply=document.createElement('button');apply.className='btn enter-daily-button';apply.textContent='进入每日行程 →';apply.onclick=applyAiPlan;apply.disabled=planDiscussionBusy||candidatePoolBusy||!planHasStructuredData(lastAiPlan);actions.appendChild(apply);out.appendChild(actions);
@@ -1171,7 +1194,7 @@ function checkCandidatePlan(plan){
       for(const s of [...(d.stops||[]),...(d.local_food||[]).filter(f=>f.candidate_id)]){
         const p=allowed.get(s.candidate_id);
         if(!p||candidateChoices[p.id]==='excluded'||selected.has(p.id))throw new Error('候选身份、排除或去重检查未通过，原方案已保留');
-        s.name=p.name;s.location=p.location;s.verification='地点已匹配高德；开放时间、票务和预约待核验';selected.add(p.id);
+        s.name=p.name;s.location=p.location;s.location_source='amap';s.coordinate_system='GCJ02';s.verification='地点已匹配高德；开放时间、票务和预约待核验';selected.add(p.id);
       }
     }
     for(const p of pool.candidates)if(candidateChoices[p.id]==='locked'&&!selected.has(p.id))throw new Error('AI 未保留锁定地点，原方案已保留；请先讨论时间或路线取舍');
@@ -1210,6 +1233,7 @@ function appendCandidateExplorer(out,onlyCity=null){
     const shown=rest.slice(offset,offset+3);
     addTextNode(details,'summary','',city.city+' · '+(pool?.rankingStatus==='ranked'?'每次 3 个精选备选':'等待精选'));
     if(!pool||pool.rankingStatus!=='ranked'){
+      if(pool?.warning)addTextNode(details,'p','tiny',pool.warning);
       addTextNode(details,'p','tiny',pool?.rankingStatus==='unavailable'?'这次精选未完成，可重试；不会用原始搜索顺序代替推荐。':'先完成本城筛选，再展示推荐。');
       const retry=document.createElement('button');retry.className='btn light small';retry.textContent='为这个城市筛选推荐';retry.disabled=candidatePoolBusy||planDiscussionBusy;retry.onclick=async()=>{if(await discoverCityPool(city))await refinePlanWithPool();};details.appendChild(retry);
     }else{

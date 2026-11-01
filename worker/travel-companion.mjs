@@ -1083,7 +1083,7 @@ async function planPoiQueries(env, city, interests, preferences) {
           {role:"user",content:JSON.stringify({city,interests,preferences})}]})});
     if(!response.ok)throw new Error("DS_HTTP_"+response.status);
     const result=await response.json();
-    const parsed=JSON.parse(result.choices?.[0]?.message?.content||"{}");
+    const parsed=JSON.parse((result.choices?.[0]?.message?.content||"{}").replace(/^```(?:json)?\s*/i,"").replace(/\s*```$/, ""));
     const seen=new Set();
     const queries=(Array.isArray(parsed.queries)?parsed.queries:[]).filter(q=>q&&interests.includes(q.interest)&&typeof q.keyword==="string"&&q.keyword.trim().length<=30&&q.keyword.trim().length>0).map(q=>({interest:q.interest,keyword:q.keyword.trim()})).filter(q=>{if(seen.has(q.keyword))return false;seen.add(q.keyword);return true;}).slice(0,6);
     for(const interest of interests)if(!queries.some(q=>q.interest===interest)){if(queries.length===6)queries.pop();queries.unshift({interest,keyword:POI_INTEREST_KEYWORDS[interest][0]});}
@@ -1095,7 +1095,7 @@ async function planPoiQueries(env, city, interests, preferences) {
   } finally {clearTimeout(timer);}
 }
 
-async function rankPoiCandidates(env,city,interests,preferences,pois){
+async function rankPoiCandidates(env,city,interests,preferences,pois,attempt=0){
   if(!pois.length)return {recommendations:[],status:"empty",warning:"未找到可筛选地点。"};
   if(!env.DEEPSEEK_API_KEY)return {recommendations:[],status:"unavailable",warning:"AI 精选暂不可用，未把原始搜索顺序当作推荐。"};
   const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),45000);
@@ -1107,14 +1107,16 @@ async function rankPoiCandidates(env,city,interests,preferences,pois){
         {role:"user",content:JSON.stringify({city,interests,preferences,candidates:pois.map(p=>({id:p.id,name:p.name,type:p.type,address:p.address,location:p.location}))})}]
       })});
     if(!response.ok)throw new Error("DS_HTTP_"+response.status);
-    const result=await response.json();const parsed=JSON.parse(result.choices?.[0]?.message?.content||"{}");
+    const result=await response.json();const parsed=JSON.parse((result.choices?.[0]?.message?.content||"{}").replace(/^```(?:json)?\s*/i,"").replace(/\s*```$/, ""));
     const allowed=new Map(pois.map(p=>[p.id,p]));const seen=new Set();
     const recommendations=(Array.isArray(parsed.recommendations)?parsed.recommendations:[]).filter(x=>x&&allowed.has(x.id)&&['sight','food'].includes(x.role)&&typeof x.reason==='string'&&x.reason.trim()).filter(x=>{if(seen.has(x.id))return false;seen.add(x.id);return true;}).slice(0,12).map((x,i)=>({id:x.id,rank:i+1,role:x.role,reason:x.reason.slice(0,100),tradeoff:String(x.tradeoff||'').slice(0,80),matched_interests:(Array.isArray(x.matched_interests)?x.matched_interests:[]).filter(t=>interests.includes(t))}));
     if(!recommendations.length)throw new Error("EMPTY_RANKING");
     return {recommendations,status:"ranked",warning:""};
   }catch(error){
     logEvent("poi_ranking_failed",{code:error.name==="AbortError"?"TIMEOUT":String(error.message||"INVALID_RESULT").slice(0,80)});
-    return {recommendations:[],status:"unavailable",warning:"本城 AI 精选尚未完成，请重试；原始候选保留，但不作为推荐列表展示。"};
+    if(attempt===0&&!/DS_HTTP_40[13]/.test(error.message||''))return rankPoiCandidates(env,city,interests,preferences,pois,1);
+    const code=error.name==='AbortError'?'TIMEOUT':String(error.message||'INVALID_RESULT').slice(0,60);
+    return {recommendations:[],status:"unavailable",warning:"AI 精选失败（"+code+"），已自动重试一次；请稍后重试。原始候选未作为推荐。"};
   }finally{clearTimeout(timer);}
 }
 
@@ -1402,7 +1404,7 @@ export default {
 
         service: "travel-companion-ai",
 
-        version: "2026-11-01-map-discussion-4",
+        version: "2026-11-01-guided-plan-5",
 
         configured: Boolean(env.DEEPSEEK_API_KEY),
 

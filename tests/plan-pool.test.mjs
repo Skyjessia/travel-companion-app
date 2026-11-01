@@ -125,3 +125,8 @@ test('revision clears busy state before rebuilding all action controls',async()=
  document:{getElementById:()=>({})},toast:()=>{},setBusy:()=>{},updatePlanReferencePreview:()=>{},addPlanBubbleToLog:()=>{},appendPlanDiscussionMessage:()=>{},savePlanSession:()=>{},buildPlanContext:()=>({}),planHasStructuredData:()=>true,apiRequest:async()=>({data:plan()}),renderPlanResult:()=>renders.push(sandbox.planDiscussionBusy)};
  vm.createContext(sandbox);vm.runInContext(snippet,sandbox);await sandbox.revisePlanFromDiscussion();assert.equal(sandbox.planDiscussionBusy,false);assert.equal(renders.at(-1),false);assert.equal(sandbox.planVersionNumber,2);
 });
+
+test('ranking retries a transient failure once and accepts fenced JSON',async()=>{
+ let calls=0;
+ try{globalThis.fetch=async()=>{calls++;if(calls===1)return new Response('',{status:503});return json({choices:[{message:{content:'```json\n'+JSON.stringify({recommendations:[{id:'p1',role:'sight',reason:'匹配历史兴趣'}]})+'\n```'}}]});};const r=await rankPoiCandidates({DEEPSEEK_API_KEY:'test'},'贵阳',['历史文化'],'',[candidate]);assert.equal(calls,2);assert.equal(r.status,'ranked');}finally{globalThis.fetch=realFetch;}
+});
