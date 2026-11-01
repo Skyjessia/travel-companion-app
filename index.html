@@ -110,6 +110,24 @@ button,input,textarea,select{font:inherit}
 .beta-transfer-note{font-size:10px;line-height:1.6;color:#7b878b;margin-top:9px}
 @media(min-width:700px){body{background:#f3f5f5}}
 
+
+/* ===== POI Discovery Lab · V1 ===== */
+.poi-lab-intro{background:linear-gradient(145deg,#f5faf6,#fff 76%);border-color:#e0eae3}
+.poi-interest-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:8px 0 4px}
+.poi-interest-chip{border:1px solid #e2e9e5;background:#fff;color:#526960;border-radius:12px;padding:11px 10px;text-align:left;font:inherit;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:7px;min-height:43px}
+.poi-interest-chip:before{content:"＋";display:grid;place-items:center;width:19px;height:19px;border-radius:50%;background:#f0f4f0;color:#70857a;font-size:12px;flex-shrink:0}
+.poi-interest-chip.active{background:#edf5f0;border-color:#8fb9a6;color:#286e60;font-weight:750}
+.poi-interest-chip.active:before{content:"✓";background:#2d756d;color:#fff}
+.poi-search-note{padding:11px 12px;background:#f6f8f5;border-radius:11px;color:#718078;font-size:10px;line-height:1.65;margin-top:10px}
+.poi-result-card{border:1px solid #e5ebe7;border-radius:13px;padding:12px;margin:9px 0;background:#fff}
+.poi-result-card strong{font-size:13px;color:var(--navy)}
+.poi-result-card p{font-size:11px;color:var(--muted);margin:4px 0 0;line-height:1.55;overflow-wrap:anywhere}
+.poi-result-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.poi-result-meta span{font-size:9px;border-radius:99px;padding:4px 7px;background:#f0f4f1;color:#61766b}
+.poi-lab-status{font-size:11px;color:var(--muted);line-height:1.6;margin-top:10px}
+.poi-lab-actions{display:flex;gap:8px;flex-wrap:wrap}
+.poi-lab-actions .btn{flex:1;min-width:130px}
+@media(min-width:430px){.poi-interest-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 </style></head>
 <body><div class="app">
 <header class="hero">
@@ -133,6 +151,7 @@ button,input,textarea,select{font:inherit}
   <div class="stage-tags"><span>需求梳理</span><span>攻略整合</span><span>每日路线</span><span>当地美食</span></div>
   <div class="stage-actions"><button class="btn" onclick="nav('planner')">开始规划一趟旅行 →</button></div>
   <button class="stage-secondary" onclick="nav('materials')">已经有很多攻略？先整理我的资料 →</button>
+  <button class="stage-secondary" onclick="nav('poiLab')">新版 Plan：景点发现实验 →</button>
 </section>
 
 <section class="stage-card journey" data-mark="02">
@@ -164,6 +183,7 @@ button,input,textarea,select{font:inherit}
 </section><section class="screen" id="planner">
 <div class="head"><h2>AI 旅行规划</h2><span class="sub">从目的地到每天怎么走</span></div>
 <p class="tiny" style="margin:0 2px 12px">先告诉我们这趟旅行的边界，剩下的交给 AI 一起梳理。信息不完整时，会先向你确认，不会擅自补全关键条件。</p>
+<div class="card poi-lab-intro"><div class="eyebrow">NEW · V1 POI DISCOVERY</div><h3 style="margin:5px 0">先发现值得去的地方</h3><p class="tiny">新版 Plan 将兴趣选择改为可点击标签，先用真实 POI 数据发现城市，再进入 AI 推荐与路线规划。</p><button class="btn light" style="width:100%" onclick="nav('poiLab')">进入新版景点发现 →</button></div>
 
 <div class="card planner-form"><div class="row" style="justify-content:space-between;align-items:center"><h3>先告诉我旅行边界</h3><span class="pill">B · 从零规划</span></div><p class="tiny">告诉 AI 你的起点、终点、城市和旅行偏好。AI 会先检查信息是否完整，再生成可编辑的城市顺序、跨城交通研究方向和逐日路线。景点开放时间、票务与实际交通仍需按出行日期核验。</p><div class="field"><label>出发地 / 起点</label><input id="origin" value="阿拉木图" placeholder="例如：新加坡"></div><div class="field"><label>返程地 / 终点</label><input id="destination" value="塔什干" placeholder="例如：塔什干"></div><div class="field"><label>想去的城市</label><input id="cities" value="阿拉木图、撒马尔罕、布哈拉、塔什干"></div><div class="field"><label>旅行日期（可暂时留空）</label><div class="row"><input id="startDate" type="date"><input id="endDate" type="date"></div></div><div class="field"><label>旅行节奏</label><select id="pace"><option>舒适慢游</option><option>经典高效</option><option>深度文化</option><option>自然户外</option></select></div><div class="field"><label>偏好补充</label><textarea id="preferences" placeholder="例如：历史文化、美食、建筑；不想每天换酒店；每天步行不要太多"></textarea></div><button class="btn" style="width:100%" onclick="generatePlan()">开始与 AI 规划</button></div><div id="generated" class="card" style="display:none"></div>
 <div class="card plan-reference-card" id="planReferenceCard">
@@ -184,6 +204,27 @@ button,input,textarea,select{font:inherit}
 <div class="head" style="margin-top:21px"><h2>试试第一份旅行内容</h2><span class="pill">内置示例数据</span></div>
 <div class="card"><div class="eyebrow">BETA TRIP · CENTRAL ASIA</div><h3 style="font-size:17px;margin-top:5px">哈萨克斯坦 × 乌兹别克斯坦</h3><p class="tiny">以阿拉木图、塔什干、撒马尔罕、布哈拉为例，体验城市规划、每日路线、景点详情和现场问答。</p><div class="statgrid"><div class="stat"><b>4</b><span>示例城市</span></div><div class="stat"><b>5</b><span>示例游览日</span></div><div class="stat"><b>20</b><span>候选地点</span></div></div><div class="divider"></div><button class="btn" style="width:100%" onclick="openTrip()">查看示例行程与 By Day →</button><p class="tiny" style="margin:9px 0 0">说明：这是用于验证操作流程的预置样例，不是朋友的最终旅行计划；跨境交通、开放时间、票务与日期适配尚未实时核验。</p></div>
 <div class="card"><div class="row" style="justify-content:space-between"><h3>我们要解决的事</h3><span class="pill gold">产品目标</span></div><div class="itemrow"><div><strong>少做无效功课</strong><small>把零散信息变成结构化资料</small></div><span>01</span></div><div class="itemrow"><div><strong>减少绕路与赶场</strong><small>城市分区、每日路线、时间预算</small></div><span>02</span></div><div class="itemrow"><div><strong>旅途中能随时求助</strong><small>临时变化、附近建议、计划调整</small></div><span>03</span></div></div>
+</section>
+
+<section class="screen" id="poiLab">
+<div class="head"><h2>景点发现实验</h2><span class="pill">V1 · POI LAB</span></div>
+<div class="card poi-lab-intro"><div class="eyebrow">DISCOVER YOUR CITY</div><h3 style="font-size:19px;margin:6px 0">先选你感兴趣的旅行内容</h3><p class="tiny">不用想复杂的提示词。告诉我们城市和兴趣，系统先去发现真实地点，再逐步帮你筛选值得去的地方。</p><div class="poi-search-note">本轮实验：先验证高德真实 POI 搜索。结果是地点候选数据，不代表最终推荐排名；下一步再接入 DeepSeek 做价值判断和个性化排序。</div></div>
+<div class="card"><div class="field"><label for="poiCity">这次想探索哪个城市？</label><input id="poiCity" value="贵阳" placeholder="例如：贵阳、长沙、成都"></div>
+<div class="field"><label>你对哪些内容感兴趣？（最多选 3 个）</label><div class="poi-interest-grid" id="poiInterestGrid">
+<button type="button" class="poi-interest-chip active" data-poi-interest="历史文化" aria-pressed="true" onclick="togglePoiInterest(this)">历史文化</button>
+<button type="button" class="poi-interest-chip active" data-poi-interest="古建筑" aria-pressed="true" onclick="togglePoiInterest(this)">古建筑</button>
+<button type="button" class="poi-interest-chip" data-poi-interest="自然风光" aria-pressed="false" onclick="togglePoiInterest(this)">自然风光</button>
+<button type="button" class="poi-interest-chip" data-poi-interest="地方生活" aria-pressed="false" onclick="togglePoiInterest(this)">地方生活</button>
+<button type="button" class="poi-interest-chip" data-poi-interest="特色美食" aria-pressed="false" onclick="togglePoiInterest(this)">特色美食</button>
+<button type="button" class="poi-interest-chip" data-poi-interest="摄影打卡" aria-pressed="false" onclick="togglePoiInterest(this)">摄影打卡</button>
+<button type="button" class="poi-interest-chip" data-poi-interest="小众探索" aria-pressed="false" onclick="togglePoiInterest(this)">小众探索</button>
+</div></div>
+<div class="field"><label for="poiExtra">还有什么特别偏好？（可选）</label><textarea id="poiExtra" placeholder="例如：不想去太商业化的地方；喜欢当地人日常生活的街区；不想走太多路。"></textarea></div>
+<button id="poiSearchButton" class="btn" style="width:100%" onclick="searchPoi()">发现贵阳的真实地点 →</button>
+<div id="poiSearchStatus" class="poi-lab-status" aria-live="polite">已选择 2 个兴趣方向。搜索时最多调用 3 次 POI 查询，控制测试额度。</div>
+</div>
+<div class="card" id="poiResultsCard" style="display:none"><div class="row" style="justify-content:space-between;align-items:center"><h3 style="margin:0">发现的地点</h3><span class="pill" id="poiResultCount">0 个候选</span></div><p class="tiny" id="poiResultSummary" style="margin:7px 0"></p><div id="poiResultList"></div><div class="poi-search-note" id="poiResultWarning"></div></div>
+<div class="card"><div class="poi-lab-actions"><button class="btn line" onclick="nav('planner')">返回原版 Plan</button><button class="btn light" onclick="nav('home')">返回首页</button></div><p class="tiny" style="margin:9px 0 0">原有规划、资料整理和旅行工作台均保留。这个入口是并行测试版，不会覆盖你的旧行程。</p></div>
 </section>
 
 <section class="screen" id="trip"><div class="head"><h2>旅行工作台</h2><span class="pill">已加载示例内容</span></div><div class="card"><div class="eyebrow">CENTRAL ASIA SAMPLE</div><h3 style="font-size:17px">哈萨克斯坦 × 乌兹别克斯坦</h3><p class="tiny">示例城市组合：阿拉木图 → 塔什干 → 撒马尔罕 → 布哈拉。此顺序仅用于体验规划功能，实际顺序应由国际机票、跨境交通与日期决定。</p><div class="statgrid"><div class="stat"><b>4</b><span>城市</span></div><div class="stat"><b>5</b><span>游览日样例</span></div><div class="stat"><b id="stopCount">16</b><span>地点素材</span></div></div></div>
@@ -877,6 +918,62 @@ function applyAiPlan(){
   activeCity=trip.cities[0].id;activeDay=trip.days[0].id;
   persist(true);renderTrip();nav("trip");toast("AI 方案已载入工作台；请继续核实交通和开放时间");
 }
+const POI_INTEREST_LIMIT = 3;
+function togglePoiInterest(button){
+  const selected=[...document.querySelectorAll('[data-poi-interest].active')];
+  const isActive=button.classList.contains('active');
+  if(!isActive && selected.length>=POI_INTEREST_LIMIT){toast('第一轮最多选择 3 个兴趣方向，避免消耗过多搜索额度');return;}
+  button.classList.toggle('active',!isActive);
+  button.setAttribute('aria-pressed',String(!isActive));
+  const count=document.querySelectorAll('[data-poi-interest].active').length;
+  const status=document.getElementById('poiSearchStatus');
+  if(status)status.textContent='已选择 '+count+' 个兴趣方向。搜索时最多调用 3 次 POI 查询，控制测试额度。';
+}
+async function apiPoiRequest(payload){
+  async function send(){
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),30000);
+    try{return await fetch(API_BASE+'/api/poi/search',{method:'POST',headers:apiHeaders(),body:JSON.stringify(payload),signal:controller.signal});}
+    catch(error){if(error.name==='AbortError')throw new Error('高德 POI 查询超过 30 秒，请稍后重试。');if(error instanceof TypeError)throw new Error('无法连接 POI 服务。请检查网络或稍后重试。');throw error;}
+    finally{clearTimeout(timer);}
+  }
+  let response=await send();
+  if(response.status===401){const code=prompt('此页面需要测试访问码，请向分享者获取后输入：');if(!code||!code.trim())throw new Error('需要测试访问码才能使用 POI 搜索。');localStorage.setItem('travelCompanionBetaCode',code.trim());response=await send();}
+  const data=await response.json().catch(()=>({error:'服务器返回内容无法识别。'}));
+  if(!response.ok)throw new Error(data.error||('POI 查询失败（'+response.status+'）'));
+  return data;
+}
+function renderPoiSearchResults(data){
+  const card=document.getElementById('poiResultsCard');const list=document.getElementById('poiResultList');
+  const count=document.getElementById('poiResultCount');const summary=document.getElementById('poiResultSummary');
+  const warning=document.getElementById('poiResultWarning');list.innerHTML='';
+  const pois=Array.isArray(data.pois)?data.pois:[];count.textContent=pois.length+' 个候选';
+  summary.textContent=(data.city||'')+' · 成功执行 '+(data.queryCount||0)+' 组兴趣搜索 · 数据来源：高德地图 Web 服务';
+  pois.forEach((poi,index)=>{
+    const item=document.createElement('article');item.className='poi-result-card';
+    const title=document.createElement('strong');title.textContent=(index+1)+'. '+(poi.name||'未命名地点');item.appendChild(title);
+    const address=document.createElement('p');address.textContent=poi.address||[poi.pname,poi.cityname,poi.adname].filter(Boolean).join(' · ')||'地址暂缺';item.appendChild(address);
+    const meta=document.createElement('div');meta.className='poi-result-meta';
+    [poi.type||'类别待补',...(poi.interests||[]),poi.location?('坐标 '+poi.location):'坐标待补'].forEach(value=>{const tag=document.createElement('span');tag.textContent=value;meta.appendChild(tag)});
+    item.appendChild(meta);list.appendChild(item);
+  });
+  if(!pois.length){const empty=document.createElement('p');empty.className='tiny';empty.textContent='本次没有返回地点。可以换一个兴趣标签或缩短关键词再试。';list.appendChild(empty);}
+  warning.textContent=data.warning||'高德返回的是地点候选数据，尚未经过 AI 价值判断。';card.style.display='block';
+}
+async function searchPoi(){
+  const city=document.getElementById('poiCity').value.trim();
+  const interests=[...document.querySelectorAll('[data-poi-interest].active')].map(x=>x.dataset.poiInterest);
+  const extra=document.getElementById('poiExtra').value.trim();
+  const button=document.getElementById('poiSearchButton');const status=document.getElementById('poiSearchStatus');
+  if(!city){toast('请先填写城市名称');return;}if(!interests.length){toast('至少选择一个兴趣方向');return;}if(interests.length>POI_INTEREST_LIMIT){toast('最多选择 3 个兴趣方向');return;}
+  button.disabled=true;button.textContent='正在发现地点…';
+  status.textContent='正在连接高德 POI 服务。API Key 保存在 Worker，不会暴露在网页端。';
+  document.getElementById('poiResultsCard').style.display='none';
+  try{const data=await apiPoiRequest({city,interests,extra});renderPoiSearchResults(data);status.textContent='查询完成：'+(data.total||0)+' 个去重后的地点候选。请先检查地点质量，再进入 AI 推荐测试。';}
+  catch(error){status.textContent='本次查询未完成：'+error.message;toast('POI 测试未完成');}
+  finally{button.disabled=false;button.textContent='发现贵阳的真实地点 →';}
+}
+
 async function readImageFilesFromInput(inputId){
   const picker=document.getElementById(inputId);
   const files=[...(picker?.files||[])];
