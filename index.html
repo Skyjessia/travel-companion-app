@@ -219,9 +219,9 @@ button,input,textarea,select{font:inherit}
 <button type="button" class="poi-interest-chip" data-poi-interest="摄影打卡" aria-pressed="false" onclick="togglePoiInterest(this)">摄影打卡</button>
 <button type="button" class="poi-interest-chip" data-poi-interest="小众探索" aria-pressed="false" onclick="togglePoiInterest(this)">小众探索</button>
 </div></div>
-<div class="field"><label for="poiExtra">还有什么特别偏好？（可选）</label><textarea id="poiExtra" placeholder="例如：不想去太商业化的地方；喜欢当地人日常生活的街区；不想走太多路。"></textarea></div>
-<button id="poiSearchButton" class="btn" style="width:100%" onclick="searchPoi()">发现贵阳的真实地点 →</button>
-<div id="poiSearchStatus" class="poi-lab-status" aria-live="polite">已选择 2 个兴趣方向。搜索时最多调用 3 次 POI 查询，控制测试额度。</div>
+<div class="field"><label for="poiExtra">补充偏好（本轮仅记录，下一步交给 AI）</label><textarea id="poiExtra" placeholder="例如：不想去太商业化的地方；喜欢当地人日常生活的街区；不想走太多路。"></textarea></div>
+<button id="poiSearchButton" class="btn" style="width:100%" onclick="searchPoi()">开始搜索真实地点 →</button>
+<div id="poiSearchStatus" class="poi-lab-status" aria-live="polite">已选择 2 个兴趣方向。每个兴趣标签单独搜索一次，最多 3 次 POI 查询，控制测试额度。</div>
 </div>
 <div class="card" id="poiResultsCard" style="display:none"><div class="row" style="justify-content:space-between;align-items:center"><h3 style="margin:0">发现的地点</h3><span class="pill" id="poiResultCount">0 个候选</span></div><p class="tiny" id="poiResultSummary" style="margin:7px 0"></p><div id="poiResultList"></div><div class="poi-search-note" id="poiResultWarning"></div></div>
 <div class="card"><div class="poi-lab-actions"><button class="btn line" onclick="nav('planner')">返回原版 Plan</button><button class="btn light" onclick="nav('home')">返回首页</button></div><p class="tiny" style="margin:9px 0 0">原有规划、资料整理和旅行工作台均保留。这个入口是并行测试版，不会覆盖你的旧行程。</p></div>
@@ -963,13 +963,12 @@ function renderPoiSearchResults(data){
 async function searchPoi(){
   const city=document.getElementById('poiCity').value.trim();
   const interests=[...document.querySelectorAll('[data-poi-interest].active')].map(x=>x.dataset.poiInterest);
-  const extra=document.getElementById('poiExtra').value.trim();
   const button=document.getElementById('poiSearchButton');const status=document.getElementById('poiSearchStatus');
   if(!city){toast('请先填写城市名称');return;}if(!interests.length){toast('至少选择一个兴趣方向');return;}if(interests.length>POI_INTEREST_LIMIT){toast('最多选择 3 个兴趣方向');return;}
   button.disabled=true;button.textContent='正在发现地点…';
   status.textContent='正在连接高德 POI 服务。API Key 保存在 Worker，不会暴露在网页端。';
   document.getElementById('poiResultsCard').style.display='none';
-  try{const data=await apiPoiRequest({city,interests,extra});renderPoiSearchResults(data);status.textContent='查询完成：'+(data.total||0)+' 个去重后的地点候选。请先检查地点质量，再进入 AI 推荐测试。';}
+  try{const data=await apiPoiRequest({city,interests});renderPoiSearchResults(data);status.textContent='查询完成：'+(data.total||0)+' 个去重后的地点候选。请先检查地点质量，再进入 AI 推荐测试。';}
   catch(error){status.textContent='本次查询未完成：'+error.message;toast('POI 测试未完成');}
   finally{button.disabled=false;button.textContent='发现贵阳的真实地点 →';}
 }
