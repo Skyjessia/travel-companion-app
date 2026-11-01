@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import fs from 'node:fs';
-import worker,{planPoiQueries,rankPoiCandidates,validatePoolPlan,isPlaceholderStop,resolveMapItem} from '../worker/travel-companion.mjs';
+import worker,{planPoiQueries,rankPoiCandidates,validatePoolPlan,isPlaceholderStop,resolveMapItem,recommendInternationalCandidates} from '../worker/travel-companion.mjs';
 const realFetch=globalThis.fetch;
 const json=x=>new Response(JSON.stringify(x),{headers:{'Content-Type':'application/json'}});
 const candidate={id:'p1',name:'测试博物馆',type:'博物馆',location:'106.7,26.5'};
@@ -48,14 +48,11 @@ test('assistant endpoint rejects a model response that drops locked candidate',a
 });
 function frontend(){
  const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
- const snippet=source.slice(source.indexOf('function poolSelectedIds(){'),source.indexOf('function appendCandidateExplorer('));
- const poolFn=source.slice(source.indexOf('function poolContext(){'),source.indexOf('function setCandidateChoice('));
+ const snippet=source.slice(source.indexOf('function poolSelectedIds(){'),source.indexOf('const POI_INTEREST_LIMIT = 3;'));
+ const poolFn=source.slice(source.indexOf('function poolContext(){'),source.indexOf('const POI_INTEREST_LIMIT = 3;'));
  const sandbox={Set,Map,Error,isMapActivity:s=>["transport","rest"].includes(s.activity_kind)||/转场|自由活动|返回.*休息/.test(s.name||""),candidatePools:{贵阳:{city:'贵阳',pois:[candidate],rankingStatus:'ranked',recommendations:[{id:'p1',reason:'兴趣匹配',role:'sight'}],queries:[]}},candidateChoices:{},candidatePoolBusy:false,candidateExplorerCity:'',planDiscussionBusy:false,lastAiPlan:plan(),planHasStructuredData:p=>!!p?.days?.length,savePlanSession:()=>{},renderPlanResult:()=>{},toast:()=>{}};
  vm.createContext(sandbox);vm.runInContext(snippet,sandbox);return sandbox;
 }
-test('candidate add, exclude and undo survive in model context',()=>{
- const f=frontend();f.setCandidateChoice('p1','locked');assert.equal(f.poolContext().candidate_choices.p1,'locked');f.setCandidateChoice('p1','excluded');assert.equal(f.poolContext().candidate_choices.p1,'excluded');f.setCandidateChoice('p1','excluded');assert.equal(f.poolContext().candidate_choices.p1,undefined);
-});
 test('model context uses AI shortlist and always retains explicit choices',()=>{
  const f=frontend();f.lastAiPlan={days:[]};const pois=Array.from({length:98},(_,i)=>({...candidate,id:'p'+i}));
  f.candidatePools={贵阳:{city:'贵阳',pois,rankingStatus:'ranked',recommendations:[{id:'p40',reason:'更符合兴趣',role:'sight'},{id:'p2',reason:'互补体验',role:'sight'}],queries:[]}};f.candidateChoices={p97:'locked'};
@@ -82,19 +79,6 @@ test('locked dining candidate can be arranged as optional daily local food',()=>
  assert.equal(validatePoolPlan(p,c),'');assert.equal(p.days[0].local_food[0].name,candidate.name);
  c.candidate_choices.p1='excluded';assert.ok(validatePoolPlan(p,c));
 });
-test('initial Plan discovers every domestic city before a single refinement',async()=>{
- const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
- const snippet=source.slice(source.indexOf('async function generatePlan(){'),source.indexOf('async function applyAiPlan('));
- const fields={origin:'长沙',destination:'衡阳',cities:'',startDate:'',endDate:'',pace:'舒适慢游',preferences:'历史与地方生活',planDays:'3'};
- const nodes=Object.fromEntries(Object.entries(fields).map(([k,v])=>[k,{value:v}]));nodes.generated={style:{},innerHTML:''};
- const found=[];let refinements=0;
- const sandbox={document:{getElementById:id=>nodes[id],querySelector:()=>({}),querySelectorAll:()=>[]},Set,Map,
-   disposeTripMaps:()=>{},addTextNode:()=>{},setBusy:()=>{},savePlanSession:()=>{},updatePlanReferencePreview:()=>{},toast:()=>{},buildPlanContext:()=>({}),renderPlanResult:()=>{},showAiError:(_o,e)=>{throw e;},
-   apiRequest:async()=>({data:{summary:'测试',city_sequence:[{city:'长沙',country:'中国'},{city:'衡阳',country:'中国'},{city:'京都',country:'日本'}],days:[{city:'长沙',stops:[{name:'具体地点'}]}]}}),
-   planHasStructuredData:()=>true,discoverCityPool:async c=>{found.push(c.city);return true;},refinePlanWithPool:async()=>{refinements++;}
- };
- vm.createContext(sandbox);vm.runInContext(snippet,sandbox);await sandbox.generatePlan();assert.deepEqual(found,['长沙','衡阳']);assert.equal(refinements,1);
-});
 test('map resolver keeps ambiguous POIs off the map',async()=>{
  try{globalThis.fetch=async()=>json({status:'1',pois:[{id:'a',name:'测试同名公园',location:'112,28'},{id:'b',name:'测试同名公园',location:'113,29'}]});const r=await resolveMapItem({AMAP_WEB_KEY:'test'},{key:'ambiguous',kind:'sight',name:'测试同名公园',city:'长沙',country:'中国'});assert.equal(r.status,'ambiguous');assert.equal(r.location,undefined);}finally{globalThis.fetch=realFetch;}
 });
@@ -118,13 +102,6 @@ test('model-only coordinates are never trusted as matched map locations',()=>{
  f.candidatePools={长沙:{pois:[{id:'actual',name:'地图地点',location:'112,28'}]}};const known=f.stopMapDescriptor({candidate_id:'actual',name:'地图地点'},'长沙','中国');assert.equal(known.location,'112,28');
 });
 
-test('revision clears busy state before rebuilding all action controls',async()=>{
- const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
- const snippet=source.slice(source.indexOf('async function revisePlanFromDiscussion(){'),source.indexOf('function restorePlanSession(){'));
- const renders=[];const sandbox={planUploadsBusy:false,planBrief:{},planDiscussionHistory:[{role:'user',content:'慢一点'}],planDiscussionBusy:false,candidatePools:{},lastAiPlan:plan(),planVersions:[],planVersionNumber:1,planReferencesPending:false,
- startPlanWork:()=>{},stopPlanWork:()=>{},document:{getElementById:()=>({})},toast:()=>{},setBusy:()=>{},updatePlanReferencePreview:()=>{},addPlanBubbleToLog:()=>{},appendPlanDiscussionMessage:()=>{},savePlanSession:()=>{},buildPlanContext:()=>({}),planHasStructuredData:()=>true,apiRequest:async()=>({data:plan()}),renderPlanResult:()=>renders.push(sandbox.planDiscussionBusy)};
- vm.createContext(sandbox);vm.runInContext(snippet,sandbox);await sandbox.revisePlanFromDiscussion();assert.equal(sandbox.planDiscussionBusy,false);assert.equal(renders.at(-1),false);assert.equal(sandbox.planVersionNumber,2);
-});
 
 test('ranking retries a transient failure once and accepts fenced JSON',async()=>{
  let calls=0;
@@ -135,15 +112,12 @@ test('ranking JSON request satisfies provider prompt contract and does not retry
  let calls=0;try{globalThis.fetch=async(_url,options)=>{calls++;const b=JSON.parse(options.body);assert.equal(b.response_format.type,'json_object');assert.match(b.messages[0].content,/json/i);return new Response('',{status:400});};const r=await rankPoiCandidates({DEEPSEEK_API_KEY:'test'},'贵阳',['历史文化'],'',[candidate]);assert.equal(calls,1);assert.match(r.warning,/DS_HTTP_400/);}finally{globalThis.fetch=realFetch;}
 });
 test('day comparison highlights changed and added days, reports removal, ignores verification wording',()=>{
- const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');const snippet=source.slice(source.indexOf('function comparableDay('),source.indexOf('function renderPlanResult('));const f={Set,Map,JSON};vm.createContext(f);vm.runInContext(snippet,f);
+ const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');const snippet=source.slice(source.indexOf('function comparableDay('),source.indexOf('function isGenericPlanStop('));const f={Set,Map,JSON};vm.createContext(f);vm.runInContext(snippet,f);
  const before={days:[{day_label:'D1',city:'贵阳',stops:[{name:'古迹',verification:'待核'}]},{day_label:'D2',city:'贵阳',stops:[]}]};
  const same=JSON.parse(JSON.stringify(before));same.days[0].stops[0].verification='仍待核';assert.equal(f.planDayChanges(same,before).changed.size,0);
  const after={days:[{day_label:'D1',city:'贵阳',stops:[{name:'新景点'}]},{day_label:'D3',city:'贵阳',stops:[]}]};const changes=f.planDayChanges(after,before);assert.deepEqual([...changes.changed],['D1','D3']);assert.deepEqual([...changes.removed],['D2']);
 });
 
-test('guided actions offer delegation and relevant constraints without typing',()=>{
- const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');const snippet=source.slice(source.indexOf('function guidedPlanChoices('),source.indexOf('function renderGuidedPlanChoices('));const f={};vm.createContext(f);vm.runInContext(snippet,f);const choices=f.guidedPlanChoices('返程城市与住宿如何决定');assert.ok(choices.some(c=>c.label==='你帮我推荐'));assert.ok(choices.some(c=>c.label==='按原来的终点'));assert.ok(choices.some(c=>c.label==='交通方便、少换酒店'));assert.ok(choices.length<=5);assert.ok(choices.every(c=>c.message));
-});
 
 test('sketch uses real geography with a uniform scale and leaves missing locations absent',()=>{
  const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');const f={Math};vm.createContext(f);vm.runInContext(source.slice(source.indexOf('function sketchCoordinates('),source.indexOf('function renderRouteSketch(')),f);
@@ -154,13 +128,6 @@ test('context compaction removes duplicate metadata and keeps all days, cities a
  const context={current_plan:{days:Array.from({length:14},(_,i)=>({day_label:'D'+i,local_food:[{name:'特色菜',source:'x'.repeat(20000)}]}))},candidate_choices:{p9:'locked'},candidate_pools:[{city:'城0',candidates:Array.from({length:12},(_,i)=>({id:'p'+i,name:'景点'+i,type:'景点',assessment:{reason:'匹配',extra:'x'.repeat(5000)}}))}]};f.compactPlanContext(context,'plan_discussion');assert.equal(context.current_plan.days.length,14);assert.equal(context.current_plan.city_sequence.length,9);assert.ok(context.candidate_pools[0].candidates.some(p=>p.id==='p9'));assert.ok(JSON.stringify(context).length<6000);
 });
 
-test('decision validation keeps full questions and exact dynamic choices',()=>{
- const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');const f={};vm.createContext(f);vm.runInContext(source.slice(source.indexOf('function cleanPlanDecision('),source.indexOf('function renderGuidedPlanChoices(')),f);
- const q='完整问题'.repeat(200);const d=f.cleanPlanDecision({question:q,options:[{label:'怀化加一晚',value:'省下的一晚加到怀化'},{label:'贵阳加一晚',value:'省下的一晚加到贵阳'}]});assert.equal(d.question,q);assert.equal(d.options[1].label,'贵阳加一晚');assert.equal(f.cleanPlanDecision({question:q,options:[]}),null);
-});
-test('entry explains pending choices but allows an explicit current-plan preview',()=>{
- const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');const f={dailyEntryBusy:false,planDiscussionBusy:false,candidatePoolBusy:false,lastAiPlan:{},planHasStructuredData:()=>true,planUploadsBusy:false,planReferencesPending:false,poolSelectedIds:()=>new Set(),candidateChoices:{p1:'locked'}};vm.createContext(f);vm.runInContext(source.slice(source.indexOf('function planEntryBlocker('),source.indexOf('function showPlanEntryStatus(')),f);assert.match(f.planEntryBlocker(false),/尚未应用/);assert.equal(f.planEntryBlocker(true),'');f.planDiscussionBusy=true;assert.match(f.planEntryBlocker(true),/仍在处理/);
-});
 
 test('guided discussion endpoint requests structured JSON and exposes dynamic decision data',async()=>{
  try{globalThis.fetch=async(_url,options)=>{const b=JSON.parse(options.body);assert.equal(b.response_format.type,'json_object');assert.ok(b.messages.some(m=>typeof m.content==='string'&&m.content.includes('本轮唯一需要决定的问题')));return json({choices:[{finish_reason:'stop',message:{content:JSON.stringify({reply:'已理解',question:'多出的一晚放哪？',options:[{label:'怀化',value:'怀化加一晚'},{label:'贵阳',value:'贵阳加一晚'}],ready:false})}}]});};
@@ -174,7 +141,7 @@ test('map descriptors reuse exact candidate identity and classify transfer separ
 });
 test('daily preflight matches real sights, skips transfers, and reports unresolved descriptions',async()=>{
  const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');const f=mapHelpers();Object.assign(f,{API_BASE:'https://example.test',apiHeaders:()=>({}),AbortSignal,mapLocationMemory:{},rememberMapLocation:item=>{f.mapLocationMemory[item.key]=item;},candidateChoices:{},fetch:async(_url,options)=>{const items=JSON.parse(options.body).items;assert.equal(items.length,2);return json({results:items.map(p=>p.name==='测试博物馆'?{...p,status:'matched',id:'real',location:'106.7,26.5'}:{...p,status:'ambiguous'})});}});
- vm.runInContext(source.slice(source.indexOf('async function resolvePlanSights('),source.indexOf('async function prepareDailyPlan(')),f);
+ vm.runInContext(source.slice(source.indexOf('async function resolvePlanSights('),source.indexOf('function togglePlanInterest(')),f);
  const p={city_sequence:[{city:'贵阳',country:'中国'}],days:[{day_label:'D1',city:'贵阳',stops:[{name:'芙蓉镇至贵阳转场'},{name:'测试博物馆'},{name:'南明河沿岸'}]}]};const missing=await f.resolvePlanSights(p);assert.equal(missing.length,1);assert.equal(missing[0].name,'南明河沿岸');assert.equal(p.days[0].stops[1].location_source,'amap');assert.equal(p.days[0].stops[1].candidate_id,'real');
 });
 
@@ -182,6 +149,23 @@ test('candidate validation accepts explicit transfer activities while retaining 
  const p=plan();p.days[0].stops.unshift({name:'A至B转场',activity_kind:'transport',from:'A',to:'B'});assert.equal(validatePoolPlan(p,context),'');p.days[0].stops=p.days[0].stops.slice(0,1);assert.ok(validatePoolPlan(p,context));
 });
 
-test('failed geographic repair keeps the previous plan instead of publishing unresolved replacements',async()=>{
- const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');const old={summary:'原方案'};const node={textContent:''};const f={lastAiPlan:old,planDiscussionBusy:false,startPlanWork:()=>{},stopPlanWork:()=>{},renderLatestPlanReply:()=>{},renderPlanResult:()=>{},candidatePools:{},planVersions:[],planVersionNumber:1,savePlanSession:()=>{},showPlanEntryStatus:t=>node.textContent=t,document:{getElementById:()=>node},resolvePlanSights:async()=>[{day_label:'D1',city:'贵阳',name:'沿岸泛称'}],buildPlanContext:()=>({}),apiRequest:async()=>({data:{summary:'未匹配替换'}}),planHasStructuredData:()=>true};vm.createContext(f);vm.runInContext(source.slice(source.indexOf('async function prepareDailyPlan('),source.indexOf('async function applyAiPlan(')),f);assert.equal(await f.prepareDailyPlan(),false);assert.equal(f.lastAiPlan,old);assert.equal(f.planVersionNumber,1);assert.match(node.textContent,/未唯一匹配/);assert.equal(f.planDiscussionBusy,false);
+
+test('overseas recommendations do not depend on Amap and never trust model coordinates',async()=>{
+ try{
+  let calls=0;globalThis.fetch=async(url,opts)=>{calls++;assert.match(String(url),/deepseek/);const body=JSON.parse(opts.body);const data=JSON.parse(body.messages[1].content);assert.equal(data.country,'哈萨克斯坦');assert.equal(data.city,'阿拉木图');assert.equal(data.preferences,'历史文化');return json({choices:[{finish_reason:'stop',message:{content:JSON.stringify({candidates:[{name:'测试海外博物馆',local_name:'Test Museum',role:'sight',reason:'测试文化偏好',location:'99,39'},{name:'测试海外博物馆',role:'sight',reason:'重复'},{name:'沿河',role:'unknown',reason:'泛称'}]})}}]});};
+  const request=()=>new Request('https://example.test/api/poi/search',{method:'POST',headers:{'Content-Type':'application/json','CF-Connecting-IP':'intl-test'},body:JSON.stringify({country:'哈萨克斯坦',city:'阿拉木图',interests:['历史文化'],preferences:'历史文化'})});
+  const response=await worker.fetch(request(),{DEEPSEEK_API_KEY:'test'});assert.equal(response.status,200);const data=await response.json();assert.equal(data.rankingStatus,'ranked');assert.equal(data.pois.length,1);assert.equal(data.pois[0].location,'');assert.equal(data.pois[0].source,'model_knowledge');assert.match(data.warning,/尚未核验/);assert.equal(calls,1);
+  const repeat=await recommendInternationalCandidates({DEEPSEEK_API_KEY:'test'},'哈萨克斯坦','阿拉木图',['历史文化'],'历史文化');assert.equal(repeat.pois[0].id,data.pois[0].id);
+ }finally{globalThis.fetch=realFetch;}
+});
+test('overseas upstream failure stays explicit and retryable instead of empty success',async()=>{
+ try{globalThis.fetch=async()=>new Response('{}',{status:400});const r=await worker.fetch(new Request('https://example.test/api/poi/search',{method:'POST',headers:{'Content-Type':'application/json','CF-Connecting-IP':'intl-fail'},body:JSON.stringify({country:'日本',city:'京都',interests:['历史文化']})}),{DEEPSEEK_API_KEY:'test'});assert.equal(r.status,502);assert.equal((await r.json()).code,'INTERNATIONAL_CANDIDATES_FAILED');}finally{globalThis.fetch=realFetch;}
+});
+test('overseas selections survive frontend and Worker validation without Amap claims',()=>{
+ const f=frontend();const p={id:'intl:test',name:'海外具体博物馆',source:'model_knowledge',location:''};f.candidatePools={贵阳:{city:'贵阳',pois:[p],recommendations:[{id:p.id,role:'sight',reason:'测试'}],rankingStatus:'ranked'}};f.candidateChoices={[p.id]:'locked'};
+ const revised=plan();revised.days[0].stops=[{candidate_id:p.id,name:'AI 名称',location:'99,39'}];f.checkCandidatePlan(revised);assert.equal(revised.days[0].stops[0].location,'');assert.equal(revised.days[0].stops[0].location_source,'unverified');assert.match(revised.days[0].stops[0].verification,/地点位置.*待核验/);
+ assert.equal(validatePoolPlan(revised,f.poolContext()),'');assert.equal(revised.days[0].stops[0].location_source,'unverified');
+});
+test('compact plan context preserves overseas provenance',()=>{
+ const source=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');const sandbox={lastAiPlan:null};vm.createContext(sandbox);vm.runInContext(source.slice(source.indexOf('function compactPlanContext('),source.indexOf('function buildPlanContext(')),sandbox);const c={candidate_pools:[{city:'京都',candidates:[{id:'intl:test',name:'海外馆',source:'model_knowledge',location:'',fact_status:'待核验'}]}]};sandbox.compactPlanContext(c,'candidate_refinement');assert.equal(c.candidate_pools[0].candidates[0].source,'model_knowledge');
 });

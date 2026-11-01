@@ -1,8 +1,9 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#173f46"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://cdn.jsdelivr.net/npm/mammoth@1.9.0/mammoth.browser.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<meta charset="utf-8"><meta name="app-version" content="2026-11-01-plan-workflow-11"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#173f46"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://cdn.jsdelivr.net/npm/mammoth@1.9.0/mammoth.browser.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <title>Travel Companion · Plan Together</title>
+<link rel="stylesheet" href="assets/plan-workflow.css?v=11">
 <style>
 :root{--navy:#173f46;--teal:#2d766b;--mint:#e8f1ec;--gold:#c18d53;--paper:#fbfaf6;--bg:#edf1ed;--ink:#20363a;--muted:#75858a;--line:#e4e8e1;--red:#a65b4e;--shadow:0 12px 32px rgba(23,63,70,.08)}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 10% 0%,#e3eee8 0,transparent 38%),var(--bg);color:var(--ink);font:14px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}.app{max-width:520px;min-height:100dvh;margin:auto;background:var(--paper);position:relative;padding-bottom:84px;box-shadow:0 18px 60px #173f4618}.hero{padding:34px 24px 36px;color:#fff;background:linear-gradient(135deg,#153a43,#23635d 68%,#3c7b6b);border-radius:0 0 28px 28px;position:relative;overflow:hidden}.hero:after{content:"✦";position:absolute;right:20px;top:65px;font-size:90px;color:#ffffff18}.brand{font-size:10px;letter-spacing:.17em;color:#d5e7df;font-weight:800}.hero h1{font-size:29px;line-height:1.25;margin:18px 0 7px;max-width:320px}.hero p{font-size:12px;color:#d8e8e2;max-width:330px;margin:0}.trip-highlight{margin-top:19px;padding:13px;background:#ffffff17;border:1px solid #ffffff30;border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:10px}.trip-highlight small{display:block;color:#d7e6df;font-size:11px}.trip-highlight strong{font-size:13px}.trip-highlight button{border:0;border-radius:11px;padding:9px 12px;background:#f8f6ef;color:var(--navy);font-weight:750;cursor:pointer}
@@ -266,6 +267,8 @@ button,input,textarea,select{font:inherit}
 <nav class="bottom"><button class="active" data-screen="home" onclick="nav('home')"><b>⌂</b>首页</button><button data-screen="trip" onclick="nav('trip')"><b>⌖</b>我的行程</button><button data-screen="assistant" onclick="nav('assistant')"><b>◌</b>旅途助手</button><button data-screen="footprint" onclick="nav('footprint')"><b>◎</b>我的足迹</button></nav>
 <div class="toast" id="toast"></div><div class="modal" id="modal" onclick="if(event.target.id==='modal')closeModal()"><div class="modalbox"><div class="modalhead"><strong id="modalTitle">地点详情</strong><button onclick="closeModal()">关闭 ✕</button></div><div id="modalBody"></div></div></div></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="assets/plan-core.js?v=11"></script>
+<script src="assets/plan-workflow.js?v=11"></script>
 <script>
 const seed={
  cities:[
@@ -445,7 +448,7 @@ function renderTrip(){
   for(const d of trip.days||[]){const b=document.createElement('button');b.className='tab '+(d.id===activeDay?'active':'');b.textContent=d.label;b.onclick=()=>selectDay(d.id);dayTabs.appendChild(b);}
   const day=trip.days.find(d=>d.id===activeDay)||trip.days[0];if(!day)return;
   document.getElementById('stopCount').textContent=trip.days.reduce((n,d)=>n+d.stops.length,0);
-  addTextNode(dayContent,'h3','',day.title);
+  addTextNode(dayContent,'h3','',day.title);if(day.transportNote)addTextNode(dayContent,'p','notice','当天交通衔接：'+day.transportNote);
   day.stops.forEach((stop,i)=>{
     const row=document.createElement('div');row.className='timeline';addTextNode(row,'div','time',stop[0]);const content=document.createElement('div');content.className='timeline-content';addTextNode(content,'strong','',stop[1]);addTextNode(content,'p','',stop[2]);
     const actions=document.createElement('div');actions.className='stop-actions';
@@ -552,6 +555,7 @@ async function apiRequest(payload){
   if(!response.ok){
     if(response.status===401 || response.status===403)throw new Error("测试访问码无效或无权限，请向分享者确认。");
     if(response.status===429)throw new Error("AI 服务请求过于频繁，请稍后再试。");
+    if(payload.task==='review'&&data.code==='UNSUPPORTED_TASK')throw new Error('请先将 Worker 更新为 plan-workflow-11，再重试综合评估；每天的选择已保留。');
     if(response.status>=500)throw new Error((data.error||"AI 服务暂时出错，请稍后重试。")+(data.code?"（"+data.code+"）":""));
     throw new Error(data.error || `请求失败（${response.status}）`);
   }
@@ -620,139 +624,6 @@ function addTextNode(parent,tag,cls,text){
 function planHasStructuredData(plan){
   return !!(plan && typeof plan==="object" && Array.isArray(plan.city_sequence) && Array.isArray(plan.days) && plan.city_sequence.length && plan.days.length);
 }
-function savePlanSession(){
-  try{
-    localStorage.setItem("travelCompanionPlanSessionV1",JSON.stringify({
-      brief:planBrief,plan:lastAiPlan,discussion:planDiscussionHistory.slice(-24),
-      versions:planVersions.slice(-6),versionNumber:planVersionNumber,
-      referenceMaterials:planReferenceMaterials.slice(0,5),planReferencesPending,materialInsights,
-      candidatePools,candidateChoices,candidatePoolNotice
-    }));
-  }catch(e){console.warn("方案协商记录暂未保存",e)}
-}
-function restorePlanVersion(index){
-  const item=planVersions[index];
-  if(!item||!item.plan)return;
-  if(lastAiPlan&&!planVersions.some(v=>v.version===planVersionNumber))planVersions.push({version:planVersionNumber,plan:JSON.parse(JSON.stringify(lastAiPlan))});
-  planVersions=planVersions.slice(-6);
-  lastAiPlan=JSON.parse(JSON.stringify(item.plan));
-  planVersionNumber++;
-  planDiscussionHistory.push({role:"assistant",content:`已恢复到历史方案 V${item.version}。你可以继续讨论，或重新更新方案。`});
-  savePlanSession();renderPlanResult(lastAiPlan);toast(`已恢复历史方案 V${item.version}`);
-}
-let planWorkTimer=null;
-function startPlanWork(label){
- clearInterval(planWorkTimer);const start=Date.now();let status=document.getElementById('planWorkStatus');
- if(!status){status=document.createElement('div');status.id='planWorkStatus';status.className='notice';document.getElementById('planLatestReply')?.after(status);}
- status.setAttribute('role','status');status.setAttribute('aria-live','polite');
- const paint=()=>{status.textContent='◌ '+label+' · 已等待 '+Math.floor((Date.now()-start)/1000)+' 秒。'+(Date.now()-start>30000?'仍在等待 AI 返回，可以留在这里，无需重复提交。':'信息已提交，正在等待 AI 回复。');};paint();status.scrollIntoView({block:'nearest'});planWorkTimer=setInterval(paint,1000);
-}
-function stopPlanWork(){clearInterval(planWorkTimer);planWorkTimer=null;document.getElementById('planWorkStatus')?.remove();}
-function appendPlanDiscussion(out){
- const panel=document.createElement('section');panel.className='plan-discussion';panel.id='planDiscussionPanel';
- addTextNode(panel,'strong','','和 AI 一起调整 · V'+planVersionNumber);
- addTextNode(panel,'p','tiny','点一个方向就能继续；不确定时，让 AI 先给建议。');
- const latest=document.createElement('div');latest.id='planLatestReply';panel.appendChild(latest);
- const quick=document.createElement('div');quick.className='plan-quick-prompts';quick.id='planGuidedChoices';panel.appendChild(quick);
- const update=document.createElement('button');update.id='planDiscussionRevise';update.className='btn';update.textContent='按这些想法生成更新方案';update.disabled=planDiscussionBusy;update.onclick=updatePlanFromInput;panel.appendChild(update);
- const advanced=document.createElement('details');advanced.id='planAdvanced';addTextNode(advanced,'summary','','更多定制 · 写想法、上传攻略');panel.appendChild(advanced);
- const compose=document.createElement('div');compose.className='plan-chat-compose';const input=document.createElement('textarea');input.id='planDiscussionInput';input.placeholder='还有其他想法？在这里补充，也可以上传收藏的攻略。';compose.appendChild(input);
- const send=document.createElement('button');send.id='planDiscussionSend';send.className='btn line';send.textContent='发送我的想法';send.disabled=planDiscussionBusy;send.onclick=()=>sendPlanMessage();compose.appendChild(send);advanced.appendChild(compose);
- const history=document.createElement('details');history.className='discussion-history';addTextNode(history,'summary','','查看历史讨论与依据');
- const log=document.createElement('div');log.className='plan-discussion-log';log.id='planDiscussionLog';history.appendChild(log);advanced.appendChild(history);
-  const material=document.createElement('details');material.className='material-absorb';addTextNode(material,'summary','','＋ 补充攻略 · 截图或文档');
-  addTextNode(material,'p','tiny','把你看到的美食、美景或优秀攻略交给 AI，提取值得考虑的地点与经验，再结合现有行程调整。');
-  const imageInput=document.createElement('input');imageInput.type='file';imageInput.id='planDiscussionFiles';imageInput.accept='image/jpeg,image/png,image/webp';imageInput.multiple=true;imageInput.hidden=true;material.appendChild(imageInput);
-  const reference=document.getElementById('planReferenceCard');if(reference){reference.hidden=false;material.appendChild(reference);}
-  const preview=document.createElement('div');preview.id='planDiscussionFilePreview';preview.className='plan-upload-preview';material.appendChild(preview);
-  const absorb=document.createElement('button');absorb.id='planAbsorbButton';absorb.className='btn light';absorb.textContent='根据整理内容，吸收精华调整行程';absorb.disabled=planDiscussionBusy||planUploadsBusy;absorb.onclick=absorbPlanMaterials;material.appendChild(absorb);advanced.appendChild(material);
-
- if(planVersions.length){const versions=document.createElement('details');addTextNode(versions,'summary','','历史方案');for(let i=planVersions.length-1;i>=0;i--){const b=document.createElement('button');b.className='btn line small';b.textContent='恢复 V'+planVersions[i].version;b.onclick=()=>restorePlanVersion(i);versions.appendChild(b);}panel.appendChild(versions);}
- out.appendChild(panel);renderPlanDiscussionLog();
-}
-function guidedPlanChoices(text){
- const choices=[{label:'你帮我推荐',message:'我不确定，请根据我的原始偏好推荐一个明确方案，简短说明取舍；能合理假设的条件请标明，不必再逐项追问。'}];
- if(/返程|终点/.test(text))choices.push({label:'按原来的终点',message:'返程终点保持原始需求不变，未给定日期不要假设具体班次。'});
- if(/天数|优先级|包含|城市/.test(text))choices.push({label:'天数不变，精选城市',message:'保持原始总天数，请按我的兴趣精选城市组合，说明建议减少哪一站，保留我的锁定地点。'});
- if(/住宿|民宿|酒店/.test(text))choices.push({label:'交通方便、少换酒店',message:'住宿先推荐交通方便的区域，尽量少换酒店；具体房型预算后续再确认，不必因此阻塞行程。'});
- choices.push({label:'每天轻松一点',message:'请在原有天数内减少每天赶路和景点数量，保留核心体验与锁定地点，先建议具体取舍。'},{label:'多点当地生活',message:'我想增加当地街区、市场或文化体验，请推荐具体地点和取舍，避免泛泛的地方生活占位。'});
- return choices.slice(0,5);
-}
-let dailyEntryBusy=false;
-const decisionRequests=new Set();
-async function prepareCurrentDecision(){
- const latest=[...planDiscussionHistory].reverse().find(m=>m.role==='assistant');const key=planVersionNumber+'|'+(latest?.content||(lastAiPlan?.questions||[]).join('|'));
- if(dailyEntryBusy||decisionRequests.has(key)||planDiscussionBusy||candidatePoolBusy||!lastAiPlan)return;decisionRequests.add(key);const version=planVersionNumber;
- planDiscussionBusy=true;startPlanWork('正在整理当前问题和推荐选项');
- try{const result=await apiRequest({task:'chat',message:'请直接把当前首个未解决的问题变成完整问题、互斥的具体A/B以及推荐原因。比较由你先完成，不要求用户先点生成比较。已有决定不要重复问。',context:buildPlanContext('plan_discussion')});const decision=cleanPlanDecision(result.data);if(!decision)throw new Error('选项结构不完整');if(version===planVersionNumber){appendPlanDiscussionMessage('assistant',[decision.reply,decision.question,decision.recommendation].filter(Boolean).join('\n'));planDiscussionHistory.at(-1).decision=decision;savePlanSession();}}
- catch(error){showPlanEntryStatus('当前问题选项整理未完成：'+error.message+'；当前方案仍可查看。');const root=document.getElementById('planGuidedChoices');if(root){root.replaceChildren();const retry=document.createElement('button');retry.textContent='重试加载当前问题选项';retry.onclick=()=>{decisionRequests.delete(key);prepareCurrentDecision();};root.appendChild(retry);}}
- finally{planDiscussionBusy=false;stopPlanWork();const current=[...planDiscussionHistory].reverse().find(m=>m.role==='assistant');if(current?.decision)renderLatestPlanReply();}
-}
-function cleanPlanDecision(data){
- if(!data||typeof data!=='object')return null;
- const question=typeof data.question==='string'?data.question.trim():'';
- const options=(Array.isArray(data.options)?data.options:[]).filter(x=>typeof x?.label==='string'&&typeof x.value==='string'&&x.label.trim()&&x.value.trim()).slice(0,2);
- if(question&&(options.length!==2||options[0].value===options[1].value))return null;
- return {reply:String(data.reply||''),question,options,recommendation:String(data.recommendation||''),ready:data.ready===true&&!question,details:String(data.details||'')};
-}
-function renderGuidedPlanChoices(text,decision){
- const root=document.getElementById('planGuidedChoices');if(!root)return;root.replaceChildren();
- const add=(label,message)=>{const b=document.createElement('button');b.textContent=label;b.disabled=planDiscussionBusy||candidatePoolBusy;b.onclick=()=>sendPlanMessage(message);root.appendChild(b);};
- if(decision?.question){decision.options.forEach((o,i)=>add((i?'B · ':'A · ')+o.label,'针对问题：'+decision.question+'\n我的选择：'+o.value));add('帮我选','针对问题：'+decision.question+'\n请按我的原始兴趣和约束替我推荐一个选项，说明建议采用哪一个；如无关键冲突，可继续形成方案。');}
- else if(!decision?.ready)addTextNode(root,'p','tiny','正在整理与当前问题对应的具体选项…');
- const update=document.getElementById('planDiscussionRevise');if(update)update.textContent=decision?.ready?'生成推荐方案':'按已确认想法更新方案';
-}
-function renderLatestPlanReply(){
- const root=document.getElementById('planLatestReply');if(!root)return;root.replaceChildren();
- const latest=[...planDiscussionHistory].reverse().find(m=>m.role==='assistant');const decision=cleanPlanDecision(latest?.decision||(!latest||/^已生成方案/.test(latest.content||'')?lastAiPlan?.next_decision:null));
- renderGuidedPlanChoices(latest?.content,decision);
- if(decision){addTextNode(root,'p','',decision.reply);if(decision.question){addTextNode(root,'strong','','这一步一起决定');addTextNode(root,'p','decision-question',decision.question);}if(decision.recommendation)addTextNode(root,'p','tiny','AI 建议：'+decision.recommendation);if(decision.ready)addTextNode(root,'p','','关键信息已足够，可以生成方案。');if(decision.details){const d=document.createElement('details');addTextNode(d,'summary','','查看推荐依据');addTextNode(d,'p','',decision.details);root.appendChild(d);}}
- else if(latest){addTextNode(root,'strong','','AI 的最新回复');addTextNode(root,'p','',latest.content||'');}
- else if(lastAiPlan?.questions?.length){addTextNode(root,'strong','','当前待确认的问题');lastAiPlan.questions.forEach(q=>addTextNode(root,'p','',q));}
- else addTextNode(root,'p','tiny','可以直接进入每日行程，或让 AI 帮你比较其他选择。');
- root.scrollTop=0;
- if(!decision&&!planDiscussionBusy&&!candidatePoolBusy&&((lastAiPlan?.questions||[]).length||latest)&&!/没有完成|未完成|失败|出错/.test(latest?.content||''))Promise.resolve().then(prepareCurrentDecision);
-}
-async function updatePlanFromInput(){
-  if(planDiscussionBusy||planUploadsBusy)return;
-  const input=document.getElementById('planDiscussionInput');const text=input?.value.trim();
-  if(text){appendPlanDiscussionMessage('user',text);input.value='';renderPlanDiscussionLog();}
-  if(!planDiscussionHistory.some(m=>m.role==='user')){toast('先写下希望调整的地方，或选一个建议');return;}
-  await revisePlanFromDiscussion();
-}
-async function absorbPlanMaterials(){
-  if(planDiscussionBusy||planUploadsBusy)return;
-  let images=[];try{images=await readImageFilesFromInput('planDiscussionFiles');}catch(error){toast(error.message);return;}
-  if(!images.length&&!planReferenceMaterials.length){toast('先上传攻略截图或文档');return;}
-  planDiscussionBusy=true;const button=document.getElementById('planAbsorbButton');setBusy(button,true,'正在整理攻略与匹配地点…');
-  try{
-    const result=await apiRequest({task:'materials',message:'从以下资料和截图提取具体地点、所在城市、游览或餐饮类别与有价值经验。只整理用户提供的内容，保留 source_claim，不把主观推荐当作事实；菜品不冒充餐厅。城市不能确认时留空。资料：'+planReferenceMaterials.map(x=>x.name+'\n'+x.text).join('\n\n').slice(0,6500),images});
-    const items=Array.isArray(result.data?.items)?result.data.items:[];
-    materialInsights=items.slice(0,20).map(x=>({name:String(x.name||''),city:String(x.city||''),category:String(x.category||''),source_claim:String(x.source_claim||'').slice(0,180),useful_tip:String(x.useful_tip||'').slice(0,180),status:'用户攻略线索，待核验'}));
-    const resolve=[];
-    for(const item of materialInsights){
-      const city=(lastAiPlan.city_sequence||[]).find(c=>String(c.city).replace(/市$/,'')===item.city.replace(/市$/,''));
-      if(!city||!item.name||!/^(中国|中华人民共和国|China|中国大陆)$/i.test(city.country))continue;
-      resolve.push({key:JSON.stringify([city.city,item.name]),name:item.name,city:city.city,country:city.country,kind:/餐|美食|小吃店|饭店/.test(item.category)?'food':'sight'});
-    }
-    for(let i=0;i<resolve.length;i+=10){
-      const batch=resolve.slice(i,i+10);const response=await fetch(API_BASE+'/api/map/resolve',{method:'POST',headers:apiHeaders(),body:JSON.stringify({items:batch}),signal:AbortSignal.timeout(125000)});
-      if(!response.ok)continue;const data=await response.json();
-      for(const match of data.results||[]){if(match.status!=='matched'||!match.id)continue;const request=batch.find(x=>x.key===match.key);if(!request)continue;
-        const pool=candidatePools[request.city]||(candidatePools[request.city]={city:request.city,pois:[],recommendations:[],rankingStatus:'ranked',queries:[]});
-        if(!pool.pois.some(p=>p.id===match.id))pool.pois.push({...match,type:request.kind==='food'?'餐饮服务':'攻略地点',search_provenance:[{keyword:request.name,interest:'用户攻略'}]});
-        pool.recommendations=pool.recommendations||[];
-        if(!pool.recommendations.some(p=>p.id===match.id))pool.recommendations.unshift({id:match.id,role:request.kind,reason:'来自你补充的攻略，是否入选需结合兴趣和路线取舍。',tradeoff:'攻略经验与开放营业情况仍待核验',matched_interests:[]});
-        pool.rankingStatus='ranked';
-      }
-    }
-    appendPlanDiscussionMessage('user','请结合新整理的攻略精华调整行程，选择适合的部分，不必全部加入。'+(result.data?.summary||''));
-    appendPlanDiscussionMessage('assistant',materialInsights.length?'已整理 '+materialInsights.length+' 条地点与经验线索；接下来结合当前方案取舍，未能唯一定位的内容仍保留待确认。':'资料中未识别出明确地点，将仅结合原文经验调整。');
-    planReferencesPending=true;savePlanSession();const picker=document.getElementById('planDiscussionFiles');if(picker)picker.value='';
-  }catch(error){toast('攻略整理未完成：'+error.message);planDiscussionBusy=false;setBusy(button,false);return;}
-  planDiscussionBusy=false;setBusy(button,false);await revisePlanFromDiscussion();
-}
-
 function comparableDay(day){return JSON.stringify({city:day.city,title:day.title,stops:(day.stops||[]).map(p=>[p.candidate_id||p.name,p.time,p.duration,p.reason]),food:(day.local_food||[]).map(p=>[p.candidate_id||p.name,p.area,p.reason])});}
 function planDayChanges(current,previous){
  if(!previous)return {changed:new Set(),removed:[]};
@@ -760,102 +631,12 @@ function planDayChanges(current,previous){
  (current.days||[]).forEach((d,i)=>{const key=d.day_label||String(i);if(!before.has(key)||comparableDay(d)!==comparableDay(before.get(key)))changed.add(key);});
  const keys=new Set((current.days||[]).map((d,i)=>d.day_label||String(i)));return {changed,removed:[...before.keys()].filter(k=>!keys.has(k))};
 }
-function renderPlanResult(result){
-  const out=document.getElementById('generated');disposeTripMaps(out);
-  const reference=document.getElementById('planReferenceCard');if(reference&&out.contains(reference)){out.after(reference);reference.hidden=true;}
-  out.style.display='block';out.innerHTML='';
-  document.getElementById('planner')?.classList.add('has-plan');
-  addTextNode(out,'div','eyebrow','你的旅行 · 可继续调整');
-  addTextNode(out,'h3','',result.summary||'旅行草案');
-  const edit=document.createElement('button');edit.className='btn line small';edit.textContent='修改旅行需求';edit.onclick=()=>{document.getElementById('planner').classList.remove('has-plan');document.querySelector('.planner-form')?.scrollIntoView({behavior:'smooth'});};out.appendChild(edit);
-  if(result.text&&!planHasStructuredData(result))appendAiText(out,result.text);
-  const overview=document.createElement('div');overview.className='plan-overview';
-  for(const c of result.city_sequence||[])addTextNode(overview,'span','pill',c.city+' · '+(c.nights||'待定')+'晚');out.appendChild(overview);
-  const seasons=(result.checks||[]).filter(x=>/出行时间|适合.*(?:月|季)|推荐.*(?:月|季)|最佳.*(?:月|季)/.test(String(x)));
-  if(seasons.length&&!planBrief?.startDate){const season=document.createElement('div');season.className='notice';addTextNode(season,'strong','','适合什么时候去');seasons.forEach(x=>addTextNode(season,'p','',x));out.appendChild(season);}
-  const ranked=Object.values(candidatePools).filter(p=>p.rankingStatus==='ranked');
-  if(ranked.length)addTextNode(out,'p','tiny','已按 '+(planBrief?.interests?.join('、')||'你的偏好')+' 筛选；备选展示推荐理由与取舍。');
-  if(candidatePoolBusy||planDiscussionBusy)addTextNode(out,'p','notice',candidatePoolNotice||'正在完善方案…');
-  else if(candidatePoolNotice&&/未完成|需要部署|草案|失败/.test(candidatePoolNotice))addTextNode(out,'p','notice',candidatePoolNotice);
-  const previous=planVersions.at(-1)?.plan;const changes=planDayChanges(result,previous);
-  if(previous){const note=document.createElement('div');note.className='notice';addTextNode(note,'strong','','本次更新 · 对比 V'+planVersions.at(-1).version);addTextNode(note,'p','',changes.changed.size?'已更新：'+[...changes.changed].join('、'):'每日内容未变化');if(changes.removed.length)addTextNode(note,'p','','移除的日期：'+changes.removed.join('、'));if(JSON.stringify(previous.intercity_transport)!==JSON.stringify(result.intercity_transport))addTextNode(note,'p','','跨城交通建议有调整');if(JSON.stringify(previous.checks)!==JSON.stringify(result.checks))addTextNode(note,'p','','住宿／准备建议有调整，请查看补充事项');out.appendChild(note);}
-  appendTransportOverview(out,result,'planWholeRouteMap');
-  for(const [dayIndex,day] of (result.days||[]).entries()){
-    const card=document.createElement('article');card.className='day-plan-card';
-    if(changes.changed.has(day.day_label||String(dayIndex))){card.classList.add('plan-day-updated');addTextNode(card,'span','pill','本次已更新');const old=previous?.days?.find((d,i)=>(d.day_label||String(i))===(day.day_label||String(dayIndex)));if(old){const detail=document.createElement('details');addTextNode(detail,'summary','','查看更新前的安排');addTextNode(detail,'p','',old.city+' · '+(old.stops||[]).map(p=>p.name).join(' → '));card.appendChild(detail);}}
-    addTextNode(card,'div','eyebrow',day.day_label||'每日安排');
-    addTextNode(card,'h3','',day.city+' · '+(day.title||'当天体验'));
-    let realStops=0;
-    for(const stop of day.stops||[]){
-      if(isGenericPlanStop(stop.name))continue;realStops++;
-      const row=document.createElement('div');row.className='day-stop';
-      addTextNode(row,'div','tiny',(stop.time||'顺路安排')+' · '+(stop.duration||'时长待估算'));
-      addTextNode(row,'strong','',stop.name);
-      addTextNode(row,'p','',stop.reason||'推荐理由待补充');
-      if(stop.candidate_id){
-        const locked=candidateChoices[stop.candidate_id]==='locked';
-        const remove=document.createElement('button');remove.className='btn line small';remove.textContent=candidateChoices[stop.candidate_id]==='excluded'?'撤销移除':'－ 换掉这个';remove.disabled=planDiscussionBusy||candidatePoolBusy;remove.onclick=()=>setCandidateChoice(stop.candidate_id,'excluded');row.appendChild(remove);
-        if(locked)addTextNode(row,'span','pill','你选的必去');
-      }
-      card.appendChild(row);
-    }
-    if(!realStops)addTextNode(card,'p','notice','这天尚无具体景点安排；交通、休息日可保留，游览日需要继续补齐。');
-    const local=Array.isArray(day.local_food)?day.local_food:[];
-    if(local.length){
-      const food=document.createElement('div');food.className='day-local';addTextNode(food,'strong','','顺路尝尝 · 自由选择');
-      for(const item of local){addTextNode(food,'p','',(item.name||'当地风味')+(item.area?' · '+item.area:'')+' — '+(item.reason||'可自行选择是否加入'));
-        if(item.candidate_id){const remove=document.createElement('button');remove.className='btn line small';remove.textContent=candidateChoices[item.candidate_id]==='excluded'?'撤销移除':'－ 不考虑这家';remove.disabled=planDiscussionBusy||candidatePoolBusy;remove.onclick=()=>setCandidateChoice(item.candidate_id,'excluded');food.appendChild(remove);}}
-      card.appendChild(food);
-    }else{
-      const existing=(result.checks||[]).filter(x=>/美食|餐饮|当地特色/.test(String(x))&&String(x).includes(day.city));
-      if(existing.length){const food=document.createElement('div');food.className='day-local';addTextNode(food,'strong','','当地特色 · 可选');existing.forEach(x=>addTextNode(food,'p','',x));card.appendChild(food);}
-    }
-    const verification=document.createElement('details');verification.className='day-verification';addTextNode(verification,'summary','','查看地点与出行核验状态');
-    for(const stop of [...(day.stops||[]),...local])addTextNode(verification,'p','tiny',(stop.name||'')+'：'+(stop.verification||'待核验'));
-    addTextNode(verification,'p','tiny','地点匹配与开放、票务核验分开；未接路线服务时，参观顺序为建议，真实交通仍待核算。');card.appendChild(verification);
-    const dayKey=day.city+'|'+day.day_label;
-    const alternatives=document.createElement('button');alternatives.className='btn light small';alternatives.textContent=candidateInlineDay===dayKey?'收起其他推荐':'看看 '+day.city+' 的其他推荐';alternatives.setAttribute('aria-expanded',String(candidateInlineDay===dayKey));alternatives.onclick=()=>{candidateInlineDay=candidateInlineDay===dayKey?'':dayKey;candidateExplorerCity=day.city;renderPlanResult(lastAiPlan);};card.appendChild(alternatives);
-    if(candidateInlineDay===dayKey)appendCandidateExplorer(card,day.city);
-    out.appendChild(card);
-  }
-
-  appendPlanDiscussion(out);out.dataset.planDiscussionReady='true';
-  const actions=document.createElement('div');actions.className='ai-action-row';
-  const apply=document.createElement('button');apply.className='btn enter-daily-button';apply.textContent='进入每日行程 →';apply.onclick=applyAiPlan;apply.disabled=planDiscussionBusy||candidatePoolBusy||!planHasStructuredData(lastAiPlan);actions.appendChild(apply);
-  if(planReferencesPending||Object.keys(candidateChoices).length){const current=document.createElement('button');current.className='btn line';current.textContent='查看当前方案 · 暂不应用新选择或资料';current.disabled=planDiscussionBusy||candidatePoolBusy;current.onclick=()=>applyAiPlan(true);actions.appendChild(current);}
-  out.appendChild(actions);const entryStatus=document.createElement('div');entryStatus.id='planEntryStatus';entryStatus.className='notice';entryStatus.setAttribute('role','status');entryStatus.textContent=planEntryBlocker(false);out.appendChild(entryStatus);
-  const supporting=document.createElement('details');supporting.className='plan-support';addTextNode(supporting,'summary','','交通、准备事项与资料来源');
-  for(const c of result.city_sequence||[])addTextNode(supporting,'p','tiny',c.city+'：'+(c.reason||''));
-  for(const t of result.intercity_transport||[])addTextNode(supporting,'p','tiny',t.from+' → '+t.to+'：'+t.mode+'；'+(t.notes||'')+' '+(t.verification||'待核验'));
-  for(const x of result.checks||[])addTextNode(supporting,'p','tiny',x);
-  appendSources(supporting,result.sources||[]);if(result.warning)addTextNode(supporting,'p','tiny',result.warning);out.appendChild(supporting);
-}
 function isGenericPlanStop(name){return !String(name||'').trim()||/历史(?:人文|文化)(?:地点|景点)$|地方生活街区$|特色餐饮区域$|^待(?:选|定|确认|推荐).*|^当地(?:景点|特色餐饮|美食区域)$/.test(String(name).trim());}
 
 function appendPlanDiscussionMessage(role,text,sources,attachments){
   planDiscussionHistory.push({role,content:text||"",sources:Array.isArray(sources)?sources:[],attachments:Array.isArray(attachments)?attachments:[]});
   planDiscussionHistory=planDiscussionHistory.slice(-24);
   savePlanSession();
-}
-function renderPlanDiscussionLog(){
-  const panel=document.getElementById("planDiscussionPanel");
-  if(!panel){if(lastAiPlan)renderPlanResult(lastAiPlan);return}
-  const log=document.getElementById("planDiscussionLog");
-  if(!log)return;
-  log.innerHTML="";
-  if(!planDiscussionHistory.length){
-    const welcome=document.createElement("div");welcome.className="plan-bubble ai";
-    welcome.textContent="方案已经生成。你可以提出修改意见、上传攻略截图，或问我为什么这样安排。我会结合当前方案先和你讨论，不会擅自覆盖已确认的内容。";log.appendChild(welcome);
-  }else{
-    planDiscussionHistory.forEach(m=>{
-      const bubble=document.createElement("div");bubble.className=`plan-bubble ${m.role==="user"?"user":"ai"}`;bubble.textContent=m.content||"";log.appendChild(bubble);
-      if(Array.isArray(m.attachments)&&m.attachments.length){const files=document.createElement("div");files.className="plan-upload-note";files.textContent="📎 图片资料："+m.attachments.map(x=>x.name||"截图").join("、");log.appendChild(files)}
-      (m.sources||[]).forEach(src=>{if(src.url&&/^https?:\/\//i.test(src.url)){const a=document.createElement("a");a.className="plan-source";a.href=src.url;a.target="_blank";a.rel="noopener noreferrer";a.textContent=src.title||src.url;log.appendChild(a)}});
-    });
-  }
-  log.scrollTop=log.scrollHeight;renderLatestPlanReply();
-  const version=panel.querySelector(".plan-current-version");if(version)version.textContent=planHasStructuredData(lastAiPlan)?`当前版本 V${planVersionNumber}`:"补充信息阶段";
-  const revise=document.getElementById("planDiscussionRevise");if(revise)revise.disabled=!planDiscussionHistory.some(m=>m.role==="user");
 }
 function updatePlanDiscussionFilePreview(){
   const input=document.getElementById("planDiscussionFiles"),preview=document.getElementById("planDiscussionFilePreview");
@@ -870,107 +651,6 @@ function updatePlanDiscussionFilePreview(){
     const url=URL.createObjectURL(file);planDiscussionPreviewUrls.push(url);img.src=url;item.appendChild(img);
     const name=document.createElement("span");name.className="plan-upload-name";name.textContent=`${file.name} · ${(file.size/1024/1024).toFixed(1)} MB`;item.appendChild(name);preview.appendChild(item);
   });
-}
-function addPlanBubbleToLog(role,text){
-  const log=document.getElementById("planDiscussionLog");if(!log)return null;
-  const bubble=document.createElement("div");bubble.className=`plan-bubble ${role}`;bubble.textContent=text;log.appendChild(bubble);log.scrollTop=log.scrollHeight;return bubble;
-}
-async function sendPlanMessage(prefill){
-  const input=document.getElementById("planDiscussionInput");
-  const fileInput=document.getElementById("planDiscussionFiles");
-  const typedMessage=(prefill??input?.value??"").trim();
-  if(planDiscussionBusy||planUploadsBusy){toast('请等待资料读取完成');return;}
-  let images=[];
-  try{images=await readImageFilesFromInput("planDiscussionFiles");}catch(e){toast(e.message);return;}
-  if(!typedMessage&&!images.length){toast("请先输入想讨论的内容，或上传旅行攻略截图。");return;}
-  const message=typedMessage||"请分析我上传的旅行攻略截图，并结合当前方案告诉我有哪些值得讨论和调整的内容。";
-  const attachmentNames=images.map(x=>({name:x.name}));
-  const displayMessage=message;
-  if(input)input.value="";
-  appendPlanDiscussionMessage("user",displayMessage,[],attachmentNames);
-  renderPlanDiscussionLog();
-  addPlanBubbleToLog("ai","AI 正在结合当前方案和你上传的资料思考…");
-  planDiscussionBusy=true;renderLatestPlanReply();startPlanWork('正在结合行程理解你的想法');
-  const send=document.getElementById("planDiscussionSend");if(send)send.disabled=true;updatePlanReferencePreview();
-  const revise=document.getElementById("planDiscussionRevise");if(revise)revise.disabled=true;
-  try{
-    const result=await apiRequest({
-      task:"chat",
-      message:message+"\n请用简短自然的对话回复：先回应用户本轮选择，最多问两个会影响安排的关键问题；不要展开长篇分析或重复整份行程。信息足够时说明可以点击生成更新方案。仅需给出简短取舍依据，详细来源另列。",
-      images,
-      history:planDiscussionHistory.slice(0,-1).slice(-10),
-      context:buildPlanContext("plan_discussion",{current_workbench:collectTripContext()})
-    });
-    const decision=cleanPlanDecision(result.data);if(result.data&&!decision)throw new Error("AI 的选项尚不完整，请重试比较；当前方案保留");
-    const answer=decision?[decision.reply,decision.question,decision.recommendation].filter(Boolean).join("\n\n"):result.text||"我已经收到你的意见和资料。你可以继续补充，或点击按讨论意见更新方案。";
-    appendPlanDiscussionMessage("assistant",answer,result.sources||[]);
-    if(decision){planDiscussionHistory.at(-1).decision=decision;savePlanSession();}
-    if(fileInput)fileInput.value="";
-    updatePlanDiscussionFilePreview();
-    renderPlanDiscussionLog();
-  }catch(e){
-    appendPlanDiscussionMessage("assistant","这次讨论没有完成："+e.message+"。你的文字和图片仍保留在当前页面，请稍后重试。");
-    renderPlanDiscussionLog();
-  }finally{
-    planDiscussionBusy=false;stopPlanWork();renderLatestPlanReply();document.getElementById("planDiscussionInput")?.focus();
-    const s=document.getElementById("planDiscussionSend");if(s)s.disabled=false;
-    const r=document.getElementById("planDiscussionRevise");if(r)r.disabled=!planDiscussionHistory.some(m=>m.role==="user");updatePlanReferencePreview();
-  }
-}
-async function revisePlanFromDiscussion(){
-  if(planUploadsBusy){toast("请等待资料读取完成");return;}
-  if(!planBrief||!planDiscussionHistory.some(m=>m.role==="user")){toast("请先告诉 AI 你希望补充或调整什么");return}
-  if(planDiscussionBusy)return;
-  const button=document.getElementById("planDiscussionRevise");
-  planDiscussionBusy=true;setBusy(button,true,"AI 正在更新完整方案…");updatePlanReferencePreview();startPlanWork("正在根据讨论生成更新方案");
-  addPlanBubbleToLog("system","正在根据讨论内容更新城市顺序、跨城交通和完整 By Day。原方案会保留为历史版本。");
-  try{
-    const result=await apiRequest({
-      task:"plan",
-      message:"请根据原始旅行需求和用户与 AI 的完整讨论，生成或修订一份完整结构化旅行方案。如果 current_plan 存在，则在保留用户已确认约束的前提下修订；如果 current_plan 为空或不完整，则根据原始需求和讨论补充信息生成完整方案。不要擅自编造未确认的交通班次、营业时间或票价。请输出完整可编辑方案，字段保持 city_sequence、intercity_transport、days、checks、questions、summary；days 必须包含每日景点顺序、建议时间、游览时长、地点组合理由、交通衔接与待核验事项。若 context.reference_materials 有内容，必须将用户上传的 Word/PDF/文字资料与讨论内容一起整合，保留有价值的地点和个人备注，去重并区分主观体验与可核实事实。每个城市规划当地特色菜、代表性小吃和合适的用餐区域；餐饮作为可选建议写在每天 local_food，不强制每餐时间或作为核心景点。优先给出有来源支持的店铺或市场名称；无法核实时推荐菜品和区域，不编造店名、营业时间或价格。每天安排 2–4 个核心景点，并兼顾餐饮、休息和交通缓冲。每个城市在 checks 中至少输出一条以“美食推荐：”开头的当地特色菜、小吃、餐饮区域或有来源支持的店铺建议。若仍有关键条件未确定，请在 questions 中明确提出，不要猜测。",
-      history:planDiscussionHistory.slice(-12),
-      context:buildPlanContext("revise_existing_plan")
-    });
-    const revised=Object.keys(candidatePools).length?checkCandidatePlan(result.data):result.data;
-    if(!planHasStructuredData(revised)){
-      const note=result.text||"AI 尚未返回完整的结构化方案，因此没有覆盖当前版本。请继续补充信息后重试。";
-      appendPlanDiscussionMessage("assistant",note,result.sources||[]);savePlanSession();renderPlanResult(lastAiPlan);toast("未覆盖原方案：AI 返回内容尚不完整");return;
-    }
-    const hadCompletePlan=planHasStructuredData(lastAiPlan);
-    if(hadCompletePlan)planVersions.push({version:planVersionNumber||1,plan:JSON.parse(JSON.stringify(lastAiPlan))});
-    planVersions=planVersions.slice(-6);
-    planVersionNumber=hadCompletePlan?(planVersionNumber||1)+1:1;
-    lastAiPlan=revised;lastAiPlan.sources=result.sources||[];planReferencesPending=false;
-    const summary=`已生成方案 V${planVersionNumber}。城市、交通和每日安排已按本轮讨论重新整理；请检查差异和待确认事项。`;
-    appendPlanDiscussionMessage("assistant",summary,result.sources||[]);
-    savePlanSession();renderPlanResult(lastAiPlan);toast("新方案已生成，旧版本已保留");
-  }catch(e){
-    appendPlanDiscussionMessage("assistant","更新没有完成："+e.message+"。原方案未改变。");
-    savePlanSession();renderPlanResult(lastAiPlan);
-  }finally{
-    planDiscussionBusy=false;stopPlanWork();updatePlanReferencePreview();if(lastAiPlan)renderPlanResult(lastAiPlan);
-    const b=document.getElementById("planDiscussionRevise");if(b){b.disabled=!planDiscussionHistory.some(m=>m.role==="user");b.textContent="按这些想法生成更新方案";}
-  }
-}
-function restorePlanSession(){
-  try{
-    const saved=JSON.parse(localStorage.getItem("travelCompanionPlanSessionV1")||"null");
-    if(!saved)return;
-    planBrief=saved.brief||null;lastAiPlan=saved.plan||null;
-    candidatePools=saved.candidatePools||{};candidateChoices=saved.candidateChoices||{};candidatePoolNotice=saved.candidatePoolNotice||'';
-    if(planBrief){
-      for(const key of ['origin','destination','cities','startDate','endDate','pace','preferences']){const input=document.getElementById(key);if(input&&planBrief[key]!=null)input.value=planBrief[key];}
-      const days=document.getElementById('planDays');if(days)days.value=planBrief.durationDays||'';
-      const savedPace=planBrief.pace||'舒适慢游';document.querySelectorAll('input[name=travelPace]').forEach(r=>r.checked=r.value===savedPace);document.getElementById('pace').value=savedPace;
-      document.querySelectorAll('[data-plan-interest]').forEach(button=>{const active=(planBrief.interests||[]).includes(button.dataset.planInterest);button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});
-    }
-    planDiscussionHistory=Array.isArray(saved.discussion)?saved.discussion:[];
-    planVersions=Array.isArray(saved.versions)?saved.versions:[];
-    planVersionNumber=Number(saved.versionNumber)|| (lastAiPlan?1:0);
-    planReferenceMaterials=Array.isArray(saved.referenceMaterials)?saved.referenceMaterials.slice(0,5):[];planReferencesPending=Boolean(saved.planReferencesPending);materialInsights=Array.isArray(saved.materialInsights)?saved.materialInsights:[];
-    if(lastAiPlan)renderPlanResult(lastAiPlan);
-    updatePlanReferencePreview();
-  }catch(e){console.warn("读取方案协商记录失败",e)}
 }
 const PLAN_REFERENCE_MAX_FILES=5;
 const PLAN_REFERENCE_MAX_TOTAL_CHARS=6500;
@@ -996,7 +676,7 @@ function updatePlanReferencePreview(){
   if(button)button.disabled=!planHasStructuredData(lastAiPlan)||planDiscussionBusy;
   if(hint){
     const count=planReferenceMaterials.length;
-    hint.textContent=count?`已保留 ${count} 份文档。点击“按讨论意见更新方案”，与当前行程一起整合。`:"可补充截图、文档，或直接在下方粘贴攻略文字。";
+    hint.textContent=count?`已保留 ${count} 份文档。点击“整理攻略并更新草案”，与当前行程一起整合。`:"可补充截图、文档，或直接在下方粘贴攻略文字。";
   }
 }
 async function handleUnifiedPlanUploads(input){
@@ -1065,7 +745,7 @@ async function handlePlanReferenceFiles(fileList){
       if(text.length<extracted.length)toast("资料较长，已保留前段内容；建议把重点章节单独整理后再上传。");
     }
     savePlanSession();updatePlanReferencePreview();
-    if(status)status.textContent="文档文字已提取并保留在当前规划会话中；点击“按讨论意见更新方案”时一并整合。";
+    if(status)status.textContent="文档文字已提取并保留在当前规划会话中；点击“整理攻略并更新草案”时一并整合。";
     toast("资料已添加到本次旅行规划");
   }catch(e){
     if(status)status.textContent=e.message;
@@ -1086,7 +766,7 @@ function clearPlanReferenceMaterials(){
 }
 function compactPlanContext(context,mode){
  const discussion=mode==='plan_discussion';
- context.candidate_pools=(context.candidate_pools||[]).map(pool=>({...pool,candidates:pool.candidates.filter((p,i)=>!discussion||context.candidate_choices?.[p.id]||i<3).map(p=>({id:p.id,name:p.name,type:String(p.type||'').slice(0,55),location:p.location,assessment:p.assessment?{role:p.assessment.role,reason:String(p.assessment.reason||'').slice(0,70)}:null}))}));
+ context.candidate_pools=(context.candidate_pools||[]).map(pool=>({...pool,candidates:pool.candidates.filter((p,i)=>!discussion||context.candidate_choices?.[p.id]||i<3).map(p=>({id:p.id,name:p.name,type:String(p.type||'').slice(0,55),location:p.location,source:p.source||'amap',fact_status:p.fact_status,assessment:p.assessment?{role:p.assessment.role,reason:String(p.assessment.reason||'').slice(0,70)}:null}))}));
  if(context.current_plan){context.current_plan.city_sequence=(lastAiPlan.city_sequence||[]).map(c=>({city:c.city,country:c.country,nights:c.nights}));context.current_plan.intercity_transport=(lastAiPlan.intercity_transport||[]).map(t=>({from:t.from,to:t.to,mode:t.mode,notes:String(t.notes||'').slice(0,100)}));context.current_plan.days=context.current_plan.days.map(d=>({...d,local_food:(d.local_food||[]).map(f=>({name:f.name,candidate_id:f.candidate_id,area:f.area,reason:String(f.reason||'').slice(0,60)}))}));}
  context.material_insights=(context.material_insights||[]).map(x=>({name:x.name,city:x.city,useful_tip:String(x.useful_tip||'').slice(0,100)}));
 }
@@ -1098,7 +778,7 @@ function buildPlanContext(mode,extra={}){
     days:(lastAiPlan.days||[]).map(d=>({
       day_label:d.day_label,city:d.city,title:d.title,local_food:d.local_food||[],
       stops:(d.stops||[]).map(s=>({
-        time:s.time,name:s.name,candidate_id:s.candidate_id,duration:s.duration,
+        time:s.time,name:s.name,candidate_id:s.candidate_id,duration:s.duration,activity_kind:s.activity_kind,location_name:s.location_name,from:s.from,to:s.to,
         reason:String(s.reason||"").slice(0,70),
         verification:String(s.verification||"").slice(0,60)
       }))
@@ -1137,151 +817,16 @@ function buildPlanContext(mode,extra={}){
   if(size>44000)throw new Error('当前方案与候选过多，请减少城市或资料后再调整；原方案保留');
   return context;
 }
-async function finalizePlanAndOpenTrip(){
-  if(planDiscussionBusy)return;
-  if(!planBrief||!planHasStructuredData(lastAiPlan)){
-    toast("请先完成第一轮 AI 规划，再生成最终 By Day。");return;
-  }
-  const button=document.getElementById("planFinalizeButton");
-  planDiscussionBusy=true;setBusy(button,true,"AI 正在整合资料并生成 By Day…");
-  const hint=document.getElementById("planReferenceHint");
-  if(hint)hint.textContent="AI 正在整合你的 Word/PDF 资料、讨论记录、景点路线和当地美食建议…";
-  try{
-    const result=await apiRequest({
-      task:"plan",
-      message:"请生成本次旅行的最终可执行 By Day 方案。必须整合原始旅行需求、当前方案、用户与 AI 的讨论，以及 context.reference_materials 中的所有资料。保留用户已确认的安排和个人备注；去重并识别同一地点的不同写法；区分攻略作者的主观体验、资料中的事实陈述和已由可靠来源核实的信息。将适合的景点按地理区域与游览逻辑安排进每日路线，形成清晰的 City Walk 顺序。每天安排 2–4 个核心景点，当地特色菜和餐饮推荐放每天 local_food，不强制每餐停留；推荐当地特色菜、小吃和合适用餐区域，优先提供有可靠来源支持的店铺/市场名称，无法核实则只推荐菜品与区域，不编造店名、营业时间和价格。交通班次、票价、开放时间、距离和精确步行耗时不得编造；未核实项目标注待核实，真实步行距离留待下一阶段地图路线服务计算。输出完整结构化 JSON，字段保持 summary、city_sequence、intercity_transport、days、checks、questions；days 必须有 day_label、city、title、stops，每个 stop 必须有 time、name、duration、reason、verification。请确保每天的景点、餐饮、休息和城市间交通衔接合理。",
-      history:planDiscussionHistory.slice(-12),
-      context:buildPlanContext("final_by_day")
-    });
-    const finalPlan=Object.keys(candidatePools).length?checkCandidatePlan(result.data):result.data;
-    if(!planHasStructuredData(finalPlan)){
-      throw new Error(result.text||"AI 返回的最终 By Day 结构不完整，原方案已保留，请继续补充后重试。");
-    }
-    if(lastAiPlan)planVersions.push({version:planVersionNumber||1,plan:JSON.parse(JSON.stringify(lastAiPlan))});
-    planVersions=planVersions.slice(-6);
-    planVersionNumber=(planVersionNumber||1)+1;
-    lastAiPlan=finalPlan;lastAiPlan.sources=result.sources||[];
-    appendPlanDiscussionMessage("assistant","已整合本次上传资料与全部讨论，生成最终 By Day 方案。原方案已保留为历史版本。",result.sources||[]);
-    savePlanSession();renderPlanResult(lastAiPlan);updatePlanReferencePreview();
-    planReferencesPending=false;planDiscussionBusy=false;applyAiPlan();
-  }catch(e){
-    if(hint)hint.textContent="这次整合没有完成，原方案和已上传资料都已保留。"+e.message;
-    appendPlanDiscussionMessage("assistant","最终 By Day 生成未完成："+e.message);
-    savePlanSession();toast("最终方案未生成，原方案与资料已保留");
-  }finally{
-    planDiscussionBusy=false;setBusy(button,false);updatePlanReferencePreview();
-  }
-}
-async function generatePlan(){
-  const button=document.querySelector('#planner .planner-form .btn');
-  const out=document.getElementById("generated");disposeTripMaps(out);
-  const reference=document.getElementById("planReferenceCard");if(reference&&out.contains?.(reference)){out.after(reference);reference.hidden=true;}
-  out.style.display="block";out.innerHTML="";
-  addTextNode(out,"div","ai-loading","✦ AI 正在根据兴趣与喜好生成第一版方案…");
-  setBusy(button,true,"AI 规划中…");
-  const brief={
-    origin:document.getElementById("origin").value.trim(),
-    destination:document.getElementById("destination").value.trim(),
-    cities:document.getElementById("cities").value.trim(),
-    startDate:document.getElementById("startDate").value,
-    endDate:document.getElementById("endDate").value,
-    pace:document.getElementById("pace").value,
-    preferences:document.getElementById("preferences").value.trim(),
-    interests:[...document.querySelectorAll("[data-plan-interest].active")].map(x=>x.dataset.planInterest),
-    durationDays:document.getElementById("planDays").value ? Number(document.getElementById("planDays").value) : null
-  };
-  // Origin/destination belong to the route boundaries, not intermediate stops.
-  // Keep the endpoint in trip_brief.destination so the model still routes there.
-  const normalizePlace=name=>name.trim().replace(/\\s+/g,"").replace(/(市|地区)$/,"");
-  const boundaryNames=new Set([normalizePlace(brief.origin),normalizePlace(brief.destination)].filter(Boolean));
-  const seenStops=new Set();
-  const intermediateStops=brief.cities.split(/[、，,;；\\n]+/).map(x=>x.trim()).filter(Boolean).filter(city=>{
-    const key=normalizePlace(city);
-    if(boundaryNames.has(key)||seenStops.has(key))return false;
-    seenStops.add(key);return true;
-  });
-  const removedBoundary=brief.cities.split(/[、，,;；\\n]+/).map(x=>x.trim()).some(x=>x&&boundaryNames.has(normalizePlace(x)));
-  brief.cities=intermediateStops.join("、");
-  if(removedBoundary){
-    document.getElementById("cities").value=brief.cities;
-    toast("已从途经城市中去掉重复的起点或终点，终点仍保留在路线末尾");
-  }
-  candidatePools={};candidateChoices={};candidatePoolNotice='';candidateExplorerCity='';candidateInlineDay='';candidatePage={};candidateBatchTurns={};candidateGuidanceCity='';
-  planBrief=brief;planDiscussionHistory=[];planVersions=[];planVersionNumber=1;lastAiPlan=null;savePlanSession();updatePlanReferencePreview();
-  try{
-    const result=await apiRequest({task:"plan",message:"请作为旅行规划师与协商搭档生成可编辑的第一版 Plan。origin 是起点、destination 是终点、cities 为候选城市；仅给国家时可建议城市组合。具体文字喜好优先于宽泛标签，明确约束优先于软偏好。根据 trip_brief.interests、preferences、pace 和 durationDays 实际调整地点选择、停留时长与节奏；在 summary 和各地点 reason 解释与用户偏好的关联，不能只改变措辞。日期空白时，在 checks 中给出适合出行的月份或季节、原因和取舍，使用 D1/D2 排程，不假设用户已选定日期；天数空白时建议合理天数并注明假设。除非无法识别目的地，否则先生成有条件的初稿，questions 最多提出两个会明显改变方案的关键问题，不用预算等选填项阻塞。返回完整 city_sequence、intercity_transport、days、checks、questions。每天安排符合节奏的核心体验，考虑地理聚类与交通缓冲；没有路线服务核算，不声称最优路线或给精确交通分钟数。无需安排固定午餐晚餐时间或强制餐饮停留点，必须在每天 local_food 提供顺路的特色菜和餐饮区域选项，具体店铺需候选 id，否则只给菜品或区域并标待核验；偏远户外活动需提示核实补给，不能未经查证断言没有餐饮。住宿建议先到区域及其取舍，遵守已有酒店约束。热门推荐线索与事实核验分开，未检索不能声称来自小红书或实时热榜。营业时间、票价、预约、班次、营业状态未取得本轮可靠证据一律待核实；具体日期确定后需复查。若有 reference_materials，吸收地点和个人备注，区分主观体验与事实。不擅自删除用户明确锁定的安排。",context:buildPlanContext("initial_plan")});
-    lastAiPlan=result.data&&typeof result.data==="object"?result.data:null;
-    if(lastAiPlan){lastAiPlan.sources=result.sources||[];planReferencesPending=false;}
-    if(planHasStructuredData(lastAiPlan)){planVersions=[];}
-    renderPlanResult(lastAiPlan||{summary:result.text||"AI 已返回结果",text:result.text||"",checks:[],questions:[],days:[]});
-    savePlanSession();updatePlanReferencePreview();toast("第一版草案已生成，正在逐城筛选推荐并细化行程");
-    const domestic=(lastAiPlan?.city_sequence||[]).filter(c=>/^(中国|中华人民共和国|China|中国大陆)$/i.test(String(c.country||'').trim()));
-    let rankedCities=0;
-    for(const city of domestic){if(await discoverCityPool(city,true))rankedCities++;}
-    if(rankedCities)await refinePlanWithPool();
-    else {candidatePoolNotice=domestic.length?'AI 精选尚未完成，当前为草案；可在城市备选中重试。':'当前为国外旅行草案，地点及路线待地图服务核实。';savePlanSession();renderPlanResult(lastAiPlan);}
-
-
-  }catch(e){showAiError(out,e)}
-  finally{setBusy(button,false)}
-}
-function planEntryBlocker(useCurrentOnly){
- if(dailyEntryBusy||planDiscussionBusy||candidatePoolBusy)return 'AI 仍在处理，请等待上方工作状态结束后再进入。';
- if(!planHasStructuredData(lastAiPlan))return '当前还没有完整的每日安排，请先生成推荐方案。';
- if(useCurrentOnly===true)return '';
- if(planUploadsBusy||planReferencesPending)return '新上传资料尚未应用。可以先查看当前方案，或展开更多定制整合资料后再进入。';
- const selected=poolSelectedIds();if(Object.entries(candidateChoices).some(([id,choice])=>choice==='locked'?!selected.has(id):choice==='excluded'&&selected.has(id)))return '你刚才的景点加减尚未应用：请先按选择调整行程，或先查看当前方案。';
- return '';
-}
-function showPlanEntryStatus(message){const root=document.getElementById('planEntryStatus');if(root){root.textContent=message;root.scrollIntoView({block:'nearest',behavior:'smooth'});}else toast(message);}
 async function resolvePlanSights(plan){
  const requests=[];for(const day of plan.days||[]){const country=(plan.city_sequence||[]).find(c=>c.city===day.city)?.country||'';for(const stop of day.stops||[]){if(isMapActivity(stop))continue;const descriptor=stopMapDescriptor(stop,day.city,country);if(!/^(中国|中华人民共和国|China|中国大陆)$/i.test(country))continue;requests.push({day,stop,descriptor});}}
  const unknown=requests.filter(r=>!r.descriptor.location);const unique=[...new Map(unknown.map(r=>[r.descriptor.key,r.descriptor])).values()];
  for(let i=0;i<unique.length;i+=10){const response=await fetch(API_BASE+'/api/map/resolve',{method:'POST',headers:apiHeaders(),body:JSON.stringify({items:unique.slice(i,i+10)}),signal:AbortSignal.timeout(125000)});const data=await response.json();if(!response.ok)throw new Error(data.error||'地点匹配服务未完成');for(const item of data.results||[])rememberMapLocation(item);}
  const missing=[];for(const r of requests){const match=r.descriptor.location?r.descriptor:mapLocationMemory[r.descriptor.key];if(match?.status==='matched'&&parseMapCoordinate(match.location)){r.stop.location=match.location;r.stop.location_source='amap';r.stop.coordinate_system=match.coordinate_system||'GCJ02';if(match.id){r.stop.candidate_id=match.id;const pool=candidatePools[r.day.city];if(pool&&!pool.pois.some(p=>p.id===match.id))pool.pois.push({id:match.id,name:match.name||r.descriptor.name,location:match.location,type:'地图名称匹配',search_provenance:[]});}r.stop.location_name=match.name||r.descriptor.name;}else missing.push({day_label:r.day.day_label,city:r.day.city,name:r.stop.name,locked:candidateChoices[r.stop.candidate_id]==='locked'});}return missing;
 }
-async function prepareDailyPlan(){
- planDiscussionBusy=true;renderLatestPlanReply();startPlanWork('正在匹配每天的具体景点');
- try{let missing=await resolvePlanSights(lastAiPlan);
- if(missing.length){startPlanWork('正在补全无法定位的景点推荐');const context=buildPlanContext('map_repair',{map_issues:missing});const result=await apiRequest({task:'plan',message:'修订完整行程：map_issues中的名称未唯一定位，不能继续原样输出。非锁定游览点替换成同城、符合兴趣的具体景点，优先候选池中带id和坐标的地点；沿河体验须明确具体游览段或起点并写location_name。交通不得作为游览点，activity_kind=transport并写from/to；休息用rest。锁定点不可删除，无法确定则questions要求用户确认。保留全部城市、天数、其他已确认选择与餐饮。',context});const revised=Object.keys(candidatePools).length?checkCandidatePlan(result.data):result.data;if(!planHasStructuredData(revised))throw new Error('未返回完整行程');missing=await resolvePlanSights(revised);if(missing.length){showPlanEntryStatus('这些游览点仍未唯一匹配，尚未替换原方案：'+missing.map(x=>x.day_label+' '+x.name).join('、')+'。请在当天备选中选具体景点后更新。');return false;}
- planVersions.push({version:planVersionNumber,plan:JSON.parse(JSON.stringify(lastAiPlan))});planVersions=planVersions.slice(-6);planVersionNumber++;lastAiPlan=revised;savePlanSession();renderPlanResult(lastAiPlan);}
- savePlanSession();return true;
- }catch(error){showPlanEntryStatus('景点匹配未完成：'+error.message+'。当前方案已保留，请重试进入。');return false;}
- finally{planDiscussionBusy=false;stopPlanWork();const note=document.getElementById('planEntryStatus')?.textContent||'';renderPlanResult(lastAiPlan);if(note.includes('未完成')||note.includes('未唯一匹配')){const status=document.getElementById('planEntryStatus');if(status)status.textContent=note;}}
-}
-async function applyAiPlan(useCurrentOnly=false){
- const blocked=planEntryBlocker(useCurrentOnly);if(blocked){showPlanEntryStatus(blocked);return;}
- dailyEntryBusy=true;
- if(!await prepareDailyPlan()){dailyEntryBusy=false;return;}
- const before=JSON.parse(JSON.stringify(trip));const beforeCity=activeCity,beforeDay=activeDay;
- try{
-  const plan=lastAiPlan;trip.planDerived=true;trip.planVersion=planVersionNumber;trip.transport=plan.intercity_transport||[];
-  const cityMap=new Map();
-  trip.cities=(plan.city_sequence||[]).map((c,i)=>{
-    const id=`ai-city-${i}`;cityMap.set(c.city,id);
-    const days=(plan.days||[]).filter(d=>d.city===c.city).length;
-    const spots=(plan.days||[]).filter(d=>d.city===c.city).flatMap(d=>(d.stops||[]).map(s=>s.name));
-    return {id,name:c.city,country:c.country||"待确认",days:`建议 ${c.nights||"待确认"} 晚`,summary:c.reason||"由 AI 根据本次旅行需求生成",spots:[...new Set(spots)]};
-  });
-  trip.days=(plan.days||[]).map((d,i)=>({
-    id:`ai-day-${i+1}`,label:d.day_label||`D${i+1} · ${d.city}`,city:cityMap.get(d.city)||trip.cities[0]?.id,
-    title:d.title||"AI 规划日程",
-    stops:[...(d.stops||[]).map(s=>[s.time||"待定",s.name,`${s.duration||"游览时长待核"} · ${s.reason||""} · ${s.verification||"信息待核实"}`,stopMapDescriptor(s,d.city,(plan.city_sequence||[]).find(c=>c.city===d.city)?.country||"","sight")]),...(d.local_food||[]).map(s=>['可选风味',s.name,`${s.area||''} · ${s.reason||''} · ${s.verification||'营业与店铺待核验'}`,stopMapDescriptor(s,d.city,(plan.city_sequence||[]).find(c=>c.city===d.city)?.country||'', 'food')])]
-  }));
-  if(!trip.cities.length||!trip.days.length){toast("AI 方案内容不完整，暂不能载入");return}
-  activeCity=trip.cities[0].id;activeDay=trip.days[0].id;
-  persist(true);nav("trip");toast("AI 方案已载入工作台；请继续核实交通和开放时间");
- }catch(error){trip=before;activeCity=beforeCity;activeDay=beforeDay;nav('planner');showPlanEntryStatus('每日行程载入失败：'+error.message+'。当前方案保留，可重试；请将此提示发给我们。');}
- finally{dailyEntryBusy=false;const status=document.getElementById('planEntryStatus');if(status&&!/失败|未完成|未唯一匹配/.test(status.textContent))status.textContent=planEntryBlocker(false);}
-}
 function togglePlanInterest(button){
   const selected=document.querySelectorAll('[data-plan-interest].active');
   if(!button.classList.contains('active')&&selected.length>=3){toast('最多选择 3 个兴趣方向');return;}
   const active=button.classList.toggle('active');button.setAttribute('aria-pressed',String(active));
-}
-function openPlanCandidates(){
-  if(!lastAiPlan){nav('planner');toast('先生成第一版 Plan，再探索城市备选');return;}
-  nav('planner');const day=lastAiPlan.days?.[0];if(day){candidateInlineDay=day.city+'|'+day.day_label;renderPlanResult(lastAiPlan);document.getElementById('candidateInlineExplorer')?.scrollIntoView({behavior:'smooth'});}
 }
 function poolSelectedIds(){
   return new Set((lastAiPlan?.days||[]).flatMap(d=>[...(d.stops||[]),...(d.local_food||[])].map(s=>s.candidate_id).filter(Boolean)));
@@ -1297,7 +842,7 @@ function checkCandidatePlan(plan){
         if(!s.candidate_id&&isMapActivity(s))continue;
         const p=allowed.get(s.candidate_id);
         if(!p||candidateChoices[p.id]==='excluded'||selected.has(p.id))throw new Error('候选身份、排除或去重检查未通过，原方案已保留');
-        s.name=p.name;s.location=p.location;s.location_source='amap';s.coordinate_system='GCJ02';s.verification='地点已匹配高德；开放时间、票务和预约待核验';selected.add(p.id);
+        s.name=p.name;s.location=p.location||'';s.location_source=p.source==='model_knowledge'?'unverified':'amap';s.coordinate_system=p.source==='model_knowledge'?'':'GCJ02';s.verification=p.source==='model_knowledge'?'AI 推荐线索；地点位置、开放时间、票务和预约待核验':'地点已匹配高德；开放时间、票务和预约待核验';selected.add(p.id);
       }
     }
     for(const p of pool.candidates)if(candidateChoices[p.id]==='locked'&&!selected.has(p.id))throw new Error('AI 未保留锁定地点，原方案已保留；请先讨论时间或路线取舍');
@@ -1311,114 +856,9 @@ function poolContext(){
     const important=pool.pois.filter(p=>candidateChoices[p.id]||selected.has(p.id));
     const ranked=(pool.recommendations||[]).map(r=>({...pool.pois.find(p=>p.id===r.id),assessment:r})).filter(p=>p.id&&!important.some(x=>x.id===p.id));
     const balanced=ranked;
-    return {city:pool.city,candidates:[...important,...balanced].map(p=>({id:p.id,name:p.name,type:p.type,location:p.location,assessment:p.assessment||(pool.recommendations||[]).find(r=>r.id===p.id)||null,search_keywords:(p.search_provenance||[]).map(q=>q.keyword).slice(0,2),fact_status:'地点身份已匹配；其他事实待核验'}))};
+    return {city:pool.city,candidates:[...important,...balanced].map(p=>({id:p.id,name:p.name,type:p.type,location:p.location,source:p.source||'amap',assessment:p.assessment||(pool.recommendations||[]).find(r=>r.id===p.id)||null,search_keywords:(p.search_provenance||[]).map(q=>q.keyword).slice(0,2),fact_status:p.source==='model_knowledge'?'AI 知识推荐；地点身份、位置和其他事实待核验':'地点身份已匹配；其他事实待核验'}))};
   })};
 }
-function setCandidateChoice(id,choice){
-  if(planDiscussionBusy||candidatePoolBusy){toast('请等待当前规划完成');return;}
-  candidateExplorerCity=Object.values(candidatePools).find(p=>p.pois.some(x=>x.id===id))?.city||candidateExplorerCity;
-  if(candidateChoices[id]===choice)delete candidateChoices[id];else candidateChoices[id]=choice;
-  savePlanSession();renderPlanResult(lastAiPlan);
-}
-function appendCandidateExplorer(out,onlyCity=null){
-  const panel=document.createElement('section');panel.className='ai-result-card';panel.id=onlyCity?'candidateInlineExplorer':'candidateExplorer';
-  addTextNode(panel,'h3','',onlyCity?'其他推荐 · 每次 3 个':'城市备选 · 为你精选');
-  addTextNode(panel,'p','tiny','这里只展示 AI 按偏好筛出的少量选择。＋设为想去，－移除；点击调整后一起安排。');
-  if(candidatePoolNotice&&!candidatePoolBusy&&!planDiscussionBusy)addTextNode(panel,'p','tiny',candidatePoolNotice);
-  const selected=poolSelectedIds();
-  for(const city of (lastAiPlan?.city_sequence||[]).filter(c=>!onlyCity||c.city===onlyCity)){
-    const pool=candidatePools[city.city];
-    const details=document.createElement('details');details.open=Boolean(onlyCity)||city.city===candidateExplorerCity;details.ontoggle=()=>{if(details.open)candidateExplorerCity=city.city;};
-    const ranks=(pool?.recommendations||[]).filter(r=>!selected.has(r.id)&&candidateChoices[r.id]!=='excluded');
-    const choices=ranks.filter(r=>candidateChoices[r.id]==='locked');
-    const rest=ranks.filter(r=>candidateChoices[r.id]!=='locked');
-    const offset=rest.length?(Math.floor((candidatePage[city.city]||0)/3)%Math.ceil(rest.length/3))*3:0;
-    const shown=rest.slice(offset,offset+3);
-    addTextNode(details,'summary','',city.city+' · '+(pool?.rankingStatus==='ranked'?'每次 3 个精选备选':'等待精选'));
-    if(!pool||pool.rankingStatus!=='ranked'){
-      if(pool?.warning)addTextNode(details,'p','tiny',pool.warning);
-      addTextNode(details,'p','tiny',pool?.rankingStatus==='unavailable'?'这次精选未完成，可重试；不会用原始搜索顺序代替推荐。':'先为你筛出少量相关地点，再挑喜欢的。');
-      const retry=document.createElement('button');retry.className='btn light small';retry.textContent='为这个城市筛选推荐';retry.disabled=candidatePoolBusy||planDiscussionBusy;retry.onclick=async()=>{await discoverCityPool(city);};details.appendChild(retry);
-    }else{
-      if(!shown.length)addTextNode(details,'p','tiny','这批精选已安排或已排除，可在当天调整，或重新发现其他选择。');
-      for(const rank of shown){
-        const poi=pool.pois.find(p=>p.id===rank.id);if(!poi)continue;
-        const row=document.createElement('article');row.className='stop';
-        addTextNode(row,'strong','',poi.name);addTextNode(row,'span','pill',rank.role==='food'?'当地餐饮':'游览备选');
-        addTextNode(row,'p','',rank.reason);if(rank.tradeoff)addTextNode(row,'p','tiny','取舍：'+rank.tradeoff);
-        if(candidateChoices[poi.id]==='locked')addTextNode(row,'p','tiny','已选为想去，待安排');
-        const plus=document.createElement('button');plus.className='btn light small';plus.textContent=candidateChoices[poi.id]==='locked'?'撤销想去':'＋ 加入我的 Plan';plus.disabled=candidatePoolBusy||planDiscussionBusy;plus.onclick=()=>setCandidateChoice(poi.id,'locked');
-        const minus=document.createElement('button');minus.className='btn line small';minus.textContent='－ 不感兴趣';minus.disabled=plus.disabled;minus.onclick=()=>setCandidateChoice(poi.id,'excluded');row.append(plus,minus);details.appendChild(row);
-      }
-      if(choices.length){
-        const pending=document.createElement('details');addTextNode(pending,'summary','','已选想去 · '+choices.length+' 个，待安排');
-        for(const choice of choices){const poi=pool.pois.find(p=>p.id===choice.id);if(!poi)continue;const undo=document.createElement('button');undo.className='btn line small';undo.textContent='撤销想去 · '+poi.name;undo.disabled=candidatePoolBusy||planDiscussionBusy;undo.onclick=()=>setCandidateChoice(poi.id,'locked');pending.appendChild(undo);}details.appendChild(pending);
-      }
-      if(rest.length>3){const more=document.createElement('button');more.className='btn line small';more.textContent=offset+3>=rest.length?'回看第一批':'换一批 · 另外 3 个';more.disabled=candidatePoolBusy||planDiscussionBusy;more.onclick=()=>{candidatePage[city.city]=offset+3;candidateBatchTurns[city.city]=(candidateBatchTurns[city.city]||0)+1;if(candidateBatchTurns[city.city]>=2)candidateGuidanceCity=city.city;candidateExplorerCity=city.city;renderPlanResult(lastAiPlan);};details.appendChild(more);}
-      const direction=document.createElement('button');direction.className='btn light small';direction.textContent='都不合适，帮我换个方向';direction.disabled=candidatePoolBusy||planDiscussionBusy;direction.onclick=()=>{candidateGuidanceCity=city.city;candidateExplorerCity=city.city;renderPlanResult(lastAiPlan);};details.appendChild(direction);
-      if(candidateGuidanceCity===city.city)appendCandidateGuidance(details,city);
-      const rejected=pool.pois.filter(p=>candidateChoices[p.id]==='excluded');
-      if(rejected.length){const restore=document.createElement('details');addTextNode(restore,'summary','','已移除的选择（'+rejected.length+'）');for(const p of rejected){const b=document.createElement('button');b.className='btn line small';b.textContent='撤销移除 · '+p.name;b.disabled=candidatePoolBusy||planDiscussionBusy;b.onclick=()=>setCandidateChoice(p.id,'excluded');restore.appendChild(b);}details.appendChild(restore);}
-    }
-    panel.appendChild(details);
-  }
-  const revise=document.createElement('button');revise.className='btn';revise.textContent=candidatePoolBusy||planDiscussionBusy?'正在完善…':'按我的选择调整行程';revise.disabled=candidatePoolBusy||planDiscussionBusy||!Object.values(candidatePools).some(p=>p.rankingStatus==='ranked');revise.onclick=()=>refinePlanWithPool();panel.appendChild(revise);out.appendChild(panel);
-}
-
-function appendCandidateGuidance(parent,city){
-  const guide=document.createElement('div');guide.className='day-local';
-  addTextNode(guide,'strong','','这几批都没打动你？我们换个方向找。');
-  addTextNode(guide,'p','tiny','点一个方向，重新为你精选；找到喜欢的再加入行程。');
-  const input=document.createElement('textarea');input.className='candidate-preference-input';input.placeholder='例如：不想逛展馆，想看看真实老街和当地人的生活';input.value=planBrief?.cityPreferences?.[city.city]||'';
-  for(const preference of ['更小众，少一些商业化','更贴近当地日常生活','更有文化内容','更轻松，少走路']){
-    const button=document.createElement('button');button.className='btn line small';button.textContent=preference;button.disabled=candidatePoolBusy||planDiscussionBusy;button.onclick=()=>rerankCityPreference(city,preference);guide.appendChild(button);
-  }
-  const custom=document.createElement('details');addTextNode(custom,'summary','','自己补充其他偏好');custom.appendChild(input);guide.appendChild(custom);
-  const submit=document.createElement('button');submit.className='btn small';submit.textContent='按新偏好重新找';submit.disabled=candidatePoolBusy||planDiscussionBusy;
-  submit.onclick=()=>rerankCityPreference(city,input.value.trim());
-  guide.appendChild(submit);parent.appendChild(guide);
-}
-
-async function rerankCityPreference(city,preference){
- if(candidatePoolBusy||planDiscussionBusy)return;
- if(!preference){toast('请选择一个方向，或补充你的偏好');return;}
- if(!planBrief)planBrief={};if(!planBrief.cityPreferences)planBrief.cityPreferences={};planBrief.cityPreferences[city.city]=preference;candidateGuidanceCity='';
- appendPlanDiscussionMessage('user',city.city+' 的推荐方向调整为：'+preference);savePlanSession();
- await discoverCityPool(city);
-}
-async function discoverCityPool(city,quiet=false){
-  if(candidatePoolBusy||planDiscussionBusy)return false;
-  candidateExplorerCity=city.city;
-  if(!/^(中国|中华人民共和国|China|中国大陆)$/i.test(String(city.country||'').trim())){
-    candidatePoolNotice='当前先验证国内城市的高德候选流程；'+city.city+' 继续保留 AI 草案，地点与路线待地图服务核实。';
-    renderPlanResult(lastAiPlan);return false;
-  }
-  candidatePoolBusy=true;candidatePoolNotice='正在根据 '+city.city+' 的兴趣和喜好发现候选…';renderPlanResult(lastAiPlan);
-  try{
-    const data=await apiPoiRequest({city:city.city,interests:planBrief?.interests?.length?planBrief.interests:['历史文化','地方生活'],preferences:[planBrief?.preferences||'',planBrief?.cityPreferences?.[city.city]||'',...planDiscussionHistory.filter(m=>m.role==='user').slice(-3).map(m=>m.content)].join('；').slice(0,1500)});
-    if(data.contractVersion!==3)throw new Error('需要部署新版 Worker（plan-curation-3），原方案已保留');
-    const pool={city:city.city,pois:data.pois||[],recommendations:data.recommendations||[],rankingStatus:data.rankingStatus||'unavailable',queries:data.queries||[],warning:data.warning||'',fetchedAt:new Date().toISOString()};
-    // Retain previously chosen candidates across a repeat search.
-    const old=candidatePools[city.city];const ids=new Set(pool.pois.map(p=>p.id));
-    for(const p of old?.pois||[])if((candidateChoices[p.id]||poolSelectedIds().has(p.id))&&!ids.has(p.id))pool.pois.push(p);
-    candidatePools[city.city]=pool;candidatePage[city.city]=0;candidateBatchTurns[city.city]=0;
-    candidatePoolNotice=pool.rankingStatus==='ranked'?city.city+' 已完成兴趣筛选，挑选喜欢的地点后再调整行程。':city.city+' 的精选尚未完成，请重试；已保留草案。';savePlanSession();return pool.rankingStatus==='ranked';
-  }catch(error){candidatePoolNotice=error.message;return false;}
-  finally{candidatePoolBusy=false;renderPlanResult(lastAiPlan);}
-}
-async function refinePlanWithPool(){
-  if(planDiscussionBusy||candidatePoolBusy)return;
-  planDiscussionBusy=true;candidatePoolNotice='AI 正在结合候选、兴趣和你的选择调整 Plan…';renderPlanResult(lastAiPlan);
-  try{
-    const result=await apiRequest({task:'plan',message:'根据 candidate_pools 生成完整修订方案。有候选的城市仅从候选中选择，每个 stop 返回 candidate_id；locked 必须保留、excluded 不得选。具体文字喜好优先于宽泛标签。解释各地点的匹配依据，信息不足不编造背景。结合节奏和地理位置取舍，检查锁定点造成的拥挤或远距离，冲突写 questions 并提示用户取舍，不擅自丢弃。核心景点必须是具体名称，不能用历史人文地点、地方生活街区等占位。每一天 local_food 展示本地特色菜、顺路餐饮区域或候选店铺，说明选择理由，不强制每餐时间；具体店铺必须来自候选 id，菜品和区域可无 id 并标待核验。住宿建议写 checks。未定日期给适合的月份与取舍，开放、预约、门票待日期确定后核验。未加载候选的城市保留原草案并标注未核验。保持完整城市顺序和每日安排。',context:buildPlanContext('candidate_refinement')});
-    const revised=checkCandidatePlan(result.data);
-    planVersions.push({version:planVersionNumber||1,plan:JSON.parse(JSON.stringify(lastAiPlan))});planVersions=planVersions.slice(-6);planVersionNumber++;
-    lastAiPlan=revised;lastAiPlan.sources=result.sources||[];planReferencesPending=false;
-    candidatePoolNotice='方案已按偏好与选择更新；城市备选保留其他精选，开放时间、预约和交通仍待核验。';savePlanSession();
-  }catch(error){candidatePoolNotice='调整未完成：'+error.message+'。原方案保留，你的加减选择仍在。';}
-  finally{planDiscussionBusy=false;renderPlanResult(lastAiPlan);}
-}
-
 const POI_INTEREST_LIMIT = 3;
 function togglePoiInterest(button){
   const selected=[...document.querySelectorAll('[data-poi-interest].active')];
