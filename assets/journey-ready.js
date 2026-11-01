@@ -4,7 +4,7 @@
 const STORAGE='travelCompanionDepartureV1';
 function clean(v){return String(v||'').trim();}
 function hash(s){let n=2166136261;for(const c of s){n^=c.codePointAt(0);n=Math.imul(n,16777619);}return (n>>>0).toString(36);}
-function contextKey(c){return hash(JSON.stringify([c.startDate||'',c.endDate||'',c.cities.map(x=>[x.name,x.country]),c.days.map(d=>[d.label,d.city])]));}
+function contextKey(c){return hash(JSON.stringify([c.startDate||'',c.endDate||'',c.cities.map(x=>[x.name,x.country]),c.days.map(d=>[d.label,d.city]),...(c.archiveId?[c.archiveId]:[])]));}
 function normalizeStore(raw){const result={profiles:{}};if(!raw||typeof raw.profiles!=='object'||!raw.profiles)return result;for(const [key,p] of Object.entries(raw.profiles).slice(-12)){if(!/^[a-z0-9]+$/.test(key)||!p||typeof p.tasks!=='object'||!p.tasks)continue;const tasks={};for(const [id,t] of Object.entries(p.tasks).slice(0,150)){if(!/^[a-z0-9-]+$/.test(id)||!t||!['todo','done','skip'].includes(t.status))continue;tasks[id]={status:t.status,note:clean(t.note).slice(0,500)};}result.profiles[key]={tasks};}return result;}
 function tasksFor(c){const groups=[{title:'住宿',items:[]},{title:'跨城市交通',items:[]},{title:'行李与出发事项',items:[]}];
  const add=(g,id,title,detail)=>groups[g].items.push({id,title,detail});
@@ -23,8 +23,8 @@ if(typeof module!=='undefined'&&module.exports)module.exports=root.JourneyReady;
 })(globalThis);
 let departureSource='trip',journeyDay='',journeyStop='';
 function departureContext(){
- if(departureSource==='plan'&&lastAiPlan)return {cities:lastAiPlan.city_sequence.map(c=>({name:c.city,country:c.country,nights:c.nights})),days:lastAiPlan.days.map(d=>({label:d.day_label,city:d.city})),transport:lastAiPlan.intercity_transport||[],bookings:planFlow?.review?.bookings||[],checks:lastAiPlan.checks||[],startDate:planBrief?.startDate,endDate:planBrief?.endDate};
- return {cities:(trip.cities||[]).map(c=>({name:c.name,country:c.country,nights:/^\d+/.test(c.days)?parseInt(c.days):undefined})),days:(trip.days||[]).map(d=>({label:d.label,city:trip.cities.find(c=>c.id===d.city)?.name||''})),transport:trip.transport||[],bookings:trip.preparation||[],checks:trip.planChecks||[],...(trip.departureBrief||{})};
+ if(departureSource==='plan'&&lastAiPlan)return {archiveId:typeof planArchiveId==='string'?planArchiveId:'',cities:lastAiPlan.city_sequence.map(c=>({name:c.city,country:c.country,nights:c.nights})),days:lastAiPlan.days.map(d=>({label:d.day_label,city:d.city})),transport:lastAiPlan.intercity_transport||[],bookings:planFlow?.review?.bookings||[],checks:lastAiPlan.checks||[],startDate:planBrief?.startDate,endDate:planBrief?.endDate};
+ return {archiveId:trip.archiveId||'',cities:(trip.cities||[]).map(c=>({name:c.name,country:c.country,nights:/^\d+/.test(c.days)?parseInt(c.days):undefined})),days:(trip.days||[]).map(d=>({label:d.label,city:trip.cities.find(c=>c.id===d.city)?.name||''})),transport:trip.transport||[],bookings:trip.preparation||[],checks:trip.planChecks||[],...(trip.departureBrief||{})};
 }
 function openDeparturePreparation(source='trip'){departureSource=source;nav('departure');}
 function readyNode(parent,tag,cls,text){const el=document.createElement(tag);if(cls)el.className=cls;if(text)el.textContent=text;parent.appendChild(el);return el;}

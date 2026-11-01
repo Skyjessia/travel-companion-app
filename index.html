@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8"><meta name="app-version" content="2026-11-01-draft-recovery-16"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#173f46"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://cdn.jsdelivr.net/npm/mammoth@1.9.0/mammoth.browser.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<meta charset="utf-8"><meta name="app-version" content="2026-11-01-trip-cards-17"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#173f46"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://cdn.jsdelivr.net/npm/mammoth@1.9.0/mammoth.browser.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <title>Travel Companion · 一起规划，轻松出发</title>
 <link rel="canonical" href="https://skyjessia.github.io/travel-companion-app/">
 <meta name="description" content="和 AI 一起规划每天怎么走，带着行程轻松出发，收藏走过的世界。">
@@ -142,7 +142,7 @@ button,input,textarea,select{font:inherit}
 .candidate-preference-input{display:block;width:100%;min-height:76px;margin:10px 0;padding:10px;border:1px solid var(--line);border-radius:10px;font:inherit;resize:vertical}
 .pace-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.field .pace-choice{display:flex;align-items:center;gap:9px;margin:0;padding:13px 11px;border:1px solid var(--line);border-radius:12px;cursor:pointer;background:#fff;font-size:12px}.field .pace-choice input{width:18px;height:18px;margin:0;accent-color:var(--teal);flex-shrink:0}.pace-choice:has(input:checked){border-color:#82b6a2;background:var(--mint);color:var(--teal)}.pace-choice:has(input:focus-visible){outline:2px solid var(--teal);outline-offset:2px}#candidateInlineExplorer{margin:12px 0 0;background:#f8faf6;box-shadow:none}
 .real-trip-map{height:285px;border-radius:15px;border:1px solid var(--line);background:#eef3ee;z-index:1;margin:12px 0}.trip-map-tooltip{font:11px/1.4 inherit;color:var(--navy);border-radius:8px}.transport-overview{margin:18px 0;padding:15px;border:1px solid var(--line);border-radius:15px;background:#f7faf6}.transport-segment{padding:10px 0;border-top:1px solid var(--line)}.transport-segment strong{display:block;margin-bottom:5px}.transport-summary{font-weight:700;color:var(--teal);font-size:12px}.enter-daily-button{display:block;width:100%;padding:18px;font-size:17px;min-height:58px}.material-absorb{margin:16px 0;padding:14px;border:1px solid #dfe7dc;border-radius:13px;background:#fff}.discussion-history{margin:14px 0}.plan-discussion-actions .btn:first-child{flex:1;min-height:43px}
-.plan-day-updated{border:2px solid #c8a164!important;background:#fffdf5!important}.plan-day-updated>span.pill{background:#f7e7c4;color:#78521c}#planLatestReply{margin:14px 0;padding:16px;background:#f1f6f0;border-radius:14px}#planLatestReply p{white-space:pre-wrap;line-height:1.8}#planWorkStatus{border:1px solid #8cb9a8} .discussion-history .plan-discussion-log{max-height:340px}#planLatestReply{max-height:380px;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}#planGuidedChoices{display:grid;grid-template-columns:1fr;gap:9px}#planGuidedChoices button{text-align:left;white-space:normal;line-height:1.6;padding:13px}.decision-question{font-weight:650}#planEntryStatus:empty{display:none}.route-city-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}.route-city-summary p{margin:3px 0;font-size:11px}</style><link rel="stylesheet" href="assets/journey-ready.css?v=15.1"></head>
+.plan-day-updated{border:2px solid #c8a164!important;background:#fffdf5!important}.plan-day-updated>span.pill{background:#f7e7c4;color:#78521c}#planLatestReply{margin:14px 0;padding:16px;background:#f1f6f0;border-radius:14px}#planLatestReply p{white-space:pre-wrap;line-height:1.8}#planWorkStatus{border:1px solid #8cb9a8} .discussion-history .plan-discussion-log{max-height:340px}#planLatestReply{max-height:380px;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}#planGuidedChoices{display:grid;grid-template-columns:1fr;gap:9px}#planGuidedChoices button{text-align:left;white-space:normal;line-height:1.6;padding:13px}.decision-question{font-weight:650}#planEntryStatus:empty{display:none}.route-city-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}.route-city-summary p{margin:3px 0;font-size:11px}</style><link rel="stylesheet" href="assets/journey-ready.css?v=17.1"></head>
 <body><div class="app">
 <header class="hero">
   <div class="brand">TRAVEL COMPANION · AI</div>
@@ -239,6 +239,8 @@ button,input,textarea,select{font:inherit}
 <div class="card"><div class="poi-lab-actions"><button class="btn line" onclick="nav('planner')">返回Plan 规划</button><button class="btn light" onclick="nav('home')">返回首页</button></div><p class="tiny" style="margin:9px 0 0">原有规划、资料整理和旅行工作台均保留。这个入口是并行测试版，不会覆盖你的旧行程。</p></div>
 </section>
 
+<section class="screen" id="vault"><div class="head"><h2>我的旅行卡片</h2><button class="btn" onclick="startAnotherTrip()">规划另一趟 ＋</button></div><p class="tiny">每趟旅行一张卡，同一趟的调整保存在卡片版本中。数据保存在当前设备，建议下载备份。</p><div class="ready-actions"><button class="btn line" onclick="exportAllTrips()">备份全部旅行 ↓</button><label class="btn line" for="vaultImport">导入旅行备份 ↑</label><input type="file" id="vaultImport" accept=".json,application/json" hidden onchange="importTripVault(this.files&&this.files[0])"></div><p class="tiny">JSON 用于恢复与继续编辑；行程单通过系统打印菜单保存为 PDF。备份可能包含 AI 讨论与偏好，请自行保管。</p><div id="vaultCards" class="vault-grid"></div></section>
+<section class="screen" id="completion"><div class="head"><h2>记录这趟旅行</h2><span class="pill">实际到访 · 由你确认</span></div><div id="completionContent"></div></section>
 <section class="screen" id="trip"><div class="head"><h2>每日行程</h2><button class="btn line small" onclick="nav('planner')">返回 Plan</button></div>
 <div class="card" id="tripIntro"></div><span id="stopCount" hidden></span>
 <div class="card"><div class="citychips" id="cityTabs"></div><div id="cityInfo"></div><div id="tripOverviewHolder"></div></div>
@@ -269,19 +271,21 @@ button,input,textarea,select{font:inherit}
 <section class="screen" id="footprint">
 <div class="head"><h2>我的世界足迹</h2><span class="pill">Visited · 已到访</span></div>
 <div class="card"><div class="statgrid"><div class="stat"><b id="footTripCount">0</b><span>旅行记录</span></div><div class="stat"><b id="footCountryCount">0</b><span>国家 / 地区</span></div><div class="stat"><b id="footCityCount">0</b><span>到访城市</span></div></div></div>
-<div class="card"><div class="head"><h3>点亮我的世界地图</h3><span class="sub">仅显示已导入且有坐标的地点</span></div><div id="footprintMap" style="height:340px;border-radius:14px;overflow:hidden;background:#e9f0eb;border:1px solid var(--line)"></div><p id="mapStatus" class="tiny" style="margin:9px 0 0">导入 Travel Bank 公开行程与地点数据后，这里会显示实际到访足迹。</p></div>
+<div id="vaultYearFilter"></div><div class="card"><div class="head"><h3>点亮我的世界地图</h3><span class="sub">已确认到访 · 有坐标时点亮地图</span></div><div id="footprintMap" style="height:340px;border-radius:14px;overflow:hidden;background:#e9f0eb;border:1px solid var(--line)"></div><p id="mapStatus" class="tiny" style="margin:9px 0 0">导入 Travel Bank 公开行程与地点数据后，这里会显示实际到访足迹。</p></div>
+<div id="vaultYearCards"></div>
 <div class="card"><div class="head"><h3>我的到访地点</h3><span class="sub">按国家 / 地区归类</span></div><div id="footprintList"><p class="tiny">还没有导入到访地点。</p></div><button class="btn light" style="width:100%;margin-top:10px" onclick="nav('archive')">导入或更新旅行档案</button></div>
 </section>
 <section class="screen" id="departure"><div class="head"><h2>出发准备</h2><span class="pill">待办可以稍后补齐</span></div><div id="departureContent"></div></section>
 <section class="screen" id="assistant"><div id="journeySpotPanel"></div><details class="card" id="assistantChatDetails"><summary>还有其他问题？问旅途助手</summary><div class="head"><h2>旅途中，随时问 AI</h2><span class="pill">AI 实时助理</span></div><div class="card"><div class="row"><span style="font-size:24px">✦</span><div><strong>你的旅行助理</strong><div class="tiny">直接问旅行问题。AI 会结合当前行程，并在适合时检索公开信息。</div></div></div><div class="chips" id="quickQuestions"><button class="chip" onclick="ask('今天下雨，帮我调整行程')">今天下雨，调整行程</button><button class="chip" onclick="ask('这几个景点是不是绕路？')">检查是否绕路</button><button class="chip" onclick="ask('我想少走路，怎么调整？')">我想少走路</button><button class="chip" onclick="ask('这个景点需要提前预约吗？')">需要提前预约吗</button><button class="chip" onclick="ask('临时多出半天，有什么特别玩法？')">发现特别玩法</button></div><div id="chatlog"><div class="chat ai">你好！我可以帮你检查路线、规划时间、整理资料和处理旅途变化。涉及实时交通、天气、门票或入境政策时，我会优先检索来源，并标出仍需确认的部分。</div></div><div class="chatinput"><input id="question" placeholder="也可以输入你遇到的问题"><button class="btn" onclick="sendCustom()">发送</button></div></div></details></section>
 </main>
-<nav class="bottom"><button class="active" data-screen="home" onclick="nav('home')"><b>⌂</b>首页</button><button data-screen="trip" onclick="nav('trip')"><b>⌖</b>我的行程</button><button data-screen="assistant" onclick="nav('assistant')"><b>◌</b>旅途助手</button><button data-screen="footprint" onclick="nav('footprint')"><b>◎</b>我的足迹</button></nav>
+<nav class="bottom"><button class="active" data-screen="home" onclick="nav('home')"><b>⌂</b>首页</button><button data-screen="trip" onclick="nav('vault')"><b>⌖</b>我的行程</button><button data-screen="assistant" onclick="nav('assistant')"><b>◌</b>旅途助手</button><button data-screen="footprint" onclick="nav('footprint')"><b>◎</b>我的足迹</button></nav>
 <div class="toast" id="toast"></div><div class="modal" id="modal" onclick="if(event.target.id==='modal')closeModal()"><div class="modalbox"><div class="modalhead"><strong id="modalTitle">地点详情</strong><button onclick="closeModal()">关闭 ✕</button></div><div id="modalBody"></div></div></div></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="assets/plan-core.js?v=14.1"></script>
 <script src="assets/candidate-discovery.js?v=15.2"></script>
-<script src="assets/plan-workflow.js?v=16.1"></script>
-<script src="assets/journey-ready.js?v=14.4"></script>
+<script src="assets/plan-workflow.js?v=17.1"></script>
+<script src="assets/journey-ready.js?v=17.1"></script>
+<script src="assets/trip-vault.js?v=17.1"></script>
 <script>
 const seed={
  cities:[
@@ -302,7 +306,7 @@ let trip=loadTrip()||JSON.parse(JSON.stringify(seed));let activeDay='d4',activeC
 function loadTrip(){try{let x=localStorage.getItem('travelCompanionV04');return x?JSON.parse(x):null}catch(e){return null}}
 function persist(silent=false){try{localStorage.setItem('travelCompanionV04',JSON.stringify(trip));if(!silent)toast('已保存到当前设备，下次打开可继续编辑')}catch(e){toast('当前浏览器无法保存，请检查隐私模式设置')}}
 function toast(s){let t=document.getElementById('toast');t.textContent=s;t.classList.add('show');clearTimeout(window._toastTimer);window._toastTimer=setTimeout(()=>t.classList.remove('show'),2400)}
-function nav(id){document.querySelector('.app').dataset.screen=id;if(id==='departure')renderDeparturePreparation();if(id==='assistant')renderJourneyAssistant();document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('.bottom button').forEach(x=>x.classList.toggle('active',x.dataset.screen===(id==='departure'?'trip':id)));window.scrollTo({top:0,behavior:'smooth'});if(id==='trip')renderTrip();if(id==='planner')requestAnimationFrame(()=>{for(const r of liveTripMaps.values())if(document.getElementById('planner').contains(r.element))refreshLiveMap(r);});if(id==='materials')renderBank();if(id==='archive')renderArchive();if(id==='footprint')renderFootprint()}
+function nav(id){document.querySelector('.app').dataset.screen=id;if(id==='departure')renderDeparturePreparation();if(id==='assistant')renderJourneyAssistant();if(id==='vault')renderTripVault();document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('.bottom button').forEach(x=>x.classList.toggle('active',x.dataset.screen===(['departure','vault','completion'].includes(id)?'trip':id)));window.scrollTo({top:0,behavior:'smooth'});if(id==='trip')renderTrip();if(id==='planner')requestAnimationFrame(()=>{for(const r of liveTripMaps.values())if(document.getElementById('planner').contains(r.element))refreshLiveMap(r);});if(id==='materials')renderBank();if(id==='archive')renderArchive();if(id==='footprint')renderFootprint()}
 const requestedScreen = new URLSearchParams(window.location.search).get('screen');
 if(requestedScreen === 'poiLab') nav('planner');
 function openTrip(){nav('trip')}
@@ -374,7 +378,7 @@ async function flushMapLookups(){
         for(const item of items)rememberMapLocation({...item,...(returned.get(item.key)||{status:'unresolved'})});
       }catch(error){for(const item of items)rememberMapLocation({...item,status:'unavailable',message:error.message});}
       finally{clearTimeout(timer);}
-      for(const record of liveTripMaps.values())refreshLiveMap(record,false);
+      for(const record of liveTripMaps.values())refreshLiveMap(record,false);if(document.getElementById('footprint')?.classList.contains('active'))renderFootprint();
     }
   }finally{mapLookupBusy=false;}
 }
@@ -454,9 +458,9 @@ function renderTrip(){
   const intro=document.getElementById('tripIntro');intro.innerHTML='';
   const cityTabs=document.getElementById('cityTabs'),dayTabs=document.getElementById('dayTabs'),info=document.getElementById('cityInfo'),dayContent=document.getElementById('dayContent'),mapHolder=document.getElementById('dayMapHolder'),whole=document.getElementById('tripOverviewHolder');
   for(const node of [cityTabs,dayTabs,info,dayContent,mapHolder,whole])node.innerHTML='';
-  if(!trip.planDerived){addTextNode(intro,'h3','','先把你的 Plan 载入每日行程');addTextNode(intro,'p','tiny','这里会展示当前方案的每天安排、真实地点地图和交通建议。');const b=document.createElement('button');b.className='btn';b.textContent='返回 Plan 查看方案';b.onclick=()=>nav('planner');intro.appendChild(b);return;}
+  if(!trip.planDerived){readyButton(intro,'我的旅行卡片 →',()=>nav('vault'),'btn line');addTextNode(intro,'h3','','先把你的 Plan 载入每日行程');addTextNode(intro,'p','tiny','这里会展示当前方案的每天安排、真实地点地图和交通建议。');const b=document.createElement('button');b.className='btn';b.textContent='返回 Plan 查看方案';b.onclick=()=>nav('planner');intro.appendChild(b);return;}
   addTextNode(intro,'h3','',(trip.cities||[]).map(c=>c.name).join(' → '));addTextNode(intro,'p','tiny','当前方案 V'+(trip.planVersion||1)+' · 每日景点和可选餐饮 · 位置匹配与营业核验分开');
-  const shortcuts=readyNode(intro,'div','ready-actions');readyButton(shortcuts,'出发准备清单 →',()=>openDeparturePreparation());readyButton(shortcuts,'旅途景点小卡 →',()=>nav('assistant'));
+  const shortcuts=readyNode(intro,'div','ready-actions');readyButton(shortcuts,'我的旅行卡片 / 下载 →',()=>{saveActiveTripToVault();nav('vault');});readyButton(shortcuts,'出发准备清单 →',()=>openDeparturePreparation());readyButton(shortcuts,'旅途景点小卡 →',()=>nav('assistant'));
   for(const c of trip.cities||[]){const b=document.createElement('button');b.className='chip '+(c.id===activeCity?'active':'');b.textContent=c.name;b.onclick=()=>selectCity(c.id);cityTabs.appendChild(b);}
   const city=trip.cities.find(c=>c.id===activeCity)||trip.cities[0];if(!city)return;
   addTextNode(info,'strong','',city.name+' · '+city.country);addTextNode(info,'p','tiny',city.summary);addTextNode(info,'p','tiny',city.days);
@@ -484,7 +488,7 @@ function selectDay(id){activeDay=id;let d=trip.days.find(x=>x.id===id);if(d)acti
 function moveStop(i,dir){let d=trip.days.find(x=>x.id===activeDay),j=i+dir;if(!d||j<0||j>=d.stops.length)return;[d.stops[i],d.stops[j]]=[d.stops[j],d.stops[i]];renderTrip();persist(true);toast('顺序已调整；正式路线需重新计算交通时间')}
 function removeStop(i){let d=trip.days.find(x=>x.id===activeDay);if(!d)return;d.stops.splice(i,1);renderTrip();persist(true);toast('已从当天行程移除')}
 function addPlace(){let e=document.getElementById('addPlace'),v=e.value.trim();if(!v){toast('先输入一个地点名称');return}let d=trip.days.find(x=>x.id===activeDay);d.stops.push(['待定',v,'用户新增地点 · 坐标、开放时间和路线尚待核实']);e.value='';renderTrip();persist(true);toast('地点已加入当天行程')}
-function saveTrip(){persist();document.getElementById('saveStatus').textContent='最近保存：'+new Date().toLocaleString()+' · 保存在当前设备浏览器'}
+function saveTrip(){persist();saveActiveTripToVault();document.getElementById('saveStatus').textContent='最近保存：'+new Date().toLocaleString()+' · 保存在当前设备浏览器'}
 function resetTrip(){if(!confirm('恢复内置示例会覆盖当前设备保存的修改，确定继续吗？'))return;trip=JSON.parse(JSON.stringify(seed));activeDay='d4';activeCity='samarkand';persist(true);renderTrip();toast('已恢复内置示例')}
 function showSpot(name){let details={
 '雷吉斯坦广场':'撒马尔罕最具代表性的历史建筑群之一。适合作为历史城区游览的重点。门票、开放时间、夜间灯光安排及现场规则需按出行日期核实。',
@@ -1002,6 +1006,7 @@ function exportBetaPackage(){
    trip:JSON.parse(JSON.stringify(trip)),
    activeDay,activeCity,
    planSession:safeReadLocalJson("travelCompanionPlanSessionV1",null),
+   tripVault:safeReadLocalJson(TravelVault.KEY,null),
    departurePreparation:safeReadLocalJson(JourneyReady.STORAGE,null),
    chatHistory:safeReadLocalJson("travelCompanionChatV05",chatHistory||[]),
    archive:safeReadLocalJson("travelCompanionArchiveV1",null)
@@ -1027,6 +1032,8 @@ async function importBetaPackage(file){
   if(!data.trip||!Array.isArray(data.trip.cities)||!Array.isArray(data.trip.days))throw new Error("测试包缺少有效的行程数据。");
   const ok=confirm("导入将替换当前浏览器中的行程、AI 规划讨论、问答和旅行档案。建议先导出自己的备份。确定继续吗？");
   if(!ok)return;
+  const incomingVault=data.tripVault?TravelVault.merge(readTripVault(),data.tripVault):null;
+  if(incomingVault&&!writeTripVault(incomingVault))throw new Error("旅行卡片未能保存，当前行程未替换。");
   trip=data.trip;
   activeDay=data.activeDay||trip.days[0]?.id||"";
   activeCity=data.activeCity||trip.cities[0]?.id||"";
@@ -1040,7 +1047,7 @@ async function importBetaPackage(file){
   if(data.archive)localStorage.setItem("travelCompanionArchiveV1",JSON.stringify(data.archive));
   else localStorage.removeItem("travelCompanionArchiveV1");
   localStorage.setItem(JourneyReady.STORAGE,JSON.stringify(JourneyReady.normalizeStore(data.departurePreparation)));
-  restorePlanSession();loadChatHistory();renderTrip();renderArchive();renderArchiveSummary();
+  restorePlanSession();loadChatHistory();renderTrip();renderArchive();renderArchiveSummary();initializeTripVault();
   if(status)status.textContent="导入成功："+(data.exportedAt?("原始导出时间 "+new Date(data.exportedAt).toLocaleString()+"。"):"")+"已载入朋友的旅行成果。";
   toast("朋友的旅行测试包已导入");
  }catch(e){
@@ -1052,7 +1059,7 @@ async function importBetaPackage(file){
 }
 
 function readArchive(){try{return JSON.parse(localStorage.getItem("travelCompanionArchiveV1")||"null")}catch(e){return null}}
-function archiveStats(){const a=readArchive()||{trips:[],places:[]};const ps=a.places||[];return {trips:(a.trips||[]).length,countries:new Set(ps.map(p=>p.country).filter(Boolean)).size,cities:new Set(ps.map(p=>p.city).filter(Boolean)).size}}
+function archiveStats(){const a=readArchive()||{trips:[],places:[]};let records=[];try{records=readTripVault().records.filter(r=>r.status==='completed');}catch(e){}const ps=[...(a.places||[]),...records.flatMap(r=>r.visited)];return {trips:(a.trips||[]).length+records.length,countries:new Set(ps.map(p=>p.country).filter(Boolean)).size,cities:new Set(ps.map(p=>p.city).filter(Boolean)).size}}
 function renderArchiveSummary(){const s=archiveStats();[["archiveTripCount",s.trips],["archiveCountryCount",s.countries],["archiveCityCount",s.cities]].forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.textContent=v})}
 function renderArchive(){
  const a=readArchive(),ts=a?.trips||[],ps=a?.places||[],countries=new Set(ps.map(p=>p.country).filter(Boolean)).size;
@@ -1083,24 +1090,24 @@ async function importArchiveFile(file){
 }
 let footprintMap=null,footprintMarkers=null;
 function renderFootprint(){
- const a=readArchive()||{trips:[],places:[]},ps=a.places||[],visited=ps.filter(p=>p.status==="visited");
+ renderVaultYears();const a=filterImportedFootprints(readArchive()||{trips:[],places:[]}),ps=[...(a.places||[]),...localVaultFootprints()],visited=ps.filter(p=>p.status==="visited");
  const countries=new Set(visited.map(p=>p.country).filter(Boolean)).size,cities=new Set(visited.map(p=>p.city).filter(Boolean)).size;
  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
- set("footTripCount",(a.trips||[]).length);set("footCountryCount",countries);set("footCityCount",cities);
+ let localTrips=0;try{localTrips=readTripVault().records.filter(r=>r.status==='completed'&&(vaultYear==='all'||TravelVault.year(r)===vaultYear)).length;}catch(e){}set("footTripCount",(a.trips||[]).length+localTrips);set("footCountryCount",countries);set("footCityCount",cities);
  const list=document.getElementById("footprintList");list.innerHTML="";const grouped={};
  visited.forEach(p=>{const k=p.country||"国家待补充";(grouped[k]||(grouped[k]=[])).push(p)});
  Object.keys(grouped).sort().forEach(country=>{
   const h=document.createElement("div");h.className="eyebrow";h.style.margin="12px 0 4px";h.textContent=country;list.appendChild(h);
-  grouped[country].forEach(p=>{const row=document.createElement("div");row.className="itemrow";const left=document.createElement("div");const strong=document.createElement("strong");strong.textContent=p.city||"地点待补充";left.appendChild(strong);const small=document.createElement("small");small.textContent=[p.region,(p.sites||[]).join("、")].filter(Boolean).join(" · ")||"已记录到访";left.appendChild(small);row.appendChild(left);const tag=document.createElement("span");tag.className="tag";tag.textContent=Number.isFinite(p.lat)&&Number.isFinite(p.lng)?"已定位":"待补坐标";row.appendChild(tag);list.appendChild(row)});
+  grouped[country].forEach(p=>{const row=document.createElement("div");row.className="itemrow";const left=document.createElement("div");const strong=document.createElement("strong");strong.textContent=p.city||"地点待补充";left.appendChild(strong);const small=document.createElement("small");small.textContent=[p.region,(p.sites||[]).join("、")].filter(Boolean).join(" · ")||"已记录到访";left.appendChild(small);row.appendChild(left);const tag=document.createElement("span");tag.className="tag";tag.textContent=Number.isFinite(p.lat)&&Number.isFinite(p.lng)?"已定位":"位置待匹配";row.appendChild(tag);list.appendChild(row)});
  });
- if(!visited.length)list.innerHTML='<p class="tiny">还没有导入到访地点。先从 Travel Bank 导出公开旅行档案。</p>';
+ if(!visited.length)list.innerHTML='<p class="tiny">还没有确认的到访地点。旅行结束后记录实际到访，或导入已有公开旅行档案。</p>';
  const mapStatus=document.getElementById("mapStatus"),points=visited.filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lng)&&Math.abs(p.lat)<=90&&Math.abs(p.lng)<=180);
  if(typeof L==="undefined"){mapStatus.textContent="地图组件暂时无法加载。你仍可以在下方查看已导入地点清单。";return}
  if(!footprintMap){footprintMap=L.map("footprintMap",{worldCopyJump:true}).setView([20,0],2);L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,attribution:"© OpenStreetMap"}).addTo(footprintMap);footprintMarkers=L.layerGroup().addTo(footprintMap)}
  footprintMarkers.clearLayers();
  points.forEach(p=>{const marker=L.circleMarker([p.lat,p.lng],{radius:7,color:"#fff",weight:2,fillColor:"#c18d53",fillOpacity:.95}).addTo(footprintMarkers);const popup=document.createElement("div");const title=document.createElement("strong");title.textContent=[p.city,p.country].filter(Boolean).join(" · ");popup.appendChild(title);if(p.sites?.length){const detail=document.createElement("div");detail.textContent=p.sites.join("、");popup.appendChild(detail)}marker.bindPopup(popup)});
  if(points.length){const bounds=L.latLngBounds(points.map(p=>[p.lat,p.lng]));footprintMap.fitBounds(bounds.pad(.25),{maxZoom:5});mapStatus.textContent="地图已点亮 "+points.length+" 个有坐标的到访地点；没有坐标的地点会保留在下方清单。"}
- else{footprintMap.setView([20,0],2);mapStatus.textContent=visited.length?"已导入地点，但目前没有可用经纬度；地点已保留，补齐坐标后即可点亮地图。":"导入 Travel Bank 公开行程与地点数据后，这里会显示实际到访足迹。"}
+ else{footprintMap.setView([20,0],2);mapStatus.textContent=visited.length?"已导入地点，但目前没有可用经纬度；地点已保留，系统匹配位置后即可点亮地图。":"导入 Travel Bank 公开行程与地点数据后，这里会显示实际到访足迹。"}
  setTimeout(()=>footprintMap&&footprintMap.invalidateSize(),120);
 }
 
@@ -1132,6 +1139,6 @@ async function loadChatHistory(){
   try{const saved=JSON.parse(localStorage.getItem("travelCompanionChatV05")||"[]");if(Array.isArray(saved)&&saved.length){chatHistory=saved;const log=document.getElementById("chatlog");log.innerHTML="";saved.forEach(m=>addChatBubble(m.role==="assistant"?"ai":"user",m.content));}}
   catch(e){}
 }
-renderTrip();renderBank();renderArchiveSummary();loadChatHistory();restorePlanSession();checkAiHealth();
+renderBank();renderArchiveSummary();loadChatHistory();restorePlanSession();initializeTripVault();renderTrip();checkAiHealth();
 
 </script></body></html>
