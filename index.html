@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8"><meta name="app-version" content="2026-11-01-confirmed-plan-13"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#173f46"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://cdn.jsdelivr.net/npm/mammoth@1.9.0/mammoth.browser.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<meta charset="utf-8"><meta name="app-version" content="2026-11-01-ready-mobile-14"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#173f46"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://cdn.jsdelivr.net/npm/mammoth@1.9.0/mammoth.browser.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <title>Travel Companion · Plan Together</title>
-<link rel="stylesheet" href="assets/plan-workflow.css?v=13.1">
+<link rel="stylesheet" href="assets/plan-workflow.css?v=14.1">
 <style>
 :root{--navy:#173f46;--teal:#2d766b;--mint:#e8f1ec;--gold:#c18d53;--paper:#fbfaf6;--bg:#edf1ed;--ink:#20363a;--muted:#75858a;--line:#e4e8e1;--red:#a65b4e;--shadow:0 12px 32px rgba(23,63,70,.08)}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 10% 0%,#e3eee8 0,transparent 38%),var(--bg);color:var(--ink);font:14px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}.app{max-width:520px;min-height:100dvh;margin:auto;background:var(--paper);position:relative;padding-bottom:84px;box-shadow:0 18px 60px #173f4618}.hero{padding:34px 24px 36px;color:#fff;background:linear-gradient(135deg,#153a43,#23635d 68%,#3c7b6b);border-radius:0 0 28px 28px;position:relative;overflow:hidden}.hero:after{content:"✦";position:absolute;right:20px;top:65px;font-size:90px;color:#ffffff18}.brand{font-size:10px;letter-spacing:.17em;color:#d5e7df;font-weight:800}.hero h1{font-size:29px;line-height:1.25;margin:18px 0 7px;max-width:320px}.hero p{font-size:12px;color:#d8e8e2;max-width:330px;margin:0}.trip-highlight{margin-top:19px;padding:13px;background:#ffffff17;border:1px solid #ffffff30;border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:10px}.trip-highlight small{display:block;color:#d7e6df;font-size:11px}.trip-highlight strong{font-size:13px}.trip-highlight button{border:0;border-radius:11px;padding:9px 12px;background:#f8f6ef;color:var(--navy);font-weight:750;cursor:pointer}
@@ -133,7 +133,7 @@ button,input,textarea,select{font:inherit}
 .candidate-preference-input{display:block;width:100%;min-height:76px;margin:10px 0;padding:10px;border:1px solid var(--line);border-radius:10px;font:inherit;resize:vertical}
 .pace-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.field .pace-choice{display:flex;align-items:center;gap:9px;margin:0;padding:13px 11px;border:1px solid var(--line);border-radius:12px;cursor:pointer;background:#fff;font-size:12px}.field .pace-choice input{width:18px;height:18px;margin:0;accent-color:var(--teal);flex-shrink:0}.pace-choice:has(input:checked){border-color:#82b6a2;background:var(--mint);color:var(--teal)}.pace-choice:has(input:focus-visible){outline:2px solid var(--teal);outline-offset:2px}#candidateInlineExplorer{margin:12px 0 0;background:#f8faf6;box-shadow:none}
 .real-trip-map{height:285px;border-radius:15px;border:1px solid var(--line);background:#eef3ee;z-index:1;margin:12px 0}.trip-map-tooltip{font:11px/1.4 inherit;color:var(--navy);border-radius:8px}.transport-overview{margin:18px 0;padding:15px;border:1px solid var(--line);border-radius:15px;background:#f7faf6}.transport-segment{padding:10px 0;border-top:1px solid var(--line)}.transport-segment strong{display:block;margin-bottom:5px}.transport-summary{font-weight:700;color:var(--teal);font-size:12px}.enter-daily-button{display:block;width:100%;padding:18px;font-size:17px;min-height:58px}.material-absorb{margin:16px 0;padding:14px;border:1px solid #dfe7dc;border-radius:13px;background:#fff}.discussion-history{margin:14px 0}.plan-discussion-actions .btn:first-child{flex:1;min-height:43px}
-.plan-day-updated{border:2px solid #c8a164!important;background:#fffdf5!important}.plan-day-updated>span.pill{background:#f7e7c4;color:#78521c}#planLatestReply{margin:14px 0;padding:16px;background:#f1f6f0;border-radius:14px}#planLatestReply p{white-space:pre-wrap;line-height:1.8}#planWorkStatus{border:1px solid #8cb9a8} .discussion-history .plan-discussion-log{max-height:340px}#planLatestReply{max-height:380px;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}#planGuidedChoices{display:grid;grid-template-columns:1fr;gap:9px}#planGuidedChoices button{text-align:left;white-space:normal;line-height:1.6;padding:13px}.decision-question{font-weight:650}#planEntryStatus:empty{display:none}.route-city-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}.route-city-summary p{margin:3px 0;font-size:11px}</style></head>
+.plan-day-updated{border:2px solid #c8a164!important;background:#fffdf5!important}.plan-day-updated>span.pill{background:#f7e7c4;color:#78521c}#planLatestReply{margin:14px 0;padding:16px;background:#f1f6f0;border-radius:14px}#planLatestReply p{white-space:pre-wrap;line-height:1.8}#planWorkStatus{border:1px solid #8cb9a8} .discussion-history .plan-discussion-log{max-height:340px}#planLatestReply{max-height:380px;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}#planGuidedChoices{display:grid;grid-template-columns:1fr;gap:9px}#planGuidedChoices button{text-align:left;white-space:normal;line-height:1.6;padding:13px}.decision-question{font-weight:650}#planEntryStatus:empty{display:none}.route-city-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}.route-city-summary p{margin:3px 0;font-size:11px}</style><link rel="stylesheet" href="assets/journey-ready.css?v=14.1"></head>
 <body><div class="app">
 <header class="hero">
   <div class="brand">TRAVEL COMPANION · AI</div>
@@ -262,13 +262,15 @@ button,input,textarea,select{font:inherit}
 <div class="card"><div class="head"><h3>点亮我的世界地图</h3><span class="sub">仅显示已导入且有坐标的地点</span></div><div id="footprintMap" style="height:340px;border-radius:14px;overflow:hidden;background:#e9f0eb;border:1px solid var(--line)"></div><p id="mapStatus" class="tiny" style="margin:9px 0 0">导入 Travel Bank 公开行程与地点数据后，这里会显示实际到访足迹。</p></div>
 <div class="card"><div class="head"><h3>我的到访地点</h3><span class="sub">按国家 / 地区归类</span></div><div id="footprintList"><p class="tiny">还没有导入到访地点。</p></div><button class="btn light" style="width:100%;margin-top:10px" onclick="nav('archive')">导入或更新旅行档案</button></div>
 </section>
-<section class="screen" id="assistant"><div class="head"><h2>旅途中，随时问 AI</h2><span class="pill">AI 实时助理</span></div><div class="card"><div class="row"><span style="font-size:24px">✦</span><div><strong>你的旅行助理</strong><div class="tiny">直接问旅行问题。AI 会结合当前行程，并在适合时检索公开信息。</div></div></div><div class="chips" id="quickQuestions"><button class="chip" onclick="ask('今天下雨，帮我调整行程')">今天下雨，调整行程</button><button class="chip" onclick="ask('这几个景点是不是绕路？')">检查是否绕路</button><button class="chip" onclick="ask('我想少走路，怎么调整？')">我想少走路</button><button class="chip" onclick="ask('这个景点需要提前预约吗？')">需要提前预约吗</button><button class="chip" onclick="ask('临时多出半天，有什么特别玩法？')">发现特别玩法</button></div><div id="chatlog"><div class="chat ai">你好！我可以帮你检查路线、规划时间、整理资料和处理旅途变化。涉及实时交通、天气、门票或入境政策时，我会优先检索来源，并标出仍需确认的部分。</div></div><div class="chatinput"><input id="question" placeholder="也可以输入你遇到的问题"><button class="btn" onclick="sendCustom()">发送</button></div></div></section>
+<section class="screen" id="departure"><div class="head"><h2>出发准备</h2><span class="pill">待办可以稍后补齐</span></div><div id="departureContent"></div></section>
+<section class="screen" id="assistant"><div id="journeySpotPanel"></div><details class="card" id="assistantChatDetails"><summary>还有其他问题？问旅途助手</summary><div class="head"><h2>旅途中，随时问 AI</h2><span class="pill">AI 实时助理</span></div><div class="card"><div class="row"><span style="font-size:24px">✦</span><div><strong>你的旅行助理</strong><div class="tiny">直接问旅行问题。AI 会结合当前行程，并在适合时检索公开信息。</div></div></div><div class="chips" id="quickQuestions"><button class="chip" onclick="ask('今天下雨，帮我调整行程')">今天下雨，调整行程</button><button class="chip" onclick="ask('这几个景点是不是绕路？')">检查是否绕路</button><button class="chip" onclick="ask('我想少走路，怎么调整？')">我想少走路</button><button class="chip" onclick="ask('这个景点需要提前预约吗？')">需要提前预约吗</button><button class="chip" onclick="ask('临时多出半天，有什么特别玩法？')">发现特别玩法</button></div><div id="chatlog"><div class="chat ai">你好！我可以帮你检查路线、规划时间、整理资料和处理旅途变化。涉及实时交通、天气、门票或入境政策时，我会优先检索来源，并标出仍需确认的部分。</div></div><div class="chatinput"><input id="question" placeholder="也可以输入你遇到的问题"><button class="btn" onclick="sendCustom()">发送</button></div></div></details></section>
 </main>
 <nav class="bottom"><button class="active" data-screen="home" onclick="nav('home')"><b>⌂</b>首页</button><button data-screen="trip" onclick="nav('trip')"><b>⌖</b>我的行程</button><button data-screen="assistant" onclick="nav('assistant')"><b>◌</b>旅途助手</button><button data-screen="footprint" onclick="nav('footprint')"><b>◎</b>我的足迹</button></nav>
 <div class="toast" id="toast"></div><div class="modal" id="modal" onclick="if(event.target.id==='modal')closeModal()"><div class="modalbox"><div class="modalhead"><strong id="modalTitle">地点详情</strong><button onclick="closeModal()">关闭 ✕</button></div><div id="modalBody"></div></div></div></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="assets/plan-core.js?v=13.1"></script>
-<script src="assets/plan-workflow.js?v=13.1"></script>
+<script src="assets/plan-core.js?v=14.1"></script>
+<script src="assets/plan-workflow.js?v=14.1"></script>
+<script src="assets/journey-ready.js?v=14.1"></script>
 <script>
 const seed={
  cities:[
@@ -289,7 +291,7 @@ let trip=loadTrip()||JSON.parse(JSON.stringify(seed));let activeDay='d4',activeC
 function loadTrip(){try{let x=localStorage.getItem('travelCompanionV04');return x?JSON.parse(x):null}catch(e){return null}}
 function persist(silent=false){try{localStorage.setItem('travelCompanionV04',JSON.stringify(trip));if(!silent)toast('已保存到当前设备，下次打开可继续编辑')}catch(e){toast('当前浏览器无法保存，请检查隐私模式设置')}}
 function toast(s){let t=document.getElementById('toast');t.textContent=s;t.classList.add('show');clearTimeout(window._toastTimer);window._toastTimer=setTimeout(()=>t.classList.remove('show'),2400)}
-function nav(id){document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('.bottom button').forEach(x=>x.classList.toggle('active',x.dataset.screen===id));window.scrollTo({top:0,behavior:'smooth'});if(id==='trip')renderTrip();if(id==='planner')requestAnimationFrame(()=>{for(const r of liveTripMaps.values())if(document.getElementById('planner').contains(r.element))refreshLiveMap(r);});if(id==='materials')renderBank();if(id==='archive')renderArchive();if(id==='footprint')renderFootprint()}
+function nav(id){document.querySelector('.app').dataset.screen=id;if(id==='departure')renderDeparturePreparation();if(id==='assistant')renderJourneyAssistant();document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('.bottom button').forEach(x=>x.classList.toggle('active',x.dataset.screen===(id==='departure'?'trip':id)));window.scrollTo({top:0,behavior:'smooth'});if(id==='trip')renderTrip();if(id==='planner')requestAnimationFrame(()=>{for(const r of liveTripMaps.values())if(document.getElementById('planner').contains(r.element))refreshLiveMap(r);});if(id==='materials')renderBank();if(id==='archive')renderArchive();if(id==='footprint')renderFootprint()}
 const requestedScreen = new URLSearchParams(window.location.search).get('screen');
 if(requestedScreen === 'poiLab') nav('planner');
 function openTrip(){nav('trip')}
@@ -442,6 +444,7 @@ function renderTrip(){
   for(const node of [cityTabs,dayTabs,info,dayContent,mapHolder,whole])node.innerHTML='';
   if(!trip.planDerived){addTextNode(intro,'h3','','先把你的 Plan 载入每日行程');addTextNode(intro,'p','tiny','这里会展示当前方案的每天安排、真实地点地图和交通建议。');const b=document.createElement('button');b.className='btn';b.textContent='返回 Plan 查看方案';b.onclick=()=>nav('planner');intro.appendChild(b);return;}
   addTextNode(intro,'h3','',(trip.cities||[]).map(c=>c.name).join(' → '));addTextNode(intro,'p','tiny','当前方案 V'+(trip.planVersion||1)+' · 每日景点和可选餐饮 · 位置匹配与营业核验分开');
+  const shortcuts=readyNode(intro,'div','ready-actions');readyButton(shortcuts,'出发准备清单 →',()=>openDeparturePreparation());readyButton(shortcuts,'旅途景点小卡 →',()=>nav('assistant'));
   for(const c of trip.cities||[]){const b=document.createElement('button');b.className='chip '+(c.id===activeCity?'active':'');b.textContent=c.name;b.onclick=()=>selectCity(c.id);cityTabs.appendChild(b);}
   const city=trip.cities.find(c=>c.id===activeCity)||trip.cities[0];if(!city)return;
   addTextNode(info,'strong','',city.name+' · '+city.country);addTextNode(info,'p','tiny',city.summary);addTextNode(info,'p','tiny',city.days);
@@ -985,6 +988,7 @@ function exportBetaPackage(){
    trip:JSON.parse(JSON.stringify(trip)),
    activeDay,activeCity,
    planSession:safeReadLocalJson("travelCompanionPlanSessionV1",null),
+   departurePreparation:safeReadLocalJson(JourneyReady.STORAGE,null),
    chatHistory:safeReadLocalJson("travelCompanionChatV05",chatHistory||[]),
    archive:safeReadLocalJson("travelCompanionArchiveV1",null)
   };
@@ -1021,6 +1025,7 @@ async function importBetaPackage(file){
   else localStorage.removeItem("travelCompanionChatV05");
   if(data.archive)localStorage.setItem("travelCompanionArchiveV1",JSON.stringify(data.archive));
   else localStorage.removeItem("travelCompanionArchiveV1");
+  localStorage.setItem(JourneyReady.STORAGE,JSON.stringify(JourneyReady.normalizeStore(data.departurePreparation)));
   restorePlanSession();loadChatHistory();renderTrip();renderArchive();renderArchiveSummary();
   if(status)status.textContent="导入成功："+(data.exportedAt?("原始导出时间 "+new Date(data.exportedAt).toLocaleString()+"。"):"")+"已载入朋友的旅行成果。";
   toast("朋友的旅行测试包已导入");
@@ -1092,9 +1097,10 @@ document.getElementById("fileInput").addEventListener("change",e=>{
 function addChatBubble(role,text){
   const log=document.getElementById("chatlog");const b=document.createElement("div");b.className=`chat ${role}`;b.textContent=text;log.appendChild(b);log.scrollTop=log.scrollHeight;
 }
-async function ask(q){
+async function ask(q,displayText){
+  document.getElementById("assistantChatDetails").open=true;
   if(!q.trim())return;
-  addChatBubble("user",q);chatHistory.push({role:"user",content:q});
+  addChatBubble("user",displayText||q);chatHistory.push({role:"user",content:displayText||q});
   const log=document.getElementById("chatlog");const loading=document.createElement("div");loading.className="chat ai";loading.textContent="AI 正在结合你的行程思考…";log.appendChild(loading);
   try{
     const result=await apiRequest({task:"chat",message:q,history:chatHistory.slice(0,-1).slice(-10),context:collectTripContext()});
