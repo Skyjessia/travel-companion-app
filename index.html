@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8"><meta name="app-version" content="2026-11-01-trip-cards-17"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#173f46"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://cdn.jsdelivr.net/npm/mammoth@1.9.0/mammoth.browser.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<meta charset="utf-8"><meta name="app-version" content="2026-11-02-on-road-18"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#173f46"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://cdn.jsdelivr.net/npm/mammoth@1.9.0/mammoth.browser.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <title>Travel Companion · 一起规划，轻松出发</title>
 <link rel="canonical" href="https://skyjessia.github.io/travel-companion-app/">
 <meta name="description" content="和 AI 一起规划每天怎么走，带着行程轻松出发，收藏走过的世界。">
@@ -142,7 +142,7 @@ button,input,textarea,select{font:inherit}
 .candidate-preference-input{display:block;width:100%;min-height:76px;margin:10px 0;padding:10px;border:1px solid var(--line);border-radius:10px;font:inherit;resize:vertical}
 .pace-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.field .pace-choice{display:flex;align-items:center;gap:9px;margin:0;padding:13px 11px;border:1px solid var(--line);border-radius:12px;cursor:pointer;background:#fff;font-size:12px}.field .pace-choice input{width:18px;height:18px;margin:0;accent-color:var(--teal);flex-shrink:0}.pace-choice:has(input:checked){border-color:#82b6a2;background:var(--mint);color:var(--teal)}.pace-choice:has(input:focus-visible){outline:2px solid var(--teal);outline-offset:2px}#candidateInlineExplorer{margin:12px 0 0;background:#f8faf6;box-shadow:none}
 .real-trip-map{height:285px;border-radius:15px;border:1px solid var(--line);background:#eef3ee;z-index:1;margin:12px 0}.trip-map-tooltip{font:11px/1.4 inherit;color:var(--navy);border-radius:8px}.transport-overview{margin:18px 0;padding:15px;border:1px solid var(--line);border-radius:15px;background:#f7faf6}.transport-segment{padding:10px 0;border-top:1px solid var(--line)}.transport-segment strong{display:block;margin-bottom:5px}.transport-summary{font-weight:700;color:var(--teal);font-size:12px}.enter-daily-button{display:block;width:100%;padding:18px;font-size:17px;min-height:58px}.material-absorb{margin:16px 0;padding:14px;border:1px solid #dfe7dc;border-radius:13px;background:#fff}.discussion-history{margin:14px 0}.plan-discussion-actions .btn:first-child{flex:1;min-height:43px}
-.plan-day-updated{border:2px solid #c8a164!important;background:#fffdf5!important}.plan-day-updated>span.pill{background:#f7e7c4;color:#78521c}#planLatestReply{margin:14px 0;padding:16px;background:#f1f6f0;border-radius:14px}#planLatestReply p{white-space:pre-wrap;line-height:1.8}#planWorkStatus{border:1px solid #8cb9a8} .discussion-history .plan-discussion-log{max-height:340px}#planLatestReply{max-height:380px;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}#planGuidedChoices{display:grid;grid-template-columns:1fr;gap:9px}#planGuidedChoices button{text-align:left;white-space:normal;line-height:1.6;padding:13px}.decision-question{font-weight:650}#planEntryStatus:empty{display:none}.route-city-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}.route-city-summary p{margin:3px 0;font-size:11px}</style><link rel="stylesheet" href="assets/journey-ready.css?v=17.1"></head>
+.plan-day-updated{border:2px solid #c8a164!important;background:#fffdf5!important}.plan-day-updated>span.pill{background:#f7e7c4;color:#78521c}#planLatestReply{margin:14px 0;padding:16px;background:#f1f6f0;border-radius:14px}#planLatestReply p{white-space:pre-wrap;line-height:1.8}#planWorkStatus{border:1px solid #8cb9a8} .discussion-history .plan-discussion-log{max-height:340px}#planLatestReply{max-height:380px;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}#planGuidedChoices{display:grid;grid-template-columns:1fr;gap:9px}#planGuidedChoices button{text-align:left;white-space:normal;line-height:1.6;padding:13px}.decision-question{font-weight:650}#planEntryStatus:empty{display:none}.route-city-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}.route-city-summary p{margin:3px 0;font-size:11px}</style><link rel="stylesheet" href="assets/journey-ready.css?v=18.1"></head>
 <body><div class="app">
 <header class="hero">
   <div class="brand">TRAVEL COMPANION · AI</div>
@@ -276,7 +276,7 @@ button,input,textarea,select{font:inherit}
 <div class="card"><div class="head"><h3>我的到访地点</h3><span class="sub">按国家 / 地区归类</span></div><div id="footprintList"><p class="tiny">还没有导入到访地点。</p></div><button class="btn light" style="width:100%;margin-top:10px" onclick="nav('archive')">导入或更新旅行档案</button></div>
 </section>
 <section class="screen" id="departure"><div class="head"><h2>出发准备</h2><span class="pill">待办可以稍后补齐</span></div><div id="departureContent"></div></section>
-<section class="screen" id="assistant"><div id="journeySpotPanel"></div><details class="card" id="assistantChatDetails"><summary>还有其他问题？问旅途助手</summary><div class="head"><h2>旅途中，随时问 AI</h2><span class="pill">AI 实时助理</span></div><div class="card"><div class="row"><span style="font-size:24px">✦</span><div><strong>你的旅行助理</strong><div class="tiny">直接问旅行问题。AI 会结合当前行程，并在适合时检索公开信息。</div></div></div><div class="chips" id="quickQuestions"><button class="chip" onclick="ask('今天下雨，帮我调整行程')">今天下雨，调整行程</button><button class="chip" onclick="ask('这几个景点是不是绕路？')">检查是否绕路</button><button class="chip" onclick="ask('我想少走路，怎么调整？')">我想少走路</button><button class="chip" onclick="ask('这个景点需要提前预约吗？')">需要提前预约吗</button><button class="chip" onclick="ask('临时多出半天，有什么特别玩法？')">发现特别玩法</button></div><div id="chatlog"><div class="chat ai">你好！我可以帮你检查路线、规划时间、整理资料和处理旅途变化。涉及实时交通、天气、门票或入境政策时，我会优先检索来源，并标出仍需确认的部分。</div></div><div class="chatinput"><input id="question" placeholder="也可以输入你遇到的问题"><button class="btn" onclick="sendCustom()">发送</button></div></div></details></section>
+<section class="screen" id="assistant"><div id="journeySpotPanel"></div><details class="card" id="assistantChatDetails" open><summary>随时问，随时在</summary><div class="head"><h2>旅途中，我陪你一起走</h2><span class="pill">结合行程陪伴</span></div><div class="card"><div class="row"><span style="font-size:24px">✦</span><div><strong>你的旅行助理</strong><div class="tiny">想了解景点、找吃的，或者计划临时变了？点下面的问题，AI 会结合当前日期与景点回答。</div></div></div><div id="roadChatDay"></div><p class="tiny" id="roadChatContext">可以随时提问；载入行程后，会结合当天安排回答。</p><div class="chips" id="quickQuestions"><button class="chip" onclick="roadQuestion('今天下雨，接下来怎么安排？','下雨了，怎么办？')">下雨了，怎么办？</button><button class="chip" onclick="roadQuestion('我有点累，接下来能不能少走一点？','有点累，少走一点')">有点累，少走一点</button><button class="chip" onclick="roadQuestion('我晚出发了，今天哪些最值得保留？','晚出发了，保留哪些？')">晚出发了，保留哪些？</button><button class="chip" onclick="roadQuestion('请介绍当前选中景点值得看的细节与背景','这里有什么看点？')">这里有什么看点？</button><button class="chip" onclick="roadQuestion('请针对当前选中景点给简单构图建议，未经核实不编具体机位和光照时刻','这里怎么拍？')">这里怎么拍？</button><button class="chip" onclick="roadQuestion('请结合当天区域给两种当地美食选择，不知道我的实时位置，不要声称最近或营业中','这一带吃什么？')">这一带吃什么？</button><button class="chip" onclick="roadQuestion('请检查当天景点顺序是否可能绕路，没有路线计算结果就说明不确定','这样走顺路吗？')">这样走顺路吗？</button><button class="chip" onclick="roadQuestion('当前选中景点是否需要预约？优先提供官方核实途径，未查证不下定论','这里需要预约吗？')">这里需要预约吗？</button></div><div id="chatlog"><div class="chat ai">你好！我可以帮你检查路线、规划时间、整理资料和处理旅途变化。涉及实时交通、天气、门票或入境政策时，我会优先检索来源，并标出仍需确认的部分。</div></div><div class="chatinput"><input id="question" placeholder="也可以输入你遇到的问题"><button class="btn" onclick="sendCustom()">发送</button></div></div></details></section>
 </main>
 <nav class="bottom"><button class="active" data-screen="home" onclick="nav('home')"><b>⌂</b>首页</button><button data-screen="trip" onclick="nav('vault')"><b>⌖</b>我的行程</button><button data-screen="assistant" onclick="nav('assistant')"><b>◌</b>旅途助手</button><button data-screen="footprint" onclick="nav('footprint')"><b>◎</b>我的足迹</button></nav>
 <div class="toast" id="toast"></div><div class="modal" id="modal" onclick="if(event.target.id==='modal')closeModal()"><div class="modalbox"><div class="modalhead"><strong id="modalTitle">地点详情</strong><button onclick="closeModal()">关闭 ✕</button></div><div id="modalBody"></div></div></div></div>
@@ -284,8 +284,9 @@ button,input,textarea,select{font:inherit}
 <script src="assets/plan-core.js?v=14.1"></script>
 <script src="assets/candidate-discovery.js?v=15.2"></script>
 <script src="assets/plan-workflow.js?v=17.1"></script>
-<script src="assets/journey-ready.js?v=17.1"></script>
-<script src="assets/trip-vault.js?v=17.1"></script>
+<script src="assets/journey-ready.js?v=18.1"></script>
+<script src="assets/trip-vault.js?v=18.1"></script>
+<script src="assets/on-road.js?v=18.1"></script>
 <script>
 const seed={
  cities:[
@@ -460,18 +461,19 @@ function renderTrip(){
   for(const node of [cityTabs,dayTabs,info,dayContent,mapHolder,whole])node.innerHTML='';
   if(!trip.planDerived){readyButton(intro,'我的旅行卡片 →',()=>nav('vault'),'btn line');addTextNode(intro,'h3','','先把你的 Plan 载入每日行程');addTextNode(intro,'p','tiny','这里会展示当前方案的每天安排、真实地点地图和交通建议。');const b=document.createElement('button');b.className='btn';b.textContent='返回 Plan 查看方案';b.onclick=()=>nav('planner');intro.appendChild(b);return;}
   addTextNode(intro,'h3','',(trip.cities||[]).map(c=>c.name).join(' → '));addTextNode(intro,'p','tiny','当前方案 V'+(trip.planVersion||1)+' · 每日景点和可选餐饮 · 位置匹配与营业核验分开');
-  const shortcuts=readyNode(intro,'div','ready-actions');readyButton(shortcuts,'我的旅行卡片 / 下载 →',()=>{saveActiveTripToVault();nav('vault');});readyButton(shortcuts,'出发准备清单 →',()=>openDeparturePreparation());readyButton(shortcuts,'旅途景点小卡 →',()=>nav('assistant'));
+  const shortcuts=readyNode(intro,'div','ready-actions');readyButton(shortcuts,'我的旅行卡片 / 下载 →',()=>{saveActiveTripToVault();nav('vault');});readyButton(shortcuts,'出发准备清单 →',()=>openDeparturePreparation());readyButton(shortcuts,'随时问，随时在 →',()=>openJourneyDay(activeDay));
   for(const c of trip.cities||[]){const b=document.createElement('button');b.className='chip '+(c.id===activeCity?'active':'');b.textContent=c.name;b.onclick=()=>selectCity(c.id);cityTabs.appendChild(b);}
   const city=trip.cities.find(c=>c.id===activeCity)||trip.cities[0];if(!city)return;
   addTextNode(info,'strong','',city.name+' · '+city.country);addTextNode(info,'p','tiny',city.summary);addTextNode(info,'p','tiny',city.days);
   for(const d of trip.days||[]){const b=document.createElement('button');b.className='tab '+(d.id===activeDay?'active':'');b.textContent=d.label;b.onclick=()=>selectDay(d.id);dayTabs.appendChild(b);}
   const day=trip.days.find(d=>d.id===activeDay)||trip.days[0];if(!day)return;
   document.getElementById('stopCount').textContent=trip.days.reduce((n,d)=>n+d.stops.length,0);
+  readyButton(dayContent,'这一天 · 讲解、拍照与临时帮忙 →',()=>openJourneyDay(day.id),'btn light ready-wide');
   addTextNode(dayContent,'h3','',day.title);if(day.transportNote)addTextNode(dayContent,'p','notice','当天交通衔接：'+day.transportNote);
   day.stops.forEach((stop,i)=>{
     const row=document.createElement('div');row.className='timeline';addTextNode(row,'div','time',stop[0]);const content=document.createElement('div');content.className='timeline-content';addTextNode(content,'strong','',stop[1]);addTextNode(content,'p','',stop[2]);
     const actions=document.createElement('div');actions.className='stop-actions';
-    for(const [text,action] of [['↑',()=>moveStop(i,-1)],['↓',()=>moveStop(i,1)],['移除',()=>removeStop(i)]]){const b=document.createElement('button');b.textContent=text;b.onclick=action;actions.appendChild(b);}content.appendChild(actions);row.appendChild(content);dayContent.appendChild(row);
+    for(const [text,action] of [['↑',()=>moveStop(i,-1)],['↓',()=>moveStop(i,1)],['移除',()=>removeStop(i)]]){const b=document.createElement('button');b.textContent=text;b.onclick=action;actions.appendChild(b);}content.appendChild(actions);if(JourneyReady.sightseeing({stops:[stop]}).length)readyButton(content,'看点 / 怎么拍 →',()=>openJourneyDay(day.id,i),'btn line small');row.appendChild(content);dayContent.appendChild(row);
   });
   appendLiveMap(mapHolder,'dailyActualMap',()=>day.stops.flatMap(stop=>{
     const meta=stop[3]||{};const kind=meta.kind||((stop[0]==='可选风味'||/餐厅|饭店|酒楼|小吃店|面馆|火锅/.test(stop[1]))?'food':'sight');
@@ -517,6 +519,7 @@ function escapeAttr(s){return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replac
 let lastAiPlan = null;
 let lastMaterialItems = [];
 let chatHistory = [];
+let chatBusy = false;
 let planBrief = null;
 let candidatePools = {};
 let candidateChoices = {};
@@ -1119,8 +1122,10 @@ function addChatBubble(role,text){
   const log=document.getElementById("chatlog");const b=document.createElement("div");b.className=`chat ${role}`;b.textContent=text;log.appendChild(b);log.scrollTop=log.scrollHeight;
 }
 async function ask(q,displayText){
+  if(chatBusy){toast("正在回复上一条问题，请稍等。");return;}
   document.getElementById("assistantChatDetails").open=true;
   if(!q.trim())return;
+  chatBusy=true;
   addChatBubble("user",displayText||q);chatHistory.push({role:"user",content:displayText||q});
   const log=document.getElementById("chatlog");const loading=document.createElement("div");loading.className="chat ai";loading.textContent="AI 正在结合你的行程思考…";log.appendChild(loading);
   try{
@@ -1131,10 +1136,11 @@ async function ask(q,displayText){
     }
     chatHistory.push({role:"assistant",content:result.text||""});
     try{localStorage.setItem("travelCompanionChatV05",JSON.stringify(chatHistory.slice(-20)))}catch(e){}
-  }catch(e){loading.textContent="AI 暂时没有完成请求："+e.message;}
+  }catch(e){loading.textContent="AI 暂时没有完成请求："+e.message;const retry=readyNode(loading,"button","btn line small","重试这个问题");retry.onclick=()=>ask(q,displayText);}
+  finally{chatBusy=false;}
   log.scrollTop=log.scrollHeight;
 }
-function sendCustom(){const e=document.getElementById("question"),q=e.value.trim();if(!q)return;e.value="";ask(q)}
+function sendCustom(){const e=document.getElementById("question"),q=e.value.trim();if(!q)return;e.value="";roadQuestion(q,q)}
 async function loadChatHistory(){
   try{const saved=JSON.parse(localStorage.getItem("travelCompanionChatV05")||"[]");if(Array.isArray(saved)&&saved.length){chatHistory=saved;const log=document.getElementById("chatlog");log.innerHTML="";saved.forEach(m=>addChatBubble(m.role==="assistant"?"ai":"user",m.content));}}
   catch(e){}
